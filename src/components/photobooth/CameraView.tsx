@@ -35,7 +35,7 @@ export default function CameraView({
   const filterCss = FILTERS.find(f => f.value === activeFilter)?.css ?? 'none'
 
   return (
-    <div className="relative w-full rounded-2xl overflow-hidden bg-pink-50 border border-pink-200 aspect-[4/3]">
+    <div className="relative w-full rounded-xl overflow-hidden bg-[#0a0a0a] border border-[#2a2a2a] aspect-[4/3]">
       {/* Video */}
       <video
         ref={videoRef}
@@ -62,21 +62,21 @@ export default function CameraView({
 
       {/* Loading state */}
       {!isReady && !error && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-pink-400 gap-2">
-          <div className="w-8 h-8 border-4 border-pink-300 border-t-pink-500 rounded-full animate-spin" />
-          <span className="text-sm">Đang khởi động camera...</span>
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-[#555] gap-2">
+          <div className="w-6 h-6 border-2 border-[#333] border-t-white rounded-full animate-spin" />
+          <span className="text-xs tracking-widest uppercase">Khởi động camera...</span>
         </div>
       )}
 
       {/* Error state */}
       {error && (
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6 gap-3">
-          <p className="text-red-400 text-sm leading-relaxed">{error}</p>
+          <p className="text-[#888] text-sm leading-relaxed">{error}</p>
           <button
             onClick={onRetry}
-            className="px-4 py-2 bg-pink-400 text-white text-sm rounded-full hover:bg-pink-500 active:scale-95 transition"
+            className="px-4 py-2 bg-white text-black text-xs font-semibold rounded-md hover:bg-[#e0e0e0] active:scale-95 transition"
           >
-            🔄 Thử lại
+            Thử lại
           </button>
         </div>
       )}
@@ -86,7 +86,7 @@ export default function CameraView({
         {/* Flash / Mirror toggle */}
         <button
           onClick={onToggleMirror}
-          className="w-8 h-8 rounded-full bg-white/70 backdrop-blur flex items-center justify-center text-pink-500 hover:bg-white transition shadow"
+          className="w-8 h-8 rounded-full bg-black/60 backdrop-blur flex items-center justify-center text-white hover:bg-black/80 transition"
           title="Lật camera"
         >
           <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
@@ -96,7 +96,7 @@ export default function CameraView({
         </button>
         <button
           onClick={onSwitchCamera}
-          className="w-8 h-8 rounded-full bg-white/70 backdrop-blur flex items-center justify-center text-pink-500 hover:bg-white transition shadow"
+          className="w-8 h-8 rounded-full bg-black/60 backdrop-blur flex items-center justify-center text-white hover:bg-black/80 transition"
           title="Đổi camera"
         >
           <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
@@ -126,8 +126,8 @@ export default function CameraView({
 
       {/* Progress badge */}
       <div className="absolute bottom-2 left-1/2 -translate-x-1/2">
-        <span className="bg-pink-400/90 text-white text-xs font-semibold px-3 py-1 rounded-full shadow">
-          Đã Chụp {capturedCount}/{totalSlots}
+        <span className="bg-black/70 text-white text-xs font-medium px-3 py-1 rounded-full tracking-widest border border-white/10">
+          {capturedCount}/{totalSlots}
         </span>
       </div>
     </div>

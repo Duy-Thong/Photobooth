@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Modal, Input, Spin, Empty, Tag, Button } from 'antd'
+import { Modal, Input, Spin, Empty, Button } from 'antd'
 import { fetchFrames, fetchCategories, frameImageUrl } from '@/lib/frameService'
 import type { FrameItem, FrameCategory } from '@/lib/frameService'
 import type { LayoutType } from '@/types/photobooth'
@@ -85,26 +85,30 @@ export default function FrameModal({
         open={open}
         onCancel={onClose}
         title={
-          <span className="text-pink-500 font-bold text-lg">
-            🖼️ Chọn Khung Ảnh
+          <span className="text-white font-semibold text-base tracking-tight">
+            Chọn Khung Ảnh
           </span>
         }
         footer={
           <div className="flex justify-between items-center pt-1">
             <Button
-              danger
               onClick={() => { onClear(); onClose() }}
               disabled={!selectedFrameUrl}
+              style={{ background: '#1e1e1e', color: selectedFrameUrl ? '#e5e5e5' : '#555', border: '1px solid #2a2a2a' }}
             >
               Bỏ Khung
             </Button>
             <div className="flex gap-2">
-              <Button onClick={onClose}>Huỷ</Button>
+              <Button onClick={onClose} style={{ background: '#1e1e1e', color: '#888', border: '1px solid #2a2a2a' }}>Huỷ</Button>
             </div>
           </div>
         }
         width={720}
-        styles={{ body: { padding: '12px 0 0' } }}
+        styles={{ 
+          body: { padding: '12px 0 0', background: '#141414' },
+          header: { background: '#141414', borderBottom: '1px solid #2a2a2a' },
+          footer: { background: '#141414', borderTop: '1px solid #2a2a2a' },
+        }}
       >
         {/* Search */}
         <div className="px-4 pb-3">
@@ -113,27 +117,34 @@ export default function FrameModal({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             allowClear
+            style={{ background: '#1e1e1e', borderColor: '#2a2a2a' }}
           />
         </div>
 
         {/* Category filter */}
         <div className="px-4 pb-3 flex flex-wrap gap-2">
-          <Tag
-            color={activeCategoryId === null ? 'pink' : 'default'}
-            className="cursor-pointer select-none"
+          <button
             onClick={() => setActiveCategoryId(null)}
+            className={`text-xs px-3 py-1 rounded-md border transition ${
+              activeCategoryId === null
+                ? 'bg-white text-black border-white font-medium'
+                : 'border-[#333] text-[#888] hover:border-[#555] hover:text-white'
+            }`}
           >
             Tất cả
-          </Tag>
+          </button>
           {availableCategories.map((cat) => (
-            <Tag
+            <button
               key={cat.id}
-              color={activeCategoryId === cat.id ? 'pink' : 'default'}
-              className="cursor-pointer select-none"
               onClick={() => setActiveCategoryId(activeCategoryId === cat.id ? null : cat.id)}
+              className={`text-xs px-3 py-1 rounded-md border transition ${
+                activeCategoryId === cat.id
+                  ? 'bg-white text-black border-white font-medium'
+                  : 'border-[#333] text-[#888] hover:border-[#555] hover:text-white'
+              }`}
             >
               {cat.name}
-            </Tag>
+            </button>
           ))}
         </div>
 
@@ -159,10 +170,10 @@ export default function FrameModal({
                   <button
                     key={frame.id}
                     onClick={() => setPreview(frame)}
-                    className={`relative rounded-xl overflow-hidden border-2 transition aspect-square bg-pink-50 flex flex-col items-center ${
+                    className={`relative rounded-lg overflow-hidden border transition aspect-square bg-[#1e1e1e] flex flex-col items-center ${
                       isActive
-                        ? 'border-pink-500 ring-2 ring-pink-300'
-                        : 'border-transparent hover:border-pink-300'
+                        ? 'border-white ring-1 ring-white/30'
+                        : 'border-[#2a2a2a] hover:border-[#555]'
                     }`}
                   >
                     <img
@@ -192,20 +203,25 @@ export default function FrameModal({
         open={!!preview}
         onCancel={() => setPreview(null)}
         title={
-          <span className="text-pink-500 font-semibold">
+          <span className="text-white font-semibold">
             {preview?.name}
           </span>
         }
         footer={
           <div className="flex justify-end gap-2">
-            <Button onClick={() => setPreview(null)}>Huỷ</Button>
-            <Button type="primary" onClick={handleConfirm} style={{ backgroundColor: '#f472b6', borderColor: '#f472b6' }}>
-              Xác nhận &amp; Áp dụng
+            <Button onClick={() => setPreview(null)} style={{ background: '#1e1e1e', color: '#888', border: '1px solid #2a2a2a' }}>Huỷ</Button>
+            <Button onClick={handleConfirm} style={{ background: '#fff', color: '#000', border: 'none', fontWeight: 600 }}>
+              Áp dụng
             </Button>
           </div>
         }
         width={360}
         centered
+        styles={{
+          body: { background: '#141414' },
+          header: { background: '#141414', borderBottom: '1px solid #2a2a2a' },
+          footer: { background: '#141414', borderTop: '1px solid #2a2a2a' },
+        }}
       >
         {preview && (
           <div className="flex flex-col items-center gap-3 py-2">

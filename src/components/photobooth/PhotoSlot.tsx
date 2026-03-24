@@ -43,7 +43,7 @@ export default function PhotoSlot({ index, slot, onUpload, onRemove }: PhotoSlot
         {/* Replace via upload */}
         <button
           onClick={() => inputRef.current?.click()}
-          className="absolute bottom-1 left-1/2 -translate-x-1/2 hidden group-hover:flex items-center gap-1 bg-pink-400/90 text-white text-xs px-2 py-1 rounded-full shadow"
+          className="absolute bottom-1 left-1/2 -translate-x-1/2 hidden group-hover:flex items-center gap-1 bg-black/80 text-white text-xs px-2 py-1 rounded-full shadow"
         >
           <UploadOutlined /> Thay
         </button>
@@ -55,16 +55,15 @@ export default function PhotoSlot({ index, slot, onUpload, onRemove }: PhotoSlot
   return (
     <div
       onClick={() => inputRef.current?.click()}
-      className="w-full h-full flex flex-col items-center justify-center gap-1 border-2 border-dashed border-pink-200 rounded-xl cursor-pointer hover:border-pink-400 hover:bg-pink-50 transition"
+      className="w-full h-full flex flex-col items-center justify-center gap-1 border border-dashed border-[#2a2a2a] rounded-xl cursor-pointer hover:border-[#555] hover:bg-[#1a1a1a] transition bg-[#141414]"
     >
-      {/* Placeholder icon */}
-      <svg viewBox="0 0 80 80" className="w-12 h-12 text-pink-200" fill="currentColor">
-        <rect x="8" y="14" width="50" height="52" rx="4" opacity="0.4" />
+      <svg viewBox="0 0 80 80" className="w-10 h-10 text-[#333]" fill="currentColor">
+        <rect x="8" y="14" width="50" height="52" rx="4" opacity="0.5" />
         <rect x="18" y="4" width="50" height="52" rx="4" />
-        <path d="M33 22 L43 36 L50 28 L62 44 H24 Z" fill="white" opacity="0.5" />
-        <circle cx="52" cy="24" r="5" fill="white" opacity="0.6" />
+        <path d="M33 22 L43 36 L50 28 L62 44 H24 Z" fill="white" opacity="0.2" />
+        <circle cx="52" cy="24" r="5" fill="white" opacity="0.3" />
       </svg>
-      <span className="text-pink-300 text-xs flex items-center gap-1">
+      <span className="text-[#444] text-xs flex items-center gap-1">
         <UploadOutlined /> Upload
       </span>
       <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />

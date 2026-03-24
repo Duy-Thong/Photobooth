@@ -41,7 +41,7 @@ export default function CaptureControls({
   }
 
   return (
-    <div className="flex flex-col items-center gap-3 py-2">
+    <div className="flex flex-col items-center gap-3 py-2 bg-[#141414] rounded-xl border border-[#2a2a2a] px-3">
       {/* Main buttons */}
       <div className="flex items-center justify-center gap-6">
         {/* Manual capture */}
@@ -50,17 +50,17 @@ export default function CaptureControls({
           disabled={disabled || allDone}
           className="flex flex-col items-center gap-1 group"
         >
-          <div className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition
+          <div className={`w-14 h-14 rounded-full flex items-center justify-center transition
             ${disabled || allDone
-              ? 'bg-pink-200 text-pink-300 cursor-not-allowed'
-              : 'bg-pink-400 text-white hover:bg-pink-500 active:scale-95'
+              ? 'bg-[#1e1e1e] text-[#444] cursor-not-allowed'
+              : 'bg-[#222] text-white hover:bg-[#333] active:scale-95 border border-[#333]'
             }`}>
             <svg viewBox="0 0 24 24" fill="currentColor" className="w-7 h-7">
               <path d="M20 5h-3.17L15 3H9L7.17 5H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-8 13c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.65 0-3 1.35-3 3s1.35 3 3 3 3-1.35 3-3-1.35-3-3-3z" />
             </svg>
           </div>
-          <span className={`text-xs font-semibold ${disabled || allDone ? 'text-pink-300' : 'text-pink-500'}`}>
-            Chụp tay
+          <span className={`text-[10px] font-medium uppercase tracking-wider ${disabled || allDone ? 'text-[#444]' : 'text-[#888]'}`}>
+            Chụp
           </span>
         </button>
 
@@ -70,16 +70,16 @@ export default function CaptureControls({
           disabled={disabled || allDone}
           className="flex flex-col items-center gap-1 group"
         >
-          <div className={`w-16 h-16 rounded-full flex items-center justify-center shadow-lg transition
+          <div className={`w-16 h-16 rounded-full flex items-center justify-center transition
             ${disabled || allDone
-              ? 'bg-pink-200 text-pink-300 cursor-not-allowed'
-              : 'bg-gradient-to-br from-pink-400 to-rose-500 text-white hover:from-pink-500 hover:to-rose-600 active:scale-95'
+              ? 'bg-[#1e1e1e] text-[#444] cursor-not-allowed'
+              : 'bg-white text-black hover:bg-[#e0e0e0] active:scale-95'
             }`}>
             <svg viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8">
               <path d="M20 5h-3.17L15 3H9L7.17 5H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-8 13c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z" />
             </svg>
           </div>
-          <span className={`text-xs font-semibold ${disabled || allDone ? 'text-pink-300' : 'text-pink-500'}`}>
+          <span className={`text-[10px] font-medium uppercase tracking-wider ${disabled || allDone ? 'text-[#444]' : 'text-white'}`}>
             AUTO
           </span>
         </button>
@@ -90,16 +90,16 @@ export default function CaptureControls({
           disabled={capturedCount === 0}
           className="flex flex-col items-center gap-1"
         >
-          <div className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition
+          <div className={`w-14 h-14 rounded-full flex items-center justify-center transition
             ${capturedCount === 0
-              ? 'bg-gray-100 text-gray-300 cursor-not-allowed'
-              : 'bg-green-100 text-green-500 hover:bg-green-200 active:scale-95'
+              ? 'bg-[#1e1e1e] text-[#444] cursor-not-allowed'
+              : 'bg-[#222] text-white hover:bg-[#333] active:scale-95 border border-[#333]'
             }`}>
             <svg viewBox="0 0 24 24" fill="currentColor" className="w-7 h-7">
               <path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z" />
             </svg>
           </div>
-          <span className={`text-xs font-semibold ${capturedCount === 0 ? 'text-gray-300' : 'text-green-500'}`}>
+          <span className={`text-[10px] font-medium uppercase tracking-wider ${capturedCount === 0 ? 'text-[#444]' : 'text-[#888]'}`}>
             Chụp Lại
           </span>
         </button>
@@ -109,11 +109,11 @@ export default function CaptureControls({
       <div className="flex items-center gap-4">
         <label className="flex items-center gap-2 cursor-pointer select-none">
           <Switch size="small" checked={videoRecap} onChange={onToggleVideoRecap} />
-          <span className="text-xs text-gray-500">Video Recap</span>
+          <span className="text-[11px] text-[#555]">Video Recap</span>
         </label>
         <button
           onClick={() => uploadRef.current?.click()}
-          className="flex items-center gap-1 text-xs text-pink-500 border border-pink-300 rounded-full px-3 py-1 hover:bg-pink-50 transition"
+          className="flex items-center gap-1 text-xs text-[#888] border border-[#2a2a2a] rounded-md px-3 py-1 hover:border-[#555] hover:text-white transition"
         >
           <UploadOutlined /> Tải ảnh lên
         </button>

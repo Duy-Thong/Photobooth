@@ -7,20 +7,24 @@ interface PhotoStripProps {
   layout: LayoutConfig
   slots: (CapturedSlot | null)[]
   finalImageUrl: string | null
+  frameUrl: string | null
   onUploadSlot: (index: number, dataUrl: string) => void
   onRemoveSlot: (index: number) => void
   onDownload: () => void
   onBuildStrip: () => void
+  onChooseFrame: () => void
 }
 
 export default function PhotoStrip({
   layout,
   slots,
   finalImageUrl,
+  frameUrl,
   onUploadSlot,
   onRemoveSlot,
   onDownload,
   onBuildStrip,
+  onChooseFrame,
 }: PhotoStripProps) {
   const filled = slots.filter(Boolean).length
   const allFilled = filled === layout.slots
@@ -52,20 +56,30 @@ export default function PhotoStrip({
 
       {/* Counter + Actions */}
       <div className="flex flex-col items-center gap-2">
-        <div className="w-full bg-pink-100 rounded-xl text-center py-2 text-pink-500 font-semibold text-sm">
+        <div className="w-full bg-[#1e1e1e] border border-[#2a2a2a] rounded-lg text-center py-2 text-[#888] font-medium text-sm">
           {filled}/{layout.slots}
         </div>
 
         {allFilled && !finalImageUrl && (
-          <Button
-            type="primary"
-            block
-            size="large"
-            onClick={onBuildStrip}
-            className="rounded-xl"
-          >
-            ✨ Tạo Ảnh
-          </Button>
+          <>
+            <Button
+              type="primary"
+              block
+              size="large"
+              onClick={onChooseFrame}
+              style={{ background: '#fff', color: '#000', border: 'none', borderRadius: 8, fontWeight: 600 }}
+            >
+              {frameUrl ? '✦ Tạo Ảnh' : '🖼 Chọn Khung'}
+            </Button>
+            {frameUrl && (
+              <button
+                onClick={onBuildStrip}
+                className="text-[11px] text-[#555] hover:text-[#888] transition underline"
+              >
+                Tạo không cần khung
+              </button>
+            )}
+          </>
         )}
 
         {finalImageUrl && (
@@ -75,7 +89,7 @@ export default function PhotoStrip({
             size="large"
             icon={<DownloadOutlined />}
             onClick={onDownload}
-            className="rounded-xl"
+            style={{ background: '#fff', color: '#000', border: 'none', borderRadius: 8, fontWeight: 600 }}
           >
             Tải Về
           </Button>

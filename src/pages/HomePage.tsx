@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { message } from 'antd'
 import { useCamera } from '@/hooks/useCamera'
 import { usePhotoboothStore } from '@/stores/photoboothStore'
@@ -30,6 +30,14 @@ export default function HomePage() {
 
   const abortRef = useRef(false)
   const capturedCount = capturedSlots.filter(Boolean).length
+
+  // ---------- Auto-open frame modal when all slots filled ----------
+  useEffect(() => {
+    if (capturedCount === layout.slots && !finalImageUrl && !isCapturing) {
+      const timer = setTimeout(() => setFrameModalOpen(true), 350)
+      return () => clearTimeout(timer)
+    }
+  }, [capturedCount, layout.slots, finalImageUrl, isCapturing])
 
   // ---------- Single shot with countdown ----------
   const takeOnePhoto = useCallback((): Promise<void> => {
@@ -133,6 +141,14 @@ export default function HomePage() {
           usePhotoboothStore.getState().setFrameUrl(url)
           setFrameModalOpen(false)
           setFinalImageUrl(null)
+          // auto-build with selected frame
+          setTimeout(async () => {
+            try {
+              const { capturedSlots: slots, layout: l, activeEffects: fx } = usePhotoboothStore.getState()
+              const result = await buildStripImage(slots, l, fx, url)
+              setFinalImageUrl(result)
+            } catch { /* ignore */ }
+          }, 0)
         }}
         onClear={() => {
           usePhotoboothStore.getState().setFrameUrl(null)
@@ -140,13 +156,13 @@ export default function HomePage() {
         }}
         onClose={() => setFrameModalOpen(false)}
       />
-      <div className="min-h-screen bg-pink-50">
+      <div className="min-h-screen bg-[#0d0d0d]">
         {/* Header */}
         <header className="text-center pt-6 pb-2">
-          <h1 className="text-4xl font-bold text-pink-400" style={{ fontFamily: 'cursive' }}>
-            PhotoXinhh
+          <h1 className="text-3xl font-bold tracking-tight text-white" style={{ letterSpacing: '-0.02em' }}>
+            Sổ Media
           </h1>
-          <p className="text-pink-300 text-sm tracking-widest">Capture Memories</p>
+          <p className="text-[#555] text-xs tracking-[0.25em] uppercase mt-0.5">Photobooth</p>
         </header>
 
         {/* Top controls */}
@@ -154,15 +170,13 @@ export default function HomePage() {
           <TopControls
             layout={layout}
             countdown={countdown}
-            frameUrl={frameUrl}
             onLayoutChange={(l) => { setLayout(l); setFinalImageUrl(null) }}
             onCountdownChange={setCountdown}
-            onChooseFrame={() => setFrameModalOpen(true)}
           />
         </div>
 
         {/* Main content: 2-column layout */}
-        <div className="max-w-5xl mx-auto px-4 pb-8">
+        <div className="max-w-5xl mx-auto px-4 pb-8 border-t border-[#1e1e1e] mt-2">
           <div className="flex flex-col md:flex-row gap-4">
             {/* Left: camera + controls + filters */}
             <div className="flex-1 flex flex-col gap-3 min-w-0">
@@ -207,10 +221,12 @@ export default function HomePage() {
                 layout={layout}
                 slots={capturedSlots}
                 finalImageUrl={finalImageUrl}
+                frameUrl={frameUrl}
                 onUploadSlot={handleUploadSlot}
                 onRemoveSlot={handleRemoveSlot}
                 onDownload={handleDownload}
                 onBuildStrip={handleBuildStrip}
+                onChooseFrame={() => setFrameModalOpen(true)}
               />
             </div>
           </div>
