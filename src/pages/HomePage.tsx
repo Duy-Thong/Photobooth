@@ -8,6 +8,7 @@ import PhotoStrip from '@/components/photobooth/PhotoStrip'
 import TopControls from '@/components/photobooth/TopControls'
 import CaptureControls from '@/components/photobooth/CaptureControls'
 import FilterPanel from '@/components/photobooth/FilterPanel'
+import FrameModal from '@/components/photobooth/FrameModal'
 
 export default function HomePage() {
   const { videoRef, isMirrored, isReady, error, toggleMirror, captureFrame, switchCamera, retryCamera } = useCamera()
@@ -24,6 +25,7 @@ export default function HomePage() {
   const [countdownValue, setCountdownValue] = useState<number | null>(null)
   const [showFlash, setShowFlash] = useState(false)
   const [videoRecap, setVideoRecap] = useState(false)
+  const [frameModalOpen, setFrameModalOpen] = useState(false)
   const [messageApi, contextHolder] = message.useMessage()
 
   const abortRef = useRef(false)
@@ -123,6 +125,21 @@ export default function HomePage() {
   return (
     <>
       {contextHolder}
+      <FrameModal
+        open={frameModalOpen}
+        currentLayout={layout.type}
+        selectedFrameUrl={frameUrl}
+        onSelect={(url) => {
+          usePhotoboothStore.getState().setFrameUrl(url)
+          setFrameModalOpen(false)
+          setFinalImageUrl(null)
+        }}
+        onClear={() => {
+          usePhotoboothStore.getState().setFrameUrl(null)
+          setFinalImageUrl(null)
+        }}
+        onClose={() => setFrameModalOpen(false)}
+      />
       <div className="min-h-screen bg-pink-50">
         {/* Header */}
         <header className="text-center pt-6 pb-2">
@@ -137,9 +154,10 @@ export default function HomePage() {
           <TopControls
             layout={layout}
             countdown={countdown}
+            frameUrl={frameUrl}
             onLayoutChange={(l) => { setLayout(l); setFinalImageUrl(null) }}
             onCountdownChange={setCountdown}
-            onChooseFrame={() => messageApi.info('Frame selector sẽ được thêm ở bước tiếp theo!')}
+            onChooseFrame={() => setFrameModalOpen(true)}
           />
         </div>
 
@@ -158,6 +176,7 @@ export default function HomePage() {
                 totalSlots={layout.slots}
                 countdownValue={countdownValue}
                 showFlash={showFlash}
+                frameUrl={frameUrl}
                 onSwitchCamera={switchCamera}
                 onToggleMirror={toggleMirror}
                 onRetry={retryCamera}

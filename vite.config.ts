@@ -14,4 +14,12 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'https://photo.freehihi.com',
+        changeOrigin: true,
+      },
+    },
+  },
 })

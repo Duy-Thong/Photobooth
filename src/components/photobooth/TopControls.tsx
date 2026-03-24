@@ -5,6 +5,7 @@ import type { LayoutConfig } from '@/types/photobooth'
 interface TopControlsProps {
   layout: LayoutConfig
   countdown: number
+  frameUrl: string | null
   onLayoutChange: (layout: LayoutConfig) => void
   onCountdownChange: (n: number) => void
   onChooseFrame: () => void
@@ -13,6 +14,7 @@ interface TopControlsProps {
 export default function TopControls({
   layout,
   countdown,
+  frameUrl,
   onLayoutChange,
   onCountdownChange,
   onChooseFrame,
@@ -44,9 +46,16 @@ export default function TopControls({
         <span className="text-pink-500 text-xs font-semibold">Hỗ Trợ Chụp</span>
         <button
           onClick={onChooseFrame}
-          className="text-sm px-3 py-1 border border-pink-400 text-pink-500 rounded-lg hover:bg-pink-50 transition"
+          className={`text-sm px-3 py-1 border rounded-lg transition flex items-center gap-1.5 ${
+            frameUrl
+              ? 'border-pink-500 bg-pink-50 text-pink-600 font-semibold'
+              : 'border-pink-400 text-pink-500 hover:bg-pink-50'
+          }`}
         >
-          Chọn Khung
+          {frameUrl && (
+            <img src={frameUrl} alt="" className="w-5 h-5 object-contain rounded" />
+          )}
+          {frameUrl ? 'Đổi Khung' : 'Chọn Khung'}
         </button>
       </div>
     </div>
