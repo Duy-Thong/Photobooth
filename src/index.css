@@ -1,0 +1,19 @@
+@import "tailwindcss";
+
+/* ── Ant Design token override: pink primary ── */
+:root {
+    --ant-color-primary: #f472b6;
+    --ant-color-primary-hover: #ec4899;
+    --ant-color-primary-active: #db2777;
+}
+
+/* ── Smooth transitions globally ── */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+body {
+    -webkit-font-smoothing: antialiased;
+}
