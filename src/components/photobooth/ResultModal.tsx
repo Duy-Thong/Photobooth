@@ -272,7 +272,7 @@ export default function ResultModal({ open, imageBlobUrl, recapVideoUrl, recapVi
                 <div className="flex flex-col items-center gap-2">
                   <p className="text-[#888] text-xs uppercase tracking-widest">Quét để xem video</p>
                   <div className="bg-white p-2 rounded-xl">
-                    <QRCode value={recapFirebaseUrl} size={110} bordered={false} />
+                    <QRCode value={recapFirebaseUrl} size={160} bordered={false} />
                   </div>
                   <div className="flex items-center gap-3">
                     <a
@@ -310,7 +310,7 @@ export default function ResultModal({ open, imageBlobUrl, recapVideoUrl, recapVi
             <div className="bg-white p-3 rounded-xl">
               <QRCode
                 value={firebaseUrl}
-                size={140}
+                size={220}
                 bordered={false}
               />
             </div>
