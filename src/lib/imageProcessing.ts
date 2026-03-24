@@ -83,7 +83,11 @@ function loadImage(src: string): Promise<HTMLImageElement> {
     const img = new Image()
     img.onload = () => resolve(img)
     img.onerror = reject
-    img.crossOrigin = 'anonymous'
+    // Only set crossOrigin for external http(s) URLs.
+    // Setting it on blob: or data: URLs taints the canvas and breaks toBlob().
+    if (src.startsWith('http://') || src.startsWith('https://')) {
+      img.crossOrigin = 'anonymous'
+    }
     img.src = src
   })
 }
@@ -244,9 +248,9 @@ export async function buildStripImage(
       // Frame on top
       ctx.drawImage(frameImg, 0, 0, fW, fH)
 
-      return new Promise((resolve) => {
+      return new Promise((resolve, reject) => {
         canvas.toBlob(
-          (blob) => resolve(URL.createObjectURL(blob!)),
+          (blob) => blob ? resolve(URL.createObjectURL(blob)) : reject(new Error('canvas.toBlob returned null (canvas taint?)')),
           'image/jpeg',
           0.93,
         )
@@ -299,9 +303,9 @@ export async function buildStripImage(
     } catch { /* ignore */ }
   }
 
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     canvas.toBlob(
-      (blob) => resolve(URL.createObjectURL(blob!)),
+      (blob) => blob ? resolve(URL.createObjectURL(blob)) : reject(new Error('canvas.toBlob returned null (canvas taint?)')),
       'image/jpeg',
       0.93,
     )
@@ -364,9 +368,9 @@ export async function stampQrOnImage(
   ctx.fillText('Quét để xem ảnh', qrX + qrW / 2, qrY + qrH - 4)
   ctx.restore()
 
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     canvas.toBlob(
-      (blob) => resolve(URL.createObjectURL(blob!)),
+      (blob) => blob ? resolve(URL.createObjectURL(blob)) : reject(new Error('canvas.toBlob returned null (canvas taint?)')),
       'image/jpeg',
       0.93,
     )
