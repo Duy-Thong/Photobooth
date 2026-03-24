@@ -9,7 +9,7 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 13,
     "categoryName": "Frame Amazing ⭐️",
-    "slots": 5
+    "slots": 4
   },
   {
     "id": 68,
@@ -324,7 +324,7 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 10,
     "categoryName": "Frame Cartoon",
-    "slots": 5
+    "slots": 4
   },
   {
     "id": 197,
@@ -396,7 +396,7 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 19,
     "categoryName": "Frame Chụp Cùng Idol",
-    "slots": 5
+    "slots": 4
   },
   {
     "id": 264,
@@ -405,7 +405,7 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 15,
     "categoryName": "Frame Đại Học",
-    "slots": 9
+    "slots": 4
   },
   {
     "id": 265,

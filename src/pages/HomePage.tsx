@@ -18,7 +18,7 @@ export default function HomePage() {
   const { startRecording, stopRecording, cancelRecording } = useVideoRecap(videoRef, isMirrored)
 
   const {
-    layout, countdown, setLayout, setCountdown,
+    layout, countdown, setCountdown,
     activeFilter, activeEffects, setFilter, toggleEffect,
     capturedSlots, addPhoto, replaceSlot, resetPhotos,
     isCapturing, setIsCapturing,
@@ -206,9 +206,14 @@ export default function HomePage() {
                   : true
             )) ?? LAYOUTS.find(l => l.slots === detectedSlots)
             if (match && match.type !== store.layout.type) {
-              // Layout needs to change — reset photos
-              store.setLayout(match)
-              store.setFinalImageUrl(null)
+              if (match.slots === store.layout.slots) {
+                // Same slot count, different arrangement — keep photos
+                store.setLayoutKeepPhotos(match)
+              } else {
+                // Slot count changed — must reset photos
+                store.setLayout(match)
+                store.setFinalImageUrl(null)
+              }
               messageApi.info(`Đã chuyển layout sang ${match.label} để khớp với khung (${detectedSlots} ảnh)`)
               targetLayout = match
             }
@@ -264,11 +269,14 @@ export default function HomePage() {
         <div className="border-b border-[#141414] px-4 py-2.5">
           <div className="max-w-5xl mx-auto">
             <TopControls
-              layout={layout}
               countdown={countdown}
-              hasFrame={!!frameUrl}
-              onLayoutChange={(l) => { setLayout(l); setFinalImageUrl(null) }}
+              frameUrl={frameUrl}
               onCountdownChange={setCountdown}
+              onChooseFrame={() => setFrameModalOpen(true)}
+              onClearFrame={() => {
+                usePhotoboothStore.getState().setFrameUrl(null)
+                setFinalImageUrl(null)
+              }}
             />
           </div>
         </div>
@@ -312,8 +320,8 @@ export default function HomePage() {
               />
             </div>
 
-            {/* Right: photo strip — width depends on layout cols */}
-            <div className={`shrink-0 w-full ${layout.cols === 2 ? 'md:w-64 lg:w-72' : 'md:w-44 lg:w-48'}`}>
+            {/* Right: photo strip — width depends on layout cols, self-start so it doesn't grow to camera height */}
+            <div className={`shrink-0 w-full md:self-start ${layout.cols === 2 ? 'md:w-64 lg:w-72' : 'md:w-44 lg:w-48'}`}>
               <PhotoStrip
                 layout={layout}
                 slots={capturedSlots}
@@ -323,11 +331,7 @@ export default function HomePage() {
                 onRemoveSlot={handleRemoveSlot}
                 onDownload={handleDownload}
                 onBuildStrip={handleBuildStrip}
-                onChooseFrame={() => setFrameModalOpen(true)}
-                onClearFrame={() => {
-                  usePhotoboothStore.getState().setFrameUrl(null)
-                  setFinalImageUrl(null)
-                }}
+
               />
             </div>
           </div>

@@ -6,6 +6,7 @@ interface PhotoboothState {
   layout: LayoutConfig
   countdown: number
   setLayout: (layout: LayoutConfig) => void
+  setLayoutKeepPhotos: (layout: LayoutConfig) => void
   setCountdown: (n: number) => void
 
   // Filter & Effects
@@ -37,6 +38,7 @@ export const usePhotoboothStore = create<PhotoboothState>((set, get) => ({
   layout: LAYOUTS[0], // 1x4 default
   countdown: 3,
   setLayout: (layout) => set({ layout, capturedSlots: Array(layout.slots).fill(null), finalImageUrl: null }),
+  setLayoutKeepPhotos: (layout) => set({ layout }),
   setCountdown: (countdown) => set({ countdown }),
 
   activeFilter: 'none',

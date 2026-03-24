@@ -27,7 +27,13 @@ export default function FrameModal({
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [activeCategoryId, setActiveCategoryId] = useState<number | null>(null)
+  const [slotFilter, setSlotFilter] = useState<number>(currentLayout.slots)
   const [preview, setPreview] = useState<FrameItem | null>(null)
+
+  // Sync slotFilter when modal opens (layout may have changed outside)
+  useEffect(() => {
+    if (open) setSlotFilter(currentLayout.slots)
+  }, [open, currentLayout.slots])
 
   // Load data when modal opens
   useEffect(() => {
@@ -44,9 +50,8 @@ export default function FrameModal({
   }, [open, frames.length])
 
   const filtered = useMemo(() => {
-    // Filter by current layout slot count, then search + category
-    let list = currentLayout.slots > 0
-      ? frames.filter(f => f.slots === currentLayout.slots)
+    let list = slotFilter > 0
+      ? frames.filter(f => f.slots === slotFilter)
       : frames
     if (activeCategoryId !== null) {
       list = list.filter((f) => f.categoryId === activeCategoryId)
@@ -56,16 +61,22 @@ export default function FrameModal({
       list = list.filter((f) => f.name.toLowerCase().includes(q))
     }
     return list
-  }, [frames, currentLayout.slots, activeCategoryId, search])
+  }, [frames, slotFilter, activeCategoryId, search])
 
-  // Categories available for current slot count
+  // Categories available for current slot filter
   const availableCategories = useMemo(() => {
-    const base = currentLayout.slots > 0
-      ? frames.filter(f => f.slots === currentLayout.slots)
+    const base = slotFilter > 0
+      ? frames.filter(f => f.slots === slotFilter)
       : frames
     const ids = new Set(base.map(f => f.categoryId))
     return categories.filter(c => ids.has(c.id))
-  }, [frames, categories, currentLayout.slots])
+  }, [frames, categories, slotFilter])
+
+  // Distinct slot counts in ALL frames
+  const availableSlots = useMemo(() => {
+    const counts = [...new Set(frames.map(f => f.slots))].sort((a, b) => a - b)
+    return counts
+  }, [frames])
 
   function handleConfirm() {
     if (!preview) return
@@ -82,9 +93,6 @@ export default function FrameModal({
         title={
           <span className="font-semibold text-sm tracking-tight">
             Chọn Khung Ảnh
-            {currentLayout.slots > 0 && (
-              <span className="ml-2 text-[10px] font-normal text-[#555]">({currentLayout.slots} ảnh)</span>
-            )}
           </span>
         }
         footer={
@@ -107,6 +115,26 @@ export default function FrameModal({
         width={680}
         centered
       >
+        {/* Slot count filter pills */}
+        {availableSlots.length > 1 && (
+          <div className="px-4 pt-3 pb-2 flex items-center gap-2 flex-wrap">
+            <span className="text-[10px] text-[#444] font-semibold uppercase tracking-[0.15em] shrink-0">Số Ảnh:</span>
+            {availableSlots.map(n => (
+              <button
+                key={n}
+                onClick={() => { setSlotFilter(n); setActiveCategoryId(null) }}
+                className={`text-[11px] px-2.5 py-0.5 rounded-md border transition-all duration-150 ${
+                  slotFilter === n
+                    ? 'bg-white text-black border-white font-semibold'
+                    : 'border-[#252525] text-[#5a5a5a] hover:border-[#3a3a3a] hover:text-[#bbb]'
+                }`}
+              >
+                {n}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* Search */}
         <div className="px-4 pt-1 pb-3">
           <Input.Search

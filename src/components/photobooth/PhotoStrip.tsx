@@ -12,8 +12,6 @@ interface PhotoStripProps {
   onRemoveSlot: (index: number) => void
   onDownload: () => void
   onBuildStrip: () => void
-  onChooseFrame: () => void
-  onClearFrame: () => void
 }
 
 // ── Mini slot thumbnail ──────────────────────────────────────────────────────
@@ -77,51 +75,16 @@ export default function PhotoStrip({
   onRemoveSlot,
   onDownload,
   onBuildStrip,
-  onChooseFrame,
-  onClearFrame,
 }: PhotoStripProps) {
   const filled = slots.filter(Boolean).length
   const allFilled = filled === layout.slots
   const { previewUrl, rendering } = useStripPreview(slots, frameUrl, layout)
 
   return (
-    <div className="flex flex-col h-full gap-2">
-
-      {/* ── Frame picker — always visible ── */}
-      <div className="flex items-center gap-1">
-        <button
-          onClick={onChooseFrame}
-          className={`flex-1 min-w-0 flex items-center gap-1.5 px-2 py-1 rounded-md border text-[10px] transition-all duration-150 ${
-            frameUrl
-              ? 'border-[#2a2a2a] text-[#999] bg-[#141414] hover:bg-[#1a1a1a]'
-              : 'border-dashed border-[#1e1e1e] text-[#444] hover:border-[#333] hover:text-[#777]'
-          }`}
-        >
-          {frameUrl ? (
-            <>
-              <img src={frameUrl} alt="" className="w-3 h-4 object-contain shrink-0 opacity-80" />
-              <span className="truncate">Đổi khung</span>
-            </>
-          ) : (
-            <>
-              <span className="shrink-0 text-xs leading-none">🖼</span>
-              <span className="truncate">Chọn khung...</span>
-            </>
-          )}
-        </button>
-        {frameUrl && (
-          <button
-            onClick={onClearFrame}
-            title="Bỏ khung"
-            className="w-5 h-5 shrink-0 flex items-center justify-center rounded border border-[#1e1e1e] text-[#444] hover:text-[#777] hover:border-[#2a2a2a] transition"
-          >
-            <CloseOutlined style={{ fontSize: 9 }} />
-          </button>
-        )}
-      </div>
+    <div className="flex flex-col gap-2">
 
       {/* ── Live composite preview ── */}
-      <div className="flex-1 min-h-0 relative bg-[#0d0d0d] rounded-xl border border-[#141414] overflow-hidden flex items-center justify-center">
+      <div className="relative bg-[#0d0d0d] rounded-xl border border-[#141414] overflow-hidden flex items-center justify-center" style={{ aspectRatio: layout.cols === 2 ? '2/3' : '1/2.2' }}>
         {previewUrl ? (
           <img
             src={previewUrl}
