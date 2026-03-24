@@ -95,6 +95,8 @@ export default function ResultModal({ open, imageBlobUrl, recapVideoUrl, recapVi
     onRetake()
   }
 
+  const btnBase = { background: '#1e1e1e', border: '1px solid #2a2a2a' }
+
   return (
     <Modal
       open={open}
@@ -108,128 +110,85 @@ export default function ResultModal({ open, imageBlobUrl, recapVideoUrl, recapVi
           {phase === 'error' && 'Có lỗi xảy ra'}
         </span>
       }
-      footer={
-        phase === 'confirm' ? (
-          <div className="flex justify-between items-center">
-            <Button
-              onClick={handleRetake}
-              style={{ background: '#1e1e1e', color: '#888', border: '1px solid #2a2a2a' }}
-            >
-              <ReloadOutlined /> Chụp lại
-            </Button>
-            <div className="flex gap-2">
+      footer={null}
+      width={760}
+      centered
+      styles={{
+        body: { background: '#141414', padding: '20px' },
+        header: { background: '#141414', borderBottom: '1px solid #1f1f1f' },
+      }}
+    >
+      {/* ── CONFIRM ─────────────────────────────────────────────────────────── */}
+      {phase === 'confirm' && imageBlobUrl && (
+        <div className="flex gap-5 items-start">
+          {/* Left — photo preview */}
+          <div className="flex-shrink-0 w-[280px] flex justify-center">
+            <img
+              src={imageBlobUrl}
+              alt="Preview"
+              className="w-full max-h-[480px] object-contain rounded-lg border border-[#2a2a2a]"
+            />
+          </div>
+
+          {/* Right — video recap + actions */}
+          <div className="flex-1 flex flex-col gap-4 justify-between min-h-[300px]">
+            {recapVideoUrl ? (
+              <div className="flex flex-col gap-2">
+                <p className="text-[#666] text-[10px] uppercase tracking-widest">Video Recap</p>
+                <video
+                  src={recapVideoUrl}
+                  controls
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  className="w-full rounded-lg border border-[#2a2a2a] bg-black object-contain"
+                />
+                <a
+                  href={recapVideoUrl}
+                  download={`somedia-recap-${Date.now()}.${recapExt}`}
+                  className="text-[#555] hover:text-white text-xs underline transition-colors text-center"
+                >
+                  Tải video về máy (offline)
+                </a>
+              </div>
+            ) : (
+              <p className="text-[#444] text-xs text-center mt-4">
+                Nhấn <span className="text-white font-medium">Upload &amp; Lấy QR</span> để lưu lên đám mây.<br />
+                Hoặc <span className="text-white font-medium">Tải về</span> ngay không cần upload.
+              </p>
+            )}
+
+            <div className="flex flex-col gap-2 mt-auto">
               <Button
-                icon={<PictureOutlined />}
-                onClick={onChangeFrame}
-                style={{ background: '#1e1e1e', color: '#e5e5e5', border: '1px solid #333' }}
-              >
-                Đổi khung
-              </Button>
-              <Button
-                icon={<DownloadOutlined />}
-                onClick={handleDownload}
-                style={{ background: '#1e1e1e', color: '#e5e5e5', border: '1px solid #333' }}
-              >
-                Tải về
-              </Button>
-              <Button
+                block
                 onClick={handleStartUpload}
-                style={{ background: '#fff', color: '#000', border: 'none', fontWeight: 600 }}
+                style={{ background: '#fff', color: '#000', border: 'none', fontWeight: 600, height: 40 }}
               >
                 Upload &amp; Lấy QR
               </Button>
-            </div>
-          </div>
-        ) : phase === 'done' ? (
-          <div className="flex justify-between items-center">
-            <Button
-              onClick={handleRetake}
-              style={{ background: '#1e1e1e', color: '#888', border: '1px solid #2a2a2a' }}
-            >
-              <ReloadOutlined /> Chụp lại
-            </Button>
-            <div className="flex gap-2">
-              <Button
-                icon={<PictureOutlined />}
-                onClick={onChangeFrame}
-                style={{ background: '#1e1e1e', color: '#e5e5e5', border: '1px solid #333' }}
-              >
-                Đổi khung
+              <Button block icon={<DownloadOutlined />} onClick={handleDownload}
+                style={{ ...btnBase, color: '#e5e5e5', height: 36 }}>
+                Tải về không cần QR
               </Button>
-              <Button
-                icon={<DownloadOutlined />}
-                onClick={handleDownload}
-                style={{ background: '#fff', color: '#000', border: 'none', fontWeight: 600 }}
-              >
-                Tải về
-              </Button>
+              <div className="flex gap-2">
+                <Button icon={<PictureOutlined />} onClick={onChangeFrame}
+                  style={{ ...btnBase, color: '#888', flex: 1 }}>
+                  Đổi khung
+                </Button>
+                <Button icon={<ReloadOutlined />} onClick={handleRetake}
+                  style={{ ...btnBase, color: '#888', flex: 1 }}>
+                  Chụp lại
+                </Button>
+              </div>
             </div>
           </div>
-        ) : phase === 'error' ? (
-          <div className="flex justify-end gap-2">
-            <Button onClick={onClose} style={{ background: '#1e1e1e', color: '#888', border: '1px solid #2a2a2a' }}>
-              Đóng
-            </Button>
-            <Button
-              icon={<DownloadOutlined />}
-              onClick={handleDownload}
-              style={{ background: '#1e1e1e', color: '#e5e5e5', border: '1px solid #333' }}
-            >
-              Tải về (không có QR)
-            </Button>
-          </div>
-        ) : null
-      }
-      width={480}
-      centered
-      styles={{
-        body: { background: '#141414', padding: '16px' },
-        header: { background: '#141414', borderBottom: '1px solid #2a2a2a' },
-        footer: { background: '#141414', borderTop: '1px solid #2a2a2a' },
-      }}
-    >
-      {/* Confirm — show preview, let user decide whether to upload */}
-      {phase === 'confirm' && imageBlobUrl && (
-        <div className="flex flex-col items-center gap-4">
-          <img
-            src={imageBlobUrl}
-            alt="Preview"
-            className="max-w-full max-h-100 object-contain rounded-lg border border-[#2a2a2a]"
-          />
-
-          {/* Video recap offline preview */}
-          {recapVideoUrl && (
-            <div className="w-full flex flex-col items-center gap-2">
-              <p className="text-[#888] text-xs uppercase tracking-widest">Video Recap</p>
-              <video
-                src={recapVideoUrl}
-                controls
-                autoPlay
-                loop
-                muted
-                playsInline
-                className="w-full max-h-[200px] rounded-lg border border-[#2a2a2a] bg-black object-contain"
-              />
-              <a
-                href={recapVideoUrl}
-                download={`somedia-recap-${Date.now()}.${recapExt}`}
-                className="text-[#555] hover:text-white text-xs underline transition-colors"
-              >
-                Tải video về máy (offline)
-              </a>
-            </div>
-          )}
-
-          <p className="text-[#555] text-xs text-center">
-            Nhấn <span className="text-white font-medium">Upload &amp; Lấy QR</span> để lưu lên đám mây và nhận mã QR chia sẻ.
-            <br />Hoặc <span className="text-white font-medium">Tải về</span> trực tiếp không cần upload.
-          </p>
         </div>
       )}
 
-      {/* Loading phases */}
+      {/* ── LOADING ──────────────────────────────────────────────────────────── */}
       {(phase === 'uploading' || phase === 'stamping') && (
-        <div className="flex flex-col items-center gap-4 py-10">
+        <div className="flex flex-col items-center gap-4 py-16">
           <Spin size="large" />
           <p className="text-[#888] text-sm">
             {phase === 'uploading' ? 'Đang upload ảnh lên Firebase...' : 'Đang ghép QR vào ảnh...'}
@@ -237,84 +196,85 @@ export default function ResultModal({ open, imageBlobUrl, recapVideoUrl, recapVi
         </div>
       )}
 
-      {/* Error */}
+      {/* ── ERROR ────────────────────────────────────────────────────────────── */}
       {phase === 'error' && (
-        <div className="flex flex-col items-center gap-3 py-8 text-center">
+        <div className="flex flex-col items-center gap-4 py-10 text-center">
           <p className="text-red-400 text-sm">{errorMsg}</p>
           <p className="text-[#555] text-xs">Bạn vẫn có thể tải ảnh về (không có QR)</p>
+          <div className="flex gap-2 mt-2">
+            <Button onClick={onClose} style={{ ...btnBase, color: '#888' }}>Đóng</Button>
+            <Button icon={<DownloadOutlined />} onClick={handleDownload}
+              style={{ ...btnBase, color: '#e5e5e5' }}>
+              Tải về (không QR)
+            </Button>
+          </div>
         </div>
       )}
 
-      {/* Done */}
+      {/* ── DONE ─────────────────────────────────────────────────────────────── */}
       {phase === 'done' && finalWithQr && firebaseUrl && (
-        <div className="flex flex-col items-center gap-5">
-          {/* Preview */}
-          <img
-            src={finalWithQr}
-            alt="Final photo"
-            className="max-w-full max-h-[360px] object-contain rounded-lg border border-[#2a2a2a]"
-          />
+        <div className="flex gap-6 items-start">
+          {/* Left — final photo with QR already stamped */}
+          <div className="flex-shrink-0 w-[280px] flex justify-center">
+            <img
+              src={finalWithQr}
+              alt="Final photo"
+              className="w-full max-h-[520px] object-contain rounded-lg border border-[#2a2a2a]"
+            />
+          </div>
 
-          {/* Video recap */}
-          {recapVideoUrl && (
-            <div className="w-full flex flex-col items-center gap-3">
-              <p className="text-[#888] text-xs uppercase tracking-widest">Video Recap</p>
-              <video
-                src={recapVideoUrl}
-                controls
-                autoPlay
-                loop
-                muted
-                playsInline
-                className="w-full max-h-[220px] rounded-lg border border-[#2a2a2a] bg-black object-contain"
-              />
-              {recapFirebaseUrl ? (
-                <div className="flex flex-col items-center gap-2">
-                  <p className="text-[#888] text-xs uppercase tracking-widest">Quét để xem video</p>
-                  <div className="bg-white p-2 rounded-xl">
-                    <QRCode value={recapFirebaseUrl} size={160} bordered={false} />
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <a
-                      href={recapVideoUrl}
-                      download={`somedia-recap-${Date.now()}.${recapExt}`}
-                      className="text-[#555] hover:text-white text-xs underline transition-colors"
-                    >
+          {/* Right — QR + actions */}
+          <div className="flex-1 flex flex-col items-center gap-4">
+            <p className="text-[#666] text-[10px] uppercase tracking-widest self-start">Quét để xem &amp; chia sẻ</p>
+            <div className="p-3 rounded-2xl">
+              <QRCode value={firebaseUrl} size={200} bordered={false} errorLevel="H" icon="/clublogo.png" iconSize={44} />
+            </div>
+
+            {/* Video recap */}
+            {recapVideoUrl && (
+              <div className="w-full flex flex-col gap-2">
+                <p className="text-[#666] text-[10px] uppercase tracking-widest">Video Recap</p>
+                <video
+                  src={recapVideoUrl}
+                  controls
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  className="w-full rounded-lg border border-[#2a2a2a] bg-black object-contain"
+                />
+                {recapFirebaseUrl && (
+                  <div className="flex items-center justify-center gap-3">
+                    <a href={recapVideoUrl} download={`somedia-recap-${Date.now()}.${recapExt}`}
+                      className="text-[#555] hover:text-white text-xs underline transition-colors">
                       Tải về (local)
                     </a>
-                    <a
-                      href={recapFirebaseUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[#555] hover:text-white text-xs underline transition-colors"
-                    >
+                    <a href={recapFirebaseUrl} target="_blank" rel="noopener noreferrer"
+                      className="text-[#555] hover:text-white text-xs underline transition-colors">
                       Link Firebase ↗
                     </a>
                   </div>
-                </div>
-              ) : (
-                <a
-                  href={recapVideoUrl}
-                  download={`somedia-recap-${Date.now()}.${recapExt}`}
-                  className="text-[#555] hover:text-white text-xs underline transition-colors"
-                >
-                  Tải về (local)
-                </a>
-              )}
-            </div>
-          )}
+                )}
+              </div>
+            )}
 
-          {/* QR standalone for easy scanning */}
-          <div className="flex flex-col items-center gap-2">
-            <p className="text-[#888] text-xs uppercase tracking-widest">Quét để xem & chia sẻ</p>
-            <div className="bg-white p-3 rounded-xl">
-              <QRCode
-                value={firebaseUrl}
-                size={220}
-                bordered={false}
-              />
+            {/* Action buttons */}
+            <div className="w-full flex flex-col gap-2 mt-auto">
+              <Button block icon={<DownloadOutlined />} onClick={handleDownload}
+                style={{ background: '#fff', color: '#000', border: 'none', fontWeight: 600, height: 40 }}>
+                Tải về
+              </Button>
+              <div className="flex gap-2">
+                <Button icon={<PictureOutlined />} onClick={onChangeFrame}
+                  style={{ ...btnBase, color: '#888', flex: 1 }}>
+                  Đổi khung
+                </Button>
+                <Button icon={<ReloadOutlined />} onClick={handleRetake}
+                  style={{ ...btnBase, color: '#888', flex: 1 }}>
+                  Chụp lại
+                </Button>
+              </div>
             </div>
-            <p className="text-[#444] text-[10px] max-w-[280px] text-center break-all">{firebaseUrl}</p>
           </div>
         </div>
       )}
