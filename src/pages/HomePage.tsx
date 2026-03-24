@@ -271,7 +271,7 @@ export default function HomePage() {
           <h1 className="text-2xl font-bold text-white" style={{ letterSpacing: '-0.03em' }}>
             Sổ Media
           </h1>
-          <p className="text-[#333] text-[9px] tracking-[0.35em] uppercase mt-0.5 font-medium">Photobooth</p>
+          <p className="text-[#666] text-[9px] tracking-[0.35em] uppercase mt-0.5 font-medium">Photobooth</p>
         </header>
 
         {/* Top controls bar */}

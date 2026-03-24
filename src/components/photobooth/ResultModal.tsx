@@ -27,6 +27,9 @@ export default function ResultModal({ open, imageBlobUrl, recapVideoUrl, recapVi
   const [recapFirebaseUrl, setRecapFirebaseUrl] = useState<string | null>(null)
   const [finalWithQr, setFinalWithQr] = useState<string | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  // Incremented each time the user explicitly triggers an upload.
+  // Used as the effect dep so phase changes mid-async don't cancel the run.
+  const [uploadKey, setUploadKey] = useState(0)
 
   useEffect(() => {
     if (!open || !imageBlobUrl) return
@@ -38,9 +41,9 @@ export default function ResultModal({ open, imageBlobUrl, recapVideoUrl, recapVi
     setErrorMsg(null)
   }, [open, imageBlobUrl])
 
-  // Upload flow — only starts when user explicitly sets phase to 'uploading'
+  // Upload flow — only starts when user explicitly triggers via uploadKey
   useEffect(() => {
-    if (phase !== 'uploading' || !imageBlobUrl) return
+    if (uploadKey === 0 || !imageBlobUrl) return
 
     let cancelled = false
 
@@ -71,14 +74,21 @@ export default function ResultModal({ open, imageBlobUrl, recapVideoUrl, recapVi
 
     run()
     return () => { cancelled = true }
-  }, [phase, imageBlobUrl, recapVideoUrl])
+  // NOTE: 'phase' intentionally excluded — including it would cause the cleanup
+  // to fire (cancelled=true) when phase changes from 'uploading' to 'stamping',
+  // which would leave the modal stuck at the stamping screen permanently.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [uploadKey, imageBlobUrl, recapVideoUrl, recapVideoMimeType])
 
   const handleDownload = () => {
     const src = finalWithQr || imageBlobUrl
     if (src) downloadImage(src, `some-media-${Date.now()}.jpg`)
   }
 
-  const handleStartUpload = () => setPhase('uploading')
+  const handleStartUpload = () => {
+    setPhase('uploading')
+    setUploadKey(k => k + 1)
+  }
 
   const handleRetake = () => {
     onClose()
