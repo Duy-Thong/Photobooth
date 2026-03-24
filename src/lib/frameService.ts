@@ -8,6 +8,8 @@ export interface FrameItem {
   frame: 'square' | 'bigrectangle' | 'grid'
   categoryId: number
   categoryName: string
+  /** number of transparent photo slots detected in the PNG */
+  slots: number
 }
 
 export interface FrameCategory {

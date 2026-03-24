@@ -13,7 +13,7 @@ export type EffectType =
   | 'grain'
   | 'chromatic'
 
-export type LayoutType = '1x4' | '2x2' | '1x3' | '1x2' | '1x1'
+export type LayoutType = '1x4' | '2x2' | '1x3' | '2x3' | '1x2' | '1x1'
 
 export type CaptureMode = 'manual' | 'auto'
 
@@ -34,6 +34,7 @@ export const LAYOUTS: LayoutConfig[] = [
   { type: '1x4', label: '1×4 Strips', slots: 4, cols: 1, rows: 4 },
   { type: '2x2', label: '2×2 Grid',   slots: 4, cols: 2, rows: 2 },
   { type: '1x3', label: '1×3 Strips', slots: 3, cols: 1, rows: 3 },
+  { type: '2x3', label: '2×3 Grid',   slots: 6, cols: 2, rows: 3 },
   { type: '1x2', label: '1×2 Strips', slots: 2, cols: 1, rows: 2 },
   { type: '1x1', label: '1×1 Full',   slots: 1, cols: 1, rows: 1 },
 ]

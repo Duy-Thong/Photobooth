@@ -83,12 +83,122 @@ function loadImage(src: string): Promise<HTMLImageElement> {
     const img = new Image()
     img.onload = () => resolve(img)
     img.onerror = reject
+    img.crossOrigin = 'anonymous'
     img.src = src
   })
 }
 
+// ─── Transparency-mask slot detection ─────────────────────────────────────────
+
+export interface SlotRect { x: number; y: number; w: number; h: number }
+
 /**
- * Compose all slot images + frame overlay into a single canvas and return a blob URL.
+ * Scan a frame PNG for connected transparent (alpha < 10) regions using a
+ * stack-based DFS on a downsampled canvas (25 % of original), then scale
+ * the bounding boxes back to full resolution.
+ *
+ * Returns slots sorted top→bottom, left→right.
+ */
+export async function detectFrameSlots(frameUrl: string): Promise<SlotRect[]> {
+  const img = await loadImage(frameUrl)
+  return detectSlotsFromImg(img)
+}
+
+function detectSlotsFromImg(img: HTMLImageElement): SlotRect[] {
+  const W = img.naturalWidth  || img.width
+  const H = img.naturalHeight || img.height
+
+  // Downsample 4× for speed — still accurate enough for slot detection
+  const SCALE = 0.25
+  const sw = Math.max(1, Math.round(W * SCALE))
+  const sh = Math.max(1, Math.round(H * SCALE))
+
+  const offscreen = document.createElement('canvas')
+  offscreen.width  = sw
+  offscreen.height = sh
+  const ctx = offscreen.getContext('2d')!
+  ctx.drawImage(img, 0, 0, sw, sh)
+  const { data } = ctx.getImageData(0, 0, sw, sh)
+
+  const ALPHA_THRESH = 10
+  // Minimum slot area: 0.5 % of the scan canvas (filters stray transparent edges)
+  const minArea = Math.max(4, Math.round(sw * sh * 0.005))
+
+  const trans   = new Uint8Array(sw * sh)
+  const visited = new Uint8Array(sw * sh)
+  for (let i = 0; i < sw * sh; i++) {
+    if (data[i * 4 + 3] < ALPHA_THRESH) trans[i] = 1
+  }
+
+  const slots: SlotRect[] = []
+
+  for (let start = 0; start < sw * sh; start++) {
+    if (!trans[start] || visited[start]) continue
+
+    // Stack-based DFS (avoids call-stack overflow on large transparent regions)
+    const stack = [start]
+    visited[start] = 1
+    let minX = sw, maxX = 0, minY = sh, maxY = 0
+    let area = 0
+
+    while (stack.length) {
+      const idx = stack.pop()!
+      const px = idx % sw
+      const py = (idx / sw) | 0
+      if (px < minX) minX = px
+      if (px > maxX) maxX = px
+      if (py < minY) minY = py
+      if (py > maxY) maxY = py
+      area++
+
+      // 4-connected neighbours
+      if (px > 0)      { const n = idx - 1;  if (trans[n] && !visited[n]) { visited[n] = 1; stack.push(n) } }
+      if (px < sw - 1) { const n = idx + 1;  if (trans[n] && !visited[n]) { visited[n] = 1; stack.push(n) } }
+      if (py > 0)      { const n = idx - sw; if (trans[n] && !visited[n]) { visited[n] = 1; stack.push(n) } }
+      if (py < sh - 1) { const n = idx + sw; if (trans[n] && !visited[n]) { visited[n] = 1; stack.push(n) } }
+    }
+
+    if (area >= minArea) {
+      slots.push({
+        x: Math.round(minX / SCALE),
+        y: Math.round(minY / SCALE),
+        w: Math.round((maxX - minX + 1) / SCALE),
+        h: Math.round((maxY - minY + 1) / SCALE),
+      })
+    }
+  }
+
+  // Sort top→bottom, then left→right
+  slots.sort((a, b) => a.y !== b.y ? a.y - b.y : a.x - b.x)
+  return slots
+}
+
+// ─── Cover-fit helper ─────────────────────────────────────────────────────────
+
+function drawCoverFit(
+  ctx: CanvasRenderingContext2D,
+  img: HTMLImageElement,
+  x: number, y: number, w: number, h: number,
+) {
+  const scale = Math.max(w / img.width, h / img.height)
+  const dw = img.width  * scale
+  const dh = img.height * scale
+  ctx.drawImage(img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh)
+}
+
+// ─── Main compositing function ────────────────────────────────────────────────
+
+/**
+ * Compose all slot images + optional frame overlay into a single canvas and
+ * return a blob URL.
+ *
+ * When a frameUrl is provided the frame PNG is scanned for transparent regions
+ * (alpha < 10) using detectSlotsFromImg().  If at least one slot is found the
+ * canvas is sized to the frame's natural dimensions and photos are composited
+ * directly into those regions before the frame is drawn on top.
+ *
+ * When no frame is provided (or detection finds nothing) the classic grid
+ * layout is used as a fallback.
  */
 export async function buildStripImage(
   slots: (CapturedSlot | null)[],
@@ -96,25 +206,72 @@ export async function buildStripImage(
   effects: EffectType[],
   frameUrl: string | null,
 ): Promise<string> {
+
+  // ── Frame-based path ────────────────────────────────────────────────────────
+  if (frameUrl) {
+    const frameImg = await loadImage(frameUrl)
+    const frameSlots = detectSlotsFromImg(frameImg)
+
+    if (frameSlots.length > 0) {
+      const fW = frameImg.naturalWidth  || frameImg.width
+      const fH = frameImg.naturalHeight || frameImg.height
+
+      const canvas = document.createElement('canvas')
+      canvas.width  = fW
+      canvas.height = fH
+      const ctx = canvas.getContext('2d')!
+
+      ctx.fillStyle = STRIP_BG
+      ctx.fillRect(0, 0, fW, fH)
+
+      const photos = slots.filter((s): s is CapturedSlot => s !== null)
+
+      await Promise.all(
+        frameSlots.map(async ({ x, y, w, h }, i) => {
+          const photo = photos[i]
+          if (!photo) return
+          const img = await loadImage(photo.dataUrl)
+          ctx.save()
+          ctx.beginPath()
+          ctx.rect(x, y, w, h) // frame defines the shape — no extra rounding
+          ctx.clip()
+          drawCoverFit(ctx, img, x, y, w, h)
+          applyEffects(ctx, effects, x, y, w, h)
+          ctx.restore()
+        }),
+      )
+
+      // Frame on top
+      ctx.drawImage(frameImg, 0, 0, fW, fH)
+
+      return new Promise((resolve) => {
+        canvas.toBlob(
+          (blob) => resolve(URL.createObjectURL(blob!)),
+          'image/jpeg',
+          0.93,
+        )
+      })
+    }
+    // Detection found nothing → fall through to grid path with frame overlay
+  }
+
+  // ── Fallback: classic grid layout ───────────────────────────────────────────
   const { cols, rows } = layout
 
-  // Determine slot size (use 400px per slot as base)
   const SLOT_W = 400
-  const SLOT_H = Math.round(SLOT_W * (3 / 4)) // 4:3 ratio
+  const SLOT_H = Math.round(SLOT_W * (3 / 4)) // 4:3
 
   const canvasW = PADDING * 2 + cols * SLOT_W + (cols - 1) * GAP
   const canvasH = PADDING * 2 + rows * SLOT_H + (rows - 1) * GAP
 
   const canvas = document.createElement('canvas')
-  canvas.width = canvasW
+  canvas.width  = canvasW
   canvas.height = canvasH
   const ctx = canvas.getContext('2d')!
 
-  // Background
   ctx.fillStyle = STRIP_BG
   ctx.fillRect(0, 0, canvasW, canvasH)
 
-  // Draw each slot
   await Promise.all(
     slots.map(async (slot, i) => {
       if (!slot) return
@@ -125,33 +282,21 @@ export async function buildStripImage(
 
       const img = await loadImage(slot.dataUrl)
 
-      // Cover-fit the image into the slot
-      const scale = Math.max(SLOT_W / img.width, SLOT_H / img.height)
-      const sw = img.width * scale
-      const sh = img.height * scale
-      const sx = (SLOT_W - sw) / 2
-      const sy = (SLOT_H - sh) / 2
-
       ctx.save()
       ctx.beginPath()
       ctx.roundRect(x, y, SLOT_W, SLOT_H, 8)
       ctx.clip()
-      ctx.drawImage(img, x + sx, y + sy, sw, sh)
-
-      // Apply effects per slot
+      drawCoverFit(ctx, img, x, y, SLOT_W, SLOT_H)
       applyEffects(ctx, effects, x, y, SLOT_W, SLOT_H)
       ctx.restore()
     }),
   )
 
-  // Frame overlay (PNG transparent)
   if (frameUrl) {
     try {
       const frameImg = await loadImage(frameUrl)
       ctx.drawImage(frameImg, 0, 0, canvasW, canvasH)
-    } catch {
-      // frame failed to load — ignore
-    }
+    } catch { /* ignore */ }
   }
 
   return new Promise((resolve) => {

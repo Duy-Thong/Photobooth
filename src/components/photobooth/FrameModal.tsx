@@ -1,22 +1,14 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Modal, Input, Spin, Empty, Button } from 'antd'
+import { Modal, Input, Spin, Empty } from 'antd'
 import { fetchFrames, fetchCategories, frameImageUrl } from '@/lib/frameService'
 import type { FrameItem, FrameCategory } from '@/lib/frameService'
-import type { LayoutType } from '@/types/photobooth'
-
-const LAYOUT_TO_FRAME_TYPE: Record<LayoutType, FrameItem['frame']> = {
-  '1x4': 'square',
-  '1x3': 'square',
-  '1x1': 'square',
-  '1x2': 'bigrectangle',
-  '2x2': 'grid',
-}
+import type { LayoutConfig } from '@/types/photobooth'
 
 interface FrameModalProps {
   open: boolean
-  currentLayout: LayoutType
+  currentLayout: LayoutConfig
   selectedFrameUrl: string | null
-  onSelect: (url: string) => void
+  onSelect: (url: string, frame: FrameItem) => void
   onClear: () => void
   onClose: () => void
 }
@@ -37,8 +29,6 @@ export default function FrameModal({
   const [activeCategoryId, setActiveCategoryId] = useState<number | null>(null)
   const [preview, setPreview] = useState<FrameItem | null>(null)
 
-  const suggestedType = LAYOUT_TO_FRAME_TYPE[currentLayout]
-
   // Load data when modal opens
   useEffect(() => {
     if (!open || frames.length > 0) return
@@ -54,8 +44,10 @@ export default function FrameModal({
   }, [open, frames.length])
 
   const filtered = useMemo(() => {
-    let list = frames
-      .filter((f) => f.frame === suggestedType)
+    // Filter by current layout slot count, then search + category
+    let list = currentLayout.slots > 0
+      ? frames.filter(f => f.slots === currentLayout.slots)
+      : frames
     if (activeCategoryId !== null) {
       list = list.filter((f) => f.categoryId === activeCategoryId)
     }
@@ -64,17 +56,20 @@ export default function FrameModal({
       list = list.filter((f) => f.name.toLowerCase().includes(q))
     }
     return list
-  }, [frames, suggestedType, activeCategoryId, search])
+  }, [frames, currentLayout.slots, activeCategoryId, search])
 
-  // Categories available for current frame type
+  // Categories available for current slot count
   const availableCategories = useMemo(() => {
-    const ids = new Set(frames.filter(f => f.frame === suggestedType).map(f => f.categoryId))
+    const base = currentLayout.slots > 0
+      ? frames.filter(f => f.slots === currentLayout.slots)
+      : frames
+    const ids = new Set(base.map(f => f.categoryId))
     return categories.filter(c => ids.has(c.id))
-  }, [frames, categories, suggestedType])
+  }, [frames, categories, currentLayout.slots])
 
   function handleConfirm() {
     if (!preview) return
-    onSelect(frameImageUrl(preview.filename))
+    onSelect(frameImageUrl(preview.filename), preview)
     setPreview(null)
   }
 
@@ -85,84 +80,79 @@ export default function FrameModal({
         open={open}
         onCancel={onClose}
         title={
-          <span className="text-white font-semibold text-base tracking-tight">
+          <span className="font-semibold text-sm tracking-tight">
             Chọn Khung Ảnh
+            {currentLayout.slots > 0 && (
+              <span className="ml-2 text-[10px] font-normal text-[#555]">({currentLayout.slots} ảnh)</span>
+            )}
           </span>
         }
         footer={
-          <div className="flex justify-between items-center pt-1">
-            <Button
+          <div className="flex justify-between items-center">
+            <button
               onClick={() => { onClear(); onClose() }}
               disabled={!selectedFrameUrl}
-              style={{ background: '#1e1e1e', color: selectedFrameUrl ? '#e5e5e5' : '#555', border: '1px solid #2a2a2a' }}
+              className="text-xs px-3 py-1.5 rounded-md border border-[#2a2a2a] text-[#666] hover:text-[#aaa] hover:border-[#444] disabled:opacity-30 disabled:cursor-not-allowed transition"
             >
               Bỏ Khung
-            </Button>
-            <div className="flex gap-2">
-              <Button onClick={onClose} style={{ background: '#1e1e1e', color: '#888', border: '1px solid #2a2a2a' }}>Huỷ</Button>
-            </div>
+            </button>
+            <button
+              onClick={onClose}
+              className="text-xs px-3 py-1.5 rounded-md border border-[#2a2a2a] text-[#666] hover:text-[#aaa] hover:border-[#444] transition"
+            >
+              Huỷ
+            </button>
           </div>
         }
-        width={720}
-        styles={{ 
-          body: { padding: '12px 0 0', background: '#141414' },
-          header: { background: '#141414', borderBottom: '1px solid #2a2a2a' },
-          footer: { background: '#141414', borderTop: '1px solid #2a2a2a' },
-        }}
+        width={680}
+        centered
       >
         {/* Search */}
-        <div className="px-4 pb-3">
+        <div className="px-4 pt-1 pb-3">
           <Input.Search
             placeholder="Tìm kiếm khung..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             allowClear
-            style={{ background: '#1e1e1e', borderColor: '#2a2a2a' }}
           />
         </div>
 
-        {/* Category filter */}
-        <div className="px-4 pb-3 flex flex-wrap gap-2">
-          <button
-            onClick={() => setActiveCategoryId(null)}
-            className={`text-xs px-3 py-1 rounded-md border transition ${
-              activeCategoryId === null
-                ? 'bg-white text-black border-white font-medium'
-                : 'border-[#333] text-[#888] hover:border-[#555] hover:text-white'
-            }`}
-          >
-            Tất cả
-          </button>
-          {availableCategories.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => setActiveCategoryId(activeCategoryId === cat.id ? null : cat.id)}
-              className={`text-xs px-3 py-1 rounded-md border transition ${
-                activeCategoryId === cat.id
-                  ? 'bg-white text-black border-white font-medium'
-                  : 'border-[#333] text-[#888] hover:border-[#555] hover:text-white'
-              }`}
-            >
-              {cat.name}
-            </button>
-          ))}
+        {/* Category pills */}
+        <div className="px-4 pb-3 flex flex-wrap gap-1.5">
+          {[
+            { id: null, name: 'Tất cả' },
+            ...availableCategories
+          ].map((cat) => {
+            const active = cat.id === activeCategoryId
+            return (
+              <button
+                key={cat.id ?? 'all'}
+                onClick={() => setActiveCategoryId(cat.id)}
+                className={`text-[11px] px-3 py-1 rounded-md border transition-all duration-150 ${
+                  active
+                    ? 'bg-white text-black border-white font-semibold'
+                    : 'border-[#252525] text-[#5a5a5a] hover:border-[#3a3a3a] hover:text-[#bbb]'
+                }`}
+              >
+                {cat.name}
+              </button>
+            )
+          })}
         </div>
 
         {/* Frame grid */}
-        <div className="px-4 pb-4 overflow-y-auto" style={{ maxHeight: 420 }}>
+        <div className="px-4 pb-4 overflow-y-auto" style={{ maxHeight: 400 }}>
           {loading && (
             <div className="flex justify-center py-12">
               <Spin size="large" />
             </div>
           )}
-          {error && (
-            <div className="text-center text-red-400 py-8 text-sm">{error}</div>
-          )}
+          {error && <p className="text-center text-red-400 py-8 text-sm">{error}</p>}
           {!loading && !error && filtered.length === 0 && (
             <Empty description="Không tìm thấy khung phù hợp" />
           )}
           {!loading && !error && filtered.length > 0 && (
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
               {filtered.map((frame) => {
                 const imgUrl = frameImageUrl(frame.filename)
                 const isActive = selectedFrameUrl === imgUrl
@@ -170,10 +160,10 @@ export default function FrameModal({
                   <button
                     key={frame.id}
                     onClick={() => setPreview(frame)}
-                    className={`relative rounded-lg overflow-hidden border transition aspect-square bg-[#1e1e1e] flex flex-col items-center ${
+                    className={`relative rounded-lg overflow-hidden border transition-all duration-150 aspect-3/4 bg-[#111] flex flex-col items-center ${
                       isActive
-                        ? 'border-white ring-1 ring-white/30'
-                        : 'border-[#2a2a2a] hover:border-[#555]'
+                        ? 'border-white shadow-[0_0_0_1px_rgba(255,255,255,0.2)]'
+                        : 'border-[#1e1e1e] hover:border-[#3a3a3a]'
                     }`}
                   >
                     <img
@@ -182,12 +172,14 @@ export default function FrameModal({
                       className="w-full h-full object-contain"
                       loading="lazy"
                     />
-                    <span className="absolute bottom-0 left-0 right-0 text-center text-[10px] text-white font-medium bg-black/40 py-0.5 truncate px-1">
+                    <span className="absolute bottom-0 left-0 right-0 text-center text-[9px] text-white/80 font-medium bg-black/50 py-0.5 truncate px-1">
                       {frame.name}
                     </span>
                     {isActive && (
-                      <span className="absolute top-1 right-1 bg-pink-500 text-white text-[9px] rounded-full px-1.5 py-0.5 font-bold">
-                        ✓
+                      <span className="absolute top-1 right-1 w-4 h-4 bg-white rounded-full flex items-center justify-center">
+                        <svg viewBox="0 0 12 12" fill="none" className="w-2.5 h-2.5">
+                          <path d="M2 6l3 3 5-5" stroke="#000" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
                       </span>
                     )}
                   </button>
@@ -198,39 +190,38 @@ export default function FrameModal({
         </div>
       </Modal>
 
-      {/* Preview confirmation modal */}
+      {/* Preview modal */}
       <Modal
         open={!!preview}
         onCancel={() => setPreview(null)}
-        title={
-          <span className="text-white font-semibold">
-            {preview?.name}
-          </span>
-        }
+        title={<span className="font-semibold text-sm">{preview?.name}</span>}
         footer={
           <div className="flex justify-end gap-2">
-            <Button onClick={() => setPreview(null)} style={{ background: '#1e1e1e', color: '#888', border: '1px solid #2a2a2a' }}>Huỷ</Button>
-            <Button onClick={handleConfirm} style={{ background: '#fff', color: '#000', border: 'none', fontWeight: 600 }}>
+            <button
+              onClick={() => setPreview(null)}
+              className="text-xs px-3 py-1.5 rounded-md border border-[#2a2a2a] text-[#666] hover:text-[#aaa] hover:border-[#444] transition"
+            >
+              Huỷ
+            </button>
+            <button
+              onClick={handleConfirm}
+              className="text-xs px-4 py-1.5 rounded-md bg-white text-black font-semibold hover:bg-[#e8e8e8] active:scale-[0.98] transition"
+            >
               Áp dụng
-            </Button>
+            </button>
           </div>
         }
-        width={360}
+        width={320}
         centered
-        styles={{
-          body: { background: '#141414' },
-          header: { background: '#141414', borderBottom: '1px solid #2a2a2a' },
-          footer: { background: '#141414', borderTop: '1px solid #2a2a2a' },
-        }}
       >
         {preview && (
-          <div className="flex flex-col items-center gap-3 py-2">
+          <div className="flex flex-col items-center gap-3 py-3">
             <img
               src={frameImageUrl(preview.filename)}
               alt={preview.name}
-              className="w-48 object-contain"
+              className="w-44 object-contain rounded-md"
             />
-            <p className="text-xs text-gray-400">{preview.categoryName}</p>
+            <p className="text-[11px] text-[#555]">{preview.categoryName}</p>
           </div>
         )}
       </Modal>

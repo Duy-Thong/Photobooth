@@ -1,7 +1,7 @@
-import { DownloadOutlined } from '@ant-design/icons'
-import { Button } from 'antd'
+import { useRef } from 'react'
+import { DownloadOutlined, CloseOutlined } from '@ant-design/icons'
 import type { CapturedSlot, LayoutConfig } from '@/types/photobooth'
-import PhotoSlot from './PhotoSlot'
+import { useStripPreview } from '@/hooks/useStripPreview'
 
 interface PhotoStripProps {
   layout: LayoutConfig
@@ -13,8 +13,61 @@ interface PhotoStripProps {
   onDownload: () => void
   onBuildStrip: () => void
   onChooseFrame: () => void
+  onClearFrame: () => void
 }
 
+// ── Mini slot thumbnail ──────────────────────────────────────────────────────
+function MiniSlot({
+  slot, index, onUpload, onRemove,
+}: {
+  slot: CapturedSlot | null
+  index: number
+  onUpload: (i: number, dataUrl: string) => void
+  onRemove: (i: number) => void
+}) {
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => onUpload(index, ev.target!.result as string)
+    reader.readAsDataURL(file)
+    e.target.value = ''
+  }
+
+  return (
+    <div className="relative group shrink-0">
+      {slot ? (
+        <>
+          <img
+            src={slot.dataUrl}
+            alt={`slot ${index + 1}`}
+            onClick={() => inputRef.current?.click()}
+            className="w-8 h-8 object-cover rounded-md cursor-pointer opacity-70 hover:opacity-100 transition"
+          />
+          <button
+            onClick={() => onRemove(index)}
+            className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-white text-black rounded-full hidden group-hover:flex items-center justify-center shadow pointer-events-auto"
+            style={{ fontSize: 7 }}
+          >
+            <CloseOutlined style={{ fontSize: 7 }} />
+          </button>
+        </>
+      ) : (
+        <div
+          onClick={() => inputRef.current?.click()}
+          className="w-8 h-8 rounded-md border border-dashed border-[#1e1e1e] bg-[#0a0a0a] flex items-center justify-center cursor-pointer hover:border-[#333] transition"
+        >
+          <span className="text-[#2a2a2a] text-sm leading-none select-none">+</span>
+        </div>
+      )}
+      <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
+    </div>
+  )
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
 export default function PhotoStrip({
   layout,
   slots,
@@ -25,74 +78,123 @@ export default function PhotoStrip({
   onDownload,
   onBuildStrip,
   onChooseFrame,
+  onClearFrame,
 }: PhotoStripProps) {
   const filled = slots.filter(Boolean).length
   const allFilled = filled === layout.slots
-
-  // Slot height based on layout
-  const slotAspect = layout.cols === 1 ? 'aspect-[4/3]' : 'aspect-square'
+  const { previewUrl, rendering } = useStripPreview(slots, frameUrl, layout)
 
   return (
-    <div className="flex flex-col h-full gap-3">
-      {/* Slots grid */}
-      <div
-        className="flex-1 grid gap-2"
-        style={{
-          gridTemplateColumns: `repeat(${layout.cols}, 1fr)`,
-          gridTemplateRows: `repeat(${layout.rows}, 1fr)`,
-        }}
-      >
-        {slots.map((slot, i) => (
-          <div key={i} className={slotAspect}>
-            <PhotoSlot
-              index={i}
+    <div className="flex flex-col h-full gap-2">
+
+      {/* ── Frame picker — always visible ── */}
+      <div className="flex items-center gap-1">
+        <button
+          onClick={onChooseFrame}
+          className={`flex-1 min-w-0 flex items-center gap-1.5 px-2 py-1 rounded-md border text-[10px] transition-all duration-150 ${
+            frameUrl
+              ? 'border-[#2a2a2a] text-[#999] bg-[#141414] hover:bg-[#1a1a1a]'
+              : 'border-dashed border-[#1e1e1e] text-[#444] hover:border-[#333] hover:text-[#777]'
+          }`}
+        >
+          {frameUrl ? (
+            <>
+              <img src={frameUrl} alt="" className="w-3 h-4 object-contain shrink-0 opacity-80" />
+              <span className="truncate">Đổi khung</span>
+            </>
+          ) : (
+            <>
+              <span className="shrink-0 text-xs leading-none">🖼</span>
+              <span className="truncate">Chọn khung...</span>
+            </>
+          )}
+        </button>
+        {frameUrl && (
+          <button
+            onClick={onClearFrame}
+            title="Bỏ khung"
+            className="w-5 h-5 shrink-0 flex items-center justify-center rounded border border-[#1e1e1e] text-[#444] hover:text-[#777] hover:border-[#2a2a2a] transition"
+          >
+            <CloseOutlined style={{ fontSize: 9 }} />
+          </button>
+        )}
+      </div>
+
+      {/* ── Live composite preview ── */}
+      <div className="flex-1 min-h-0 relative bg-[#0d0d0d] rounded-xl border border-[#141414] overflow-hidden flex items-center justify-center">
+        {previewUrl ? (
+          <img
+            src={previewUrl}
+            alt="preview"
+            className="w-full h-full object-contain"
+          />
+        ) : (
+          /* No preview yet — show empty slot placeholders */
+          <div
+            className="w-full h-full p-1.5 grid gap-1"
+            style={{ gridTemplateColumns: `repeat(${layout.cols}, 1fr)` }}
+          >
+            {slots.map((slot, i) => (
+              <div
+                key={i}
+                className={`${layout.cols === 1 ? 'aspect-4/3' : 'aspect-square'} bg-[#111] rounded-lg border border-dashed border-[#1a1a1a] flex items-center justify-center`}
+              >
+                {slot ? (
+                  <img src={slot.dataUrl} alt="" className="w-full h-full object-cover rounded-lg" />
+                ) : (
+                  <span className="text-[#1e1e1e] text-lg font-light select-none">{i + 1}</span>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Rendering spinner overlay */}
+        {rendering && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/30 pointer-events-none">
+            <div className="w-5 h-5 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
+          </div>
+        )}
+      </div>
+
+      {/* ── Mini thumbnails for remove / replace ── */}
+      {filled > 0 && (
+        <div className="flex gap-1.5 justify-center flex-wrap">
+          {slots.map((slot, i) => (
+            <MiniSlot
+              key={i}
               slot={slot}
+              index={i}
               onUpload={onUploadSlot}
               onRemove={onRemoveSlot}
             />
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
-      {/* Counter + Actions */}
-      <div className="flex flex-col items-center gap-2">
-        <div className="w-full bg-[#1e1e1e] border border-[#2a2a2a] rounded-lg text-center py-2 text-[#888] font-medium text-sm">
-          {filled}/{layout.slots}
+      {/* ── Status + actions ── */}
+      <div className="flex flex-col gap-1.5">
+        <div className="flex items-center justify-between px-0.5">
+          <span className="text-[#2e2e2e] text-[9px] font-semibold uppercase tracking-[0.15em]">Slots</span>
+          <span className="text-[#3a3a3a] text-[11px] font-medium tabular-nums">{filled}/{layout.slots}</span>
         </div>
 
         {allFilled && !finalImageUrl && (
-          <>
-            <Button
-              type="primary"
-              block
-              size="large"
-              onClick={onChooseFrame}
-              style={{ background: '#fff', color: '#000', border: 'none', borderRadius: 8, fontWeight: 600 }}
-            >
-              {frameUrl ? '✦ Tạo Ảnh' : '🖼 Chọn Khung'}
-            </Button>
-            {frameUrl && (
-              <button
-                onClick={onBuildStrip}
-                className="text-[11px] text-[#555] hover:text-[#888] transition underline"
-              >
-                Tạo không cần khung
-              </button>
-            )}
-          </>
+          <button
+            onClick={onBuildStrip}
+            className="w-full py-2 rounded-lg bg-white text-black text-xs font-bold tracking-wide hover:bg-[#e8e8e8] active:scale-[0.98] transition-all duration-150"
+          >
+            ✦ Tạo Ảnh
+          </button>
         )}
 
         {finalImageUrl && (
-          <Button
-            type="primary"
-            block
-            size="large"
-            icon={<DownloadOutlined />}
+          <button
             onClick={onDownload}
-            style={{ background: '#fff', color: '#000', border: 'none', borderRadius: 8, fontWeight: 600 }}
+            className="w-full py-2 rounded-lg bg-white text-black text-xs font-bold tracking-wide hover:bg-[#e8e8e8] active:scale-[0.98] transition-all duration-150 flex items-center justify-center gap-1.5"
           >
-            Tải Về
-          </Button>
+            <DownloadOutlined /> Tải Về
+          </button>
         )}
       </div>
     </div>

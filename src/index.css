@@ -1,25 +1,85 @@
 @import "tailwindcss";
 
-/* ── Ant Design token override: B&W theme ── */
-:root {
-    --ant-color-primary: #ffffff;
-    --ant-color-primary-hover: #e0e0e0;
-    --ant-color-primary-active: #cccccc;
-    --ant-color-bg-base: #141414;
-    --ant-color-bg-container: #1e1e1e;
-    --ant-color-border: #2a2a2a;
-    --ant-color-text: #e5e5e5;
-    --ant-color-text-secondary: #888888;
-}
-
 *,
 *::before,
 *::after {
     box-sizing: border-box;
 }
 
+html {
+    scroll-behavior: smooth;
+}
+
 body {
     -webkit-font-smoothing: antialiased;
-    background-color: #0d0d0d;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: #0a0a0a;
     color: #e5e5e5;
+    font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    min-height: 100dvh;
+    overflow-x: hidden;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+}
+
+::-webkit-scrollbar-track {
+    background: #0a0a0a;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #2a2a2a;
+    border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #444;
+}
+
+/* ── AntD modal backdrop ── */
+.ant-modal-mask {
+    background: rgba(0, 0, 0, 0.7) !important;
+}
+
+/* ── AntD modal shell — ConfigProvider handles bg, but shadow/radius here ── */
+.ant-modal .ant-modal-content {
+    border: 1px solid #222;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.7);
+}
+
+/* ── AntD modal header/body/footer dividers ── */
+.ant-modal .ant-modal-header {
+    border-bottom: 1px solid #1e1e1e !important;
+    padding-bottom: 12px;
+}
+
+.ant-modal .ant-modal-footer {
+    border-top: 1px solid #1e1e1e !important;
+    padding-top: 12px;
+}
+
+/* ── AntD modal close button ── */
+.ant-modal .ant-modal-close {
+    color: #555;
+}
+
+.ant-modal .ant-modal-close:hover {
+    color: #fff;
+    background: #222;
+}
+
+/* ── Switch track color when off ── */
+.ant-switch {
+    background: #2a2a2a;
+}
+
+/* ── Focus ring ── */
+*:focus-visible {
+    outline: 1px solid rgba(255, 255, 255, 0.2);
+    outline-offset: 2px;
 }
