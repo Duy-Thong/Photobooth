@@ -15,7 +15,7 @@ import ResultModal from '@/components/photobooth/ResultModal'
 
 export default function HomePage() {
   const { videoRef, isMirrored, isReady, error, toggleMirror, captureFrame, selectDevice, retryCamera, devices, activeDeviceId } = useCamera()
-  const { startRecording, stopRecording, cancelRecording } = useVideoRecap(videoRef, isMirrored)
+  const { startRecording, stopRecording, cancelRecording, getVideoMimeType } = useVideoRecap(videoRef, isMirrored)
 
   const {
     layout, countdown, setCountdown,
@@ -30,6 +30,7 @@ export default function HomePage() {
   const [showFlash, setShowFlash] = useState(false)
   const [videoRecap, setVideoRecap] = useState(false)
   const [recapVideoUrl, setRecapVideoUrl] = useState<string | null>(null)
+  const [recapVideoMimeType, setRecapVideoMimeType] = useState<string>('video/webm')
   const [frameModalOpen, setFrameModalOpen] = useState(false)
   const [resultModalOpen, setResultModalOpen] = useState(false)
   const [messageApi, contextHolder] = message.useMessage()
@@ -86,10 +87,13 @@ export default function HomePage() {
     if (capturedCount === layout.slots && !isCapturing && isRecordingRef.current) {
       stopRecording().then(url => {
         isRecordingRef.current = false
-        if (url) setRecapVideoUrl(url)
+        if (url) {
+          setRecapVideoUrl(url)
+          setRecapVideoMimeType(getVideoMimeType())
+        }
       })
     }
-  }, [capturedCount, layout.slots, isCapturing, stopRecording])
+  }, [capturedCount, layout.slots, isCapturing, stopRecording, getVideoMimeType])
 
   // ---------- Manual single capture ----------
   const handleManualCapture = useCallback(async () => {
@@ -123,7 +127,10 @@ export default function HomePage() {
     if (isRecordingRef.current) {
       const url = await stopRecording()
       isRecordingRef.current = false
-      if (url) setRecapVideoUrl(url)
+      if (url) {
+        setRecapVideoUrl(url)
+        setRecapVideoMimeType(getVideoMimeType())
+      }
     }
     setIsCapturing(false)
   }, [isReady, isCapturing, setIsCapturing, capturedSlots, takeOnePhoto, videoRecap, startRecording, stopRecording])
@@ -135,6 +142,7 @@ export default function HomePage() {
     cancelRecording()
     isRecordingRef.current = false
     setRecapVideoUrl(null)
+    setRecapVideoMimeType('video/webm')
     resetPhotos()
     setFinalImageUrl(null)
     setCountdownValue(null)
@@ -246,6 +254,7 @@ export default function HomePage() {
         open={resultModalOpen}
         imageBlobUrl={finalImageUrl}
         recapVideoUrl={recapVideoUrl}
+        recapVideoMimeType={recapVideoMimeType}
         onClose={() => setResultModalOpen(false)}
         onRetake={() => {
           handleRetake()

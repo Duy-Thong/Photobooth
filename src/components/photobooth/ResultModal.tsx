@@ -10,14 +10,18 @@ interface ResultModalProps {
   open: boolean
   /** blob URL of the final composited strip (without QR) */
   imageBlobUrl: string | null
-  /** object URL of the webm video recap (optional) */
+  /** object URL of the video recap (optional) */
   recapVideoUrl?: string | null
+  /** MIME type of the recap video, e.g. 'video/mp4' or 'video/webm' */
+  recapVideoMimeType?: string | null
   onClose: () => void
   onRetake: () => void
   onChangeFrame: () => void
 }
 
-export default function ResultModal({ open, imageBlobUrl, recapVideoUrl, onClose, onRetake, onChangeFrame }: ResultModalProps) {
+export default function ResultModal({ open, imageBlobUrl, recapVideoUrl, recapVideoMimeType, onClose, onRetake, onChangeFrame }: ResultModalProps) {
+  const recapExt = recapVideoMimeType?.startsWith('video/mp4') ? 'mp4' : 'webm'
+
   const [phase, setPhase] = useState<Phase>('uploading')
   const [firebaseUrl, setFirebaseUrl] = useState<string | null>(null)
   const [recapFirebaseUrl, setRecapFirebaseUrl] = useState<string | null>(null)
@@ -45,7 +49,7 @@ export default function ResultModal({ open, imageBlobUrl, recapVideoUrl, onClose
         // Step 1: Upload photo + video in parallel
         const [photoUrl, videoUrl] = await Promise.all([
           uploadPhotoToFirebase(imageBlobUrl!),
-          recapVideoUrl ? uploadVideoToFirebase(recapVideoUrl) : Promise.resolve(null),
+          recapVideoUrl ? uploadVideoToFirebase(recapVideoUrl, recapVideoMimeType ?? undefined) : Promise.resolve(null),
         ])
         if (cancelled) return
         setFirebaseUrl(photoUrl)
@@ -182,6 +186,30 @@ export default function ResultModal({ open, imageBlobUrl, recapVideoUrl, onClose
             alt="Preview"
             className="max-w-full max-h-100 object-contain rounded-lg border border-[#2a2a2a]"
           />
+
+          {/* Video recap offline preview */}
+          {recapVideoUrl && (
+            <div className="w-full flex flex-col items-center gap-2">
+              <p className="text-[#888] text-xs uppercase tracking-widest">Video Recap</p>
+              <video
+                src={recapVideoUrl}
+                controls
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="w-full max-h-[200px] rounded-lg border border-[#2a2a2a] bg-black object-contain"
+              />
+              <a
+                href={recapVideoUrl}
+                download={`somedia-recap-${Date.now()}.${recapExt}`}
+                className="text-[#555] hover:text-white text-xs underline transition-colors"
+              >
+                Tải video về máy (offline)
+              </a>
+            </div>
+          )}
+
           <p className="text-[#555] text-xs text-center">
             Nhấn <span className="text-white font-medium">Upload &amp; Lấy QR</span> để lưu lên đám mây và nhận mã QR chia sẻ.
             <br />Hoặc <span className="text-white font-medium">Tải về</span> trực tiếp không cần upload.
@@ -239,7 +267,7 @@ export default function ResultModal({ open, imageBlobUrl, recapVideoUrl, onClose
                   <div className="flex items-center gap-3">
                     <a
                       href={recapVideoUrl}
-                      download={`somedia-recap-${Date.now()}.webm`}
+                      download={`somedia-recap-${Date.now()}.${recapExt}`}
                       className="text-[#555] hover:text-white text-xs underline transition-colors"
                     >
                       Tải về (local)
@@ -257,7 +285,7 @@ export default function ResultModal({ open, imageBlobUrl, recapVideoUrl, onClose
               ) : (
                 <a
                   href={recapVideoUrl}
-                  download={`somedia-recap-${Date.now()}.webm`}
+                  download={`somedia-recap-${Date.now()}.${recapExt}`}
                   className="text-[#555] hover:text-white text-xs underline transition-colors"
                 >
                   Tải về (local)

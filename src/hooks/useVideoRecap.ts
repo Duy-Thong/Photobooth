@@ -3,7 +3,8 @@ import { useRef, useCallback } from 'react'
 /**
  * Records the camera feed at a given FPS using an off-screen canvas
  * (so mirror + filter CSS are by-passed — we manually apply mirror in canvas).
- * Returns a blob URL for the recorded WebM video when stopRecording() resolves.
+ * Returns a blob URL for the recorded video when stopRecording() resolves.
+ * Prefers MP4/H.264 (iOS/Safari) then falls back to WebM.
  */
 export function useVideoRecap(
   videoRef: React.RefObject<HTMLVideoElement>,
@@ -12,6 +13,7 @@ export function useVideoRecap(
   const recorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const mimeTypeRef = useRef<string>('video/webm')
 
   const startRecording = useCallback((fps: 12 | 24 = 12) => {
     const video = videoRef.current
@@ -44,17 +46,26 @@ export function useVideoRecap(
 
     // Give the interval a head start before starting the recorder so canvas has content
     setTimeout(() => {
-      const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
-        ? 'video/webm;codecs=vp9'
-        : MediaRecorder.isTypeSupported('video/webm')
-          ? 'video/webm'
-          : ''
+      // Prefer MP4/H.264 (plays on iOS, Android, desktop). Fall back to WebM.
+      const mimeType =
+        MediaRecorder.isTypeSupported('video/mp4;codecs=avc1')
+          ? 'video/mp4;codecs=avc1'
+          : MediaRecorder.isTypeSupported('video/mp4')
+            ? 'video/mp4'
+            : MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
+              ? 'video/webm;codecs=vp9'
+              : MediaRecorder.isTypeSupported('video/webm')
+                ? 'video/webm'
+                : ''
 
       try {
         const mediaStream = canvas.captureStream(fps)
         const recorder = mimeType
           ? new MediaRecorder(mediaStream, { mimeType })
           : new MediaRecorder(mediaStream)
+
+        // recorder.mimeType is the canonical value after construction
+        mimeTypeRef.current = recorder.mimeType || mimeType || 'video/webm'
 
         chunksRef.current = []
         recorder.ondataavailable = (e) => {
@@ -82,7 +93,7 @@ export function useVideoRecap(
         return
       }
       recorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: 'video/webm' })
+        const blob = new Blob(chunksRef.current, { type: mimeTypeRef.current })
         recorderRef.current = null
         chunksRef.current = []
         resolve(blob.size > 0 ? URL.createObjectURL(blob) : null)
@@ -104,5 +115,7 @@ export function useVideoRecap(
     chunksRef.current = []
   }, [])
 
-  return { startRecording, stopRecording, cancelRecording }
+  const getVideoMimeType = useCallback(() => mimeTypeRef.current, [])
+
+  return { startRecording, stopRecording, cancelRecording, getVideoMimeType }
 }
