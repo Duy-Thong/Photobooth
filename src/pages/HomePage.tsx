@@ -14,7 +14,7 @@ import FrameModal from '@/components/photobooth/FrameModal'
 import ResultModal from '@/components/photobooth/ResultModal'
 
 export default function HomePage() {
-  const { videoRef, isMirrored, isReady, error, toggleMirror, captureFrame, switchCamera, retryCamera } = useCamera()
+  const { videoRef, isMirrored, isReady, error, toggleMirror, captureFrame, selectDevice, retryCamera, devices, activeDeviceId } = useCamera()
   const { startRecording, stopRecording, cancelRecording } = useVideoRecap(videoRef, isMirrored)
 
   const {
@@ -296,7 +296,9 @@ export default function HomePage() {
                 totalSlots={layout.slots}
                 countdownValue={countdownValue}
                 showFlash={showFlash}
-                onSwitchCamera={switchCamera}
+                devices={devices}
+                activeDeviceId={activeDeviceId}
+                onSelectDevice={selectDevice}
                 onToggleMirror={toggleMirror}
                 onRetry={retryCamera}
               />

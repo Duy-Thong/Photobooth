@@ -1,3 +1,4 @@
+import type { CameraDevice } from '@/hooks/useCamera'
 import { FILTERS } from '@/types/photobooth'
 import type { FilterType } from '@/types/photobooth'
 
@@ -11,7 +12,9 @@ interface CameraViewProps {
   totalSlots: number
   countdownValue: number | null
   showFlash: boolean
-  onSwitchCamera: () => void
+  devices: CameraDevice[]
+  activeDeviceId: string | null
+  onSelectDevice: (deviceId: string) => void
   onToggleMirror: () => void
   onRetry: () => void
 }
@@ -21,7 +24,7 @@ function CamBtn({ onClick, title, children }: { onClick: () => void; title: stri
     <button
       onClick={onClick}
       title={title}
-      className="w-8 h-8 rounded-lg bg-black/50 backdrop-blur-sm flex items-center justify-center text-white/60 hover:text-white hover:bg-black/70 transition-all duration-150 border border-white/[0.05]"
+      className="w-8 h-8 rounded-lg bg-black/50 backdrop-blur-sm flex items-center justify-center text-white/60 hover:text-white hover:bg-black/70 transition-all duration-150 border border-white/5"
     >
       {children}
     </button>
@@ -38,14 +41,16 @@ export default function CameraView({
   totalSlots,
   countdownValue,
   showFlash,
-  onSwitchCamera,
+  devices,
+  activeDeviceId,
+  onSelectDevice,
   onToggleMirror,
   onRetry,
 }: CameraViewProps) {
   const filterCss = FILTERS.find(f => f.value === activeFilter)?.css ?? 'none'
 
   return (
-    <div className="relative w-full rounded-xl overflow-hidden bg-[#080808] border border-[#1a1a1a] aspect-[4/3]">
+    <div className="relative w-full rounded-xl overflow-hidden bg-[#080808] border border-[#1a1a1a] aspect-4/3">
       <video
         ref={videoRef}
         autoPlay
@@ -79,19 +84,29 @@ export default function CameraView({
       )}
 
       {/* Corner controls */}
-      <div className="absolute top-2.5 left-2.5 right-2.5 flex justify-between pointer-events-none">
+      <div className="absolute top-2.5 left-2.5 right-2.5 flex justify-between items-start">
         <CamBtn onClick={onToggleMirror} title="Lật ngang">
-          {/* Horizontal flip icon */}
           <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
             <path d="M15 21h2v-2h-2v2zm4-12h2V7h-2v2zm0 8h2v-2h-2v2zm0-4h2v-2h-2v2zm-4 8h2v-2h-2v2zM5 3H3v18h2V3zm4 18h2v-2H9v2zm8-16V3l-4 4 4 4V7h2V5h-2zm-8 0h2V3H9v2z" />
           </svg>
         </CamBtn>
-        <CamBtn onClick={onSwitchCamera} title="Đổi camera">
-          {/* Camera rotate icon */}
-          <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
-            <path d="M20 5h-3.17L15 3H9L7.17 5H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-8 13c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm3.5-5c0-1.93-1.57-3.5-3.5-3.5S8.5 9.07 8.5 11s1.57 3.5 3.5 3.5 3.5-1.57 3.5-3.5z" />
-          </svg>
-        </CamBtn>
+
+        {/* Camera selector */}
+        {devices.length > 1 ? (
+          <select
+            value={activeDeviceId ?? ''}
+            onChange={e => onSelectDevice(e.target.value)}
+            className="h-8 max-w-40 px-2 rounded-lg bg-black/50 backdrop-blur-sm text-white/80 text-[11px] border border-white/8 hover:bg-black/70 transition cursor-pointer outline-none"
+          >
+            {devices.map((d, i) => (
+              <option key={d.deviceId} value={d.deviceId} className="bg-[#1a1a1a] text-white">
+                {d.label.length > 24 ? d.label.slice(0, 22) + '…' : d.label || `Camera ${i + 1}`}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <div className="w-8" />
+        )}
       </div>
 
       {/* Countdown */}
@@ -111,7 +126,7 @@ export default function CameraView({
 
       {/* Progress pill */}
       <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2">
-        <span className="bg-black/55 backdrop-blur-sm text-white/80 text-[10px] font-medium px-3 py-0.5 rounded-full tracking-wider border border-white/[0.08]">
+        <span className="bg-black/55 backdrop-blur-sm text-white/80 text-[10px] font-medium px-3 py-0.5 rounded-full tracking-wider border border-white/8">
           {capturedCount} / {totalSlots}
         </span>
       </div>

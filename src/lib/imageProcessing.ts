@@ -317,7 +317,7 @@ export function downloadImage(url: string, filename = 'photobooth.jpg') {
 
 /**
  * Stamp a QR code onto an existing image blob URL.
- * The QR encodes `qrUrl` and is placed at the bottom-center of the image.
+ * The QR encodes `qrUrl` and is placed at the bottom-right corner of the image.
  * Returns a new blob URL with the QR stamped on.
  */
 export async function stampQrOnImage(
@@ -345,7 +345,7 @@ export async function stampQrOnImage(
   const pad = 8
   const qrW = QR_SIZE + pad * 2
   const qrH = QR_SIZE + pad * 2 + 16 // extra for label
-  const qrX = (canvas.width - qrW) / 2
+  const qrX = canvas.width - qrW - 12
   const qrY = canvas.height - qrH - 12
 
   ctx.save()

@@ -1,16 +1,22 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 
+export interface CameraDevice {
+  deviceId: string
+  label: string
+}
+
 interface UseCameraReturn {
   videoRef: React.RefObject<HTMLVideoElement>
   stream: MediaStream | null
   isMirrored: boolean
   isReady: boolean
   error: string | null
+  devices: CameraDevice[]
+  activeDeviceId: string | null
   toggleMirror: () => void
   captureFrame: () => string | null
-  switchCamera: () => void
+  selectDevice: (deviceId: string) => void
   retryCamera: () => void
-  facingMode: 'user' | 'environment'
 }
 
 export function useCamera(): UseCameraReturn {
@@ -20,37 +26,42 @@ export function useCamera(): UseCameraReturn {
   const [isMirrored, setIsMirrored] = useState(true)
   const [isReady, setIsReady] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user')
+  const [devices, setDevices] = useState<CameraDevice[]>([])
+  const [activeDeviceId, setActiveDeviceId] = useState<string | null>(null)
 
-  const startCamera = useCallback(async (facing: 'user' | 'environment') => {
+  const startCamera = useCallback(async (deviceId?: string) => {
     setIsReady(false)
     setError(null)
 
-    // Stop any existing stream
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(t => t.stop())
       streamRef.current = null
     }
 
-    // Build constraints — facingMode is ideal (not required) so desktops don't fail
-    const constraints: MediaStreamConstraints = {
-      video: {
-        facingMode: { ideal: facing },
-        width: { ideal: 1280 },
-        height: { ideal: 720 },
-      },
-      audio: false,
-    }
+    const videoConstraint: MediaTrackConstraints = deviceId
+      ? { deviceId: { exact: deviceId }, width: { ideal: 1280 }, height: { ideal: 720 } }
+      : { facingMode: { ideal: 'user' }, width: { ideal: 1280 }, height: { ideal: 720 } }
 
     try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia(constraints)
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ video: videoConstraint, audio: false })
       streamRef.current = mediaStream
       setStream(mediaStream)
+
+      // After getting permission, enumerate devices (labels are available now)
+      const allDevices = await navigator.mediaDevices.enumerateDevices()
+      const videoDevices = allDevices
+        .filter(d => d.kind === 'videoinput')
+        .map((d, i) => ({ deviceId: d.deviceId, label: d.label || `Camera ${i + 1}` }))
+      setDevices(videoDevices)
+
+      // Track which device is active
+      const track = mediaStream.getVideoTracks()[0]
+      const currentId = track?.getSettings?.()?.deviceId ?? deviceId ?? null
+      setActiveDeviceId(currentId)
 
       const video = videoRef.current
       if (!video) return
 
-      // Attach ready listener BEFORE setting srcObject to avoid missing the event
       const onReady = () => {
         setIsReady(true)
         video.removeEventListener('canplay', onReady)
@@ -60,7 +71,7 @@ export function useCamera(): UseCameraReturn {
       video.addEventListener('loadedmetadata', onReady)
 
       video.srcObject = mediaStream
-      video.play().catch(() => {/* autoplay policy — fine */})
+      video.play().catch(() => { /* autoplay policy */ })
     } catch (err: unknown) {
       const e = err as DOMException
       let msg = 'Không thể truy cập camera.'
@@ -77,23 +88,19 @@ export function useCamera(): UseCameraReturn {
   }, [])
 
   useEffect(() => {
-    startCamera(facingMode)
-    return () => {
-      streamRef.current?.getTracks().forEach(t => t.stop())
-    }
+    startCamera()
+    return () => { streamRef.current?.getTracks().forEach(t => t.stop()) }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const toggleMirror = useCallback(() => setIsMirrored(m => !m), [])
 
-  const switchCamera = useCallback(() => {
-    const next = facingMode === 'user' ? 'environment' : 'user'
-    setFacingMode(next)
-    startCamera(next)
-  }, [facingMode, startCamera])
+  const selectDevice = useCallback((deviceId: string) => {
+    startCamera(deviceId)
+  }, [startCamera])
 
   const retryCamera = useCallback(() => {
-    startCamera(facingMode)
-  }, [facingMode, startCamera])
+    startCamera(activeDeviceId ?? undefined)
+  }, [activeDeviceId, startCamera])
 
   const captureFrame = useCallback((): string | null => {
     const video = videoRef.current
@@ -118,10 +125,11 @@ export function useCamera(): UseCameraReturn {
     isMirrored,
     isReady,
     error,
+    devices,
+    activeDeviceId,
     toggleMirror,
     captureFrame,
-    switchCamera,
+    selectDevice,
     retryCamera,
-    facingMode,
   }
 }
