@@ -11,7 +11,6 @@ interface CameraViewProps {
   totalSlots: number
   countdownValue: number | null
   showFlash: boolean
-  frameUrl?: string | null
   onSwitchCamera: () => void
   onToggleMirror: () => void
   onRetry: () => void
@@ -27,7 +26,6 @@ export default function CameraView({
   totalSlots,
   countdownValue,
   showFlash,
-  frameUrl,
   onSwitchCamera,
   onToggleMirror,
   onRetry,
@@ -49,16 +47,6 @@ export default function CameraView({
           display: isReady ? 'block' : 'none',
         }}
       />
-
-      {/* Frame overlay on live camera */}
-      {frameUrl && isReady && (
-        <img
-          src={frameUrl}
-          alt="frame"
-          className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-          style={{ zIndex: 1 }}
-        />
-      )}
 
       {/* Loading state */}
       {!isReady && !error && (

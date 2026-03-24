@@ -90,6 +90,7 @@ export default function HomePage() {
     resetPhotos()
     setFinalImageUrl(null)
     setCountdownValue(null)
+    usePhotoboothStore.getState().setFrameUrl(null)
   }, [resetPhotos, setFinalImageUrl, setIsCapturing])
 
   // ---------- Build final strip ----------
@@ -190,7 +191,6 @@ export default function HomePage() {
                 totalSlots={layout.slots}
                 countdownValue={countdownValue}
                 showFlash={showFlash}
-                frameUrl={frameUrl}
                 onSwitchCamera={switchCamera}
                 onToggleMirror={toggleMirror}
                 onRetry={retryCamera}
