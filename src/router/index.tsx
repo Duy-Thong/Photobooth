@@ -1,6 +1,9 @@
 import { createBrowserRouter } from 'react-router-dom'
 import { MainLayout } from '@/components/layout'
 import HomePage from '@/pages/HomePage'
+import AdminLoginPage from '@/pages/AdminLoginPage'
+import AdminPage from '@/pages/AdminPage'
+import ProtectedRoute from '@/components/admin/ProtectedRoute'
 
 export const router = createBrowserRouter([
   {
@@ -12,5 +15,17 @@ export const router = createBrowserRouter([
         element: <HomePage />,
       },
     ],
+  },
+  {
+    path: '/admin/login',
+    element: <AdminLoginPage />,
+  },
+  {
+    path: '/admin',
+    element: (
+      <ProtectedRoute>
+        <AdminPage />
+      </ProtectedRoute>
+    ),
   },
 ])
