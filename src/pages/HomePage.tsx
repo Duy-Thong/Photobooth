@@ -2,13 +2,14 @@ import { useState, useCallback, useRef, useEffect } from 'react'
 import { message } from 'antd'
 import { useCamera } from '@/hooks/useCamera'
 import { usePhotoboothStore } from '@/stores/photoboothStore'
-import { buildStripImage, downloadImage } from '@/lib/imageProcessing'
+import { buildStripImage } from '@/lib/imageProcessing'
 import CameraView from '@/components/photobooth/CameraView'
 import PhotoStrip from '@/components/photobooth/PhotoStrip'
 import TopControls from '@/components/photobooth/TopControls'
 import CaptureControls from '@/components/photobooth/CaptureControls'
 import FilterPanel from '@/components/photobooth/FilterPanel'
 import FrameModal from '@/components/photobooth/FrameModal'
+import ResultModal from '@/components/photobooth/ResultModal'
 
 export default function HomePage() {
   const { videoRef, isMirrored, isReady, error, toggleMirror, captureFrame, switchCamera, retryCamera } = useCamera()
@@ -26,6 +27,7 @@ export default function HomePage() {
   const [showFlash, setShowFlash] = useState(false)
   const [videoRecap, setVideoRecap] = useState(false)
   const [frameModalOpen, setFrameModalOpen] = useState(false)
+  const [resultModalOpen, setResultModalOpen] = useState(false)
   const [messageApi, contextHolder] = message.useMessage()
 
   const abortRef = useRef(false)
@@ -102,14 +104,15 @@ export default function HomePage() {
     try {
       const url = await buildStripImage(capturedSlots, layout, activeEffects, frameUrl)
       setFinalImageUrl(url)
+      setResultModalOpen(true)
     } catch {
       messageApi.error('Tạo ảnh thất bại, thử lại nhé!')
     }
   }, [capturedSlots, layout, activeEffects, frameUrl, setFinalImageUrl, messageApi])
 
-  // ---------- Download ----------
+  // ---------- Download / Show Result ----------
   const handleDownload = useCallback(() => {
-    if (finalImageUrl) downloadImage(finalImageUrl, `photobooth-${Date.now()}.jpg`)
+    if (finalImageUrl) setResultModalOpen(true)
   }, [finalImageUrl])
 
   // ---------- Slot management ----------
@@ -148,6 +151,7 @@ export default function HomePage() {
               const { capturedSlots: slots, layout: l, activeEffects: fx } = usePhotoboothStore.getState()
               const result = await buildStripImage(slots, l, fx, url)
               setFinalImageUrl(result)
+              setResultModalOpen(true)
             } catch { /* ignore */ }
           }, 0)
         }}
@@ -156,6 +160,15 @@ export default function HomePage() {
           setFinalImageUrl(null)
         }}
         onClose={() => setFrameModalOpen(false)}
+      />
+      <ResultModal
+        open={resultModalOpen}
+        imageBlobUrl={finalImageUrl}
+        onClose={() => setResultModalOpen(false)}
+        onRetake={() => {
+          handleRetake()
+          setResultModalOpen(false)
+        }}
       />
       <div className="min-h-screen bg-[#0d0d0d]">
         {/* Header */}

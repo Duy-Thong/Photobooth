@@ -1,4 +1,5 @@
 import type { CapturedSlot, LayoutConfig, EffectType } from '@/types/photobooth'
+import QRCode from 'qrcode'
 
 const STRIP_BG = '#fff'
 const PADDING = 16
@@ -167,4 +168,62 @@ export function downloadImage(url: string, filename = 'photobooth.jpg') {
   a.href = url
   a.download = filename
   a.click()
+}
+
+/**
+ * Stamp a QR code onto an existing image blob URL.
+ * The QR encodes `qrUrl` and is placed at the bottom-center of the image.
+ * Returns a new blob URL with the QR stamped on.
+ */
+export async function stampQrOnImage(
+  imageBlobUrl: string,
+  qrUrl: string,
+): Promise<string> {
+  // Render QR to an off-screen canvas via qrcode lib
+  const QR_SIZE = 120
+  const qrCanvas = document.createElement('canvas')
+  await QRCode.toCanvas(qrCanvas, qrUrl, {
+    width: QR_SIZE,
+    margin: 1,
+    color: { dark: '#000000', light: '#ffffff' },
+  })
+
+  // Load the strip image
+  const stripImg = await loadImage(imageBlobUrl)
+  const canvas = document.createElement('canvas')
+  canvas.width = stripImg.width
+  canvas.height = stripImg.height
+  const ctx = canvas.getContext('2d')!
+  ctx.drawImage(stripImg, 0, 0)
+
+  // White rounded background for QR
+  const pad = 8
+  const qrW = QR_SIZE + pad * 2
+  const qrH = QR_SIZE + pad * 2 + 16 // extra for label
+  const qrX = (canvas.width - qrW) / 2
+  const qrY = canvas.height - qrH - 12
+
+  ctx.save()
+  ctx.fillStyle = 'rgba(255,255,255,0.95)'
+  ctx.beginPath()
+  ctx.roundRect(qrX, qrY, qrW, qrH, 8)
+  ctx.fill()
+
+  // Draw QR onto strip
+  ctx.drawImage(qrCanvas, qrX + pad, qrY + pad, QR_SIZE, QR_SIZE)
+
+  // Small label under QR
+  ctx.fillStyle = '#555'
+  ctx.font = `bold ${Math.max(9, QR_SIZE * 0.09)}px sans-serif`
+  ctx.textAlign = 'center'
+  ctx.fillText('Quét để xem ảnh', qrX + qrW / 2, qrY + qrH - 4)
+  ctx.restore()
+
+  return new Promise((resolve) => {
+    canvas.toBlob(
+      (blob) => resolve(URL.createObjectURL(blob!)),
+      'image/jpeg',
+      0.93,
+    )
+  })
 }
