@@ -1315,5 +1315,41 @@ export const STATIC_FRAMES: FrameItem[] = [
     "categoryId": 11,
     "categoryName": "Frame Basic",
     "slots": 4
+  },
+  {
+    "id": 543,
+    "filename": "FRAME ECONY 1.png",
+    "name": "ECONY 1",
+    "frame": "square",
+    "categoryId": 20,
+    "categoryName": "SYP",
+    "slots": 4
+  },
+  {
+    "id": 544,
+    "filename": "FRAME ECONY 2.png",
+    "name": "ECONY 2",
+    "frame": "square",
+    "categoryId": 20,
+    "categoryName": "SYP",
+    "slots": 4
+  },
+  {
+    "id": 545,
+    "filename": "FRAME ECONY 3.png",
+    "name": "ECONY 3",
+    "frame": "square",
+    "categoryId": 20,
+    "categoryName": "SYP",
+    "slots": 4
+  },
+  {
+    "id": 546,
+    "filename": "FRAME ECONY 4.png",
+    "name": "ECONY 4",
+    "frame": "square",
+    "categoryId": 20,
+    "categoryName": "SYP",
+    "slots": 3
   }
 ]
