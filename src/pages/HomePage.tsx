@@ -80,7 +80,7 @@ export default function HomePage() {
   // This produces one clip per slot.
   const takeOnePhoto = useCallback((): Promise<void> => {
     return new Promise((resolve) => {
-      if (videoRecap) startRecording(24)
+      if (videoRecap) startRecording(30)
       let count = countdown
       setCountdownValue(count)
       const tick = setInterval(() => {
