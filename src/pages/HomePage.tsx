@@ -25,7 +25,7 @@ export default function HomePage() {
     frameUrl,
   } = usePhotoboothStore()
 
-  const { startRecording, stopRecording, cancelRecording, getVideoMimeType } = useVideoRecap(videoRef, isMirrored, frameUrl)
+  const { startRecording, stopRecording, cancelRecording, getVideoMimeType } = useVideoRecap(videoRef, isMirrored)
 
   const [countdownValue, setCountdownValue] = useState<number | null>(null)
   const [showFlash, setShowFlash] = useState(false)
