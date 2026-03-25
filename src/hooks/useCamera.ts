@@ -14,7 +14,7 @@ interface UseCameraReturn {
   devices: CameraDevice[]
   activeDeviceId: string | null
   toggleMirror: () => void
-  captureFrame: () => string | null
+  captureFrame: (filterCss?: string) => string | null
   selectDevice: (deviceId: string) => void
   retryCamera: () => void
 }
@@ -102,7 +102,7 @@ export function useCamera(): UseCameraReturn {
     startCamera(activeDeviceId ?? undefined)
   }, [activeDeviceId, startCamera])
 
-  const captureFrame = useCallback((): string | null => {
+  const captureFrame = useCallback((filterCss?: string): string | null => {
     const video = videoRef.current
     if (!video || !isReady) return null
 
@@ -111,6 +111,9 @@ export function useCamera(): UseCameraReturn {
     canvas.height = video.videoHeight
     const ctx = canvas.getContext('2d')!
 
+    if (filterCss && filterCss !== 'none') {
+      ctx.filter = filterCss
+    }
     if (isMirrored) {
       ctx.translate(canvas.width, 0)
       ctx.scale(-1, 1)

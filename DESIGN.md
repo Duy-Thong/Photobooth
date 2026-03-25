@@ -1,22 +1,21 @@
-# 📸 Photobooth — Thiết Kế Hệ Thống
+﻿# 📸 Sổ Media — Photobooth · Thiết Kế Hệ Thống
 
-> Tham khảo: [photo.freehihi.com](https://photo.freehihi.com/)  
-> Stack: Vite + React + TypeScript + Tailwind CSS + Ant Design + Firebase (Serverless)
+> Stack: Vite 6 + React 19 + TypeScript + Tailwind CSS 4 + Ant Design 6 + Firebase 12 + Zustand 5 + Vercel Analytics
 
 ---
 
 ## 1. Tổng Quan Hệ Thống
 
-Web app Photobooth chạy hoàn toàn trên trình duyệt (serverless), hỗ trợ mọi thiết bị có camera. Người dùng có thể chụp ảnh, áp dụng filter/effect, chọn khung trang trí và tải về.
+Web app Photobooth chạy hoàn toàn trên trình duyệt (serverless), hỗ trợ mọi thiết bị có camera. Người dùng chụp ảnh, chọn filter/effect, chọn khung trang trí, xem preview live, rồi tải về. Ảnh & video recap được upload lên Firebase Storage và đóng dấu QR để chia sẻ.
 
 ```
-┌─────────────────────────────────────────────────┐
-│              PHOTOBOOTH WEB APP                 │
-│         (Serverless SPA - Firebase Hosting)     │
-├──────────────┬──────────────────────────────────┤
-│   Frontend   │          Firebase Services        │
-│  React + TS  │  Firestore │ Storage │ Auth       │
-└──────────────┴──────────────────────────────────┘
+┌────────────────────────────────────────────────────────┐
+│              SỔ MEDIA — PHOTOBOOTH WEB APP             │
+│          (Serverless SPA — Vercel + Firebase)          │
+├──────────────┬─────────────────────────────────────────┤
+│   Frontend   │          Firebase Services              │
+│  React + TS  │  Storage (ảnh + video recap)  │ Auth    │
+└──────────────┴─────────────────────────────────────────┘
 ```
 
 ---
@@ -24,311 +23,219 @@ Web app Photobooth chạy hoàn toàn trên trình duyệt (serverless), hỗ tr
 ## 2. Sitemap & Routing
 
 ```
-/                         → Trang chủ — Chụp ảnh (core feature)
-/feedbacks                → Bộ sưu tập ảnh cộng đồng
-/support                  → Tải lên frame riêng (có phí)
-/community-contribution   → Đóng góp frame miễn phí
-/contact                  → Liên hệ
-/app-photobooth           → Landing page giới thiệu app kinh doanh
-/privateframe             → Hướng dẫn tạo frame PNG trong suốt
+/                  → Trang chủ — Photobooth Studio (core feature)
+/admin/login       → Đăng nhập Admin
+/admin             → Admin Panel — quản lý media trên Firebase Storage
 ```
+
+> Các trang `/feedbacks`, `/support`, `/community-contribution`, `/contact`, `/app-photobooth` **chưa implement**.
 
 ---
 
-## 3. Các Trang & Tính Năng Chi Tiết
+## 3. Các Trang & Tính Năng
 
 ### 3.1 Trang Chủ `/` — Photobooth Studio
 
-Màn hình chính chia 2 cột:
+Header nhỏ ở trên cùng, bên dưới chia 2 cột trên desktop:
 
 ```
-┌──────────────────────┬──────────────────┐
-│   CAMERA / PREVIEW   │   PHOTO STRIP    │
-│   (chiếm 65%)        │   (chiếm 35%)    │
-│                      │  ┌────────────┐  │
-│  [camera feed]       │  │  Slot 1    │  │
-│                      │  └────────────┘  │
-│  [Đã Chụp: 0/4]      │  ┌────────────┐  │
-│                      │  │  Slot 2    │  │
-├──────────────────────┤  └────────────┘  │
-│  [Chụp tay] [AUTO]   │  ┌────────────┐  │
-│  [Chụp Lại]          │  │  Slot 3    │  │
-│  [Video Recap toggle]│  └────────────┘  │
-│  [Tải ảnh lên]       │  ┌────────────┐  │
-├──────────────────────┤  │  Slot 4    │  │
-│  BỘ LỌC MÀU          │  └────────────┘  │
-│  HIỆU ỨNG            │  [0/4]           │
-└──────────────────────┴──────────────────┘
+┌────────────────────────────────────────────────────────┐
+│                    Sổ Media · PHOTOBOOTH               │
+├──────────────────────────────────────┬─────────────────┤
+│  KHUNG: [🖼 Chọn khung]              │                 │
+│  ĐẾM NGƯỢC: [3s] [5s] [10s]         │                 │
+├──────────────────────────────────────┤  PHOTO STRIP    │
+│                                      │  (live preview) │
+│  [Camera Feed]                       │                 │
+│  [Lật ngang]  [Device Selector ▼]   │  [mini slots]   │
+│  [0 / 4]                             │  [0/4]          │
+├──────────────────────────────────────┤  [Tạo Ảnh]     │
+│  [Chụp]  [AUTO]  [Lại]              │  [Tải Về]       │
+│  [Video Recap toggle] [Tải ảnh lên] │                 │
+├──────────────────────────────────────┴─────────────────┤
+│  BỘ LỌC MÀU   │   HIỆU ỨNG (sau khi chụp)             │
+└────────────────────────────────────────────────────────┘
 ```
 
-#### Thanh điều khiển trên cùng
+#### Thanh điều khiển trên cùng (TopControls)
 | Thành phần | Loại | Mô tả |
 |---|---|---|
-| Layout Ảnh | Dropdown | 1x4 Strips, 2x2 Grid, v.v. |
-| Đếm Ngược | Dropdown | 3s / 5s / 10s |
-| Chọn Khung | Button → Modal | Mở thư viện frame |
+| Chọn Khung | Button → Modal | Mở thư viện frame; khi đã chọn hiện "Đổi khung" + nút ✕ bỏ khung |
+| Đếm Ngược | Pill buttons | 3s / 5s / 10s |
 
-#### Camera Controls
+> **Không có Layout dropdown** — layout được tự động phát hiện từ frame khi chọn khung.
+
+#### Camera Controls (CameraView + CaptureControls)
 | Control | Mô tả |
 |---|---|
-| Flip/Mirror | Lật camera ngang |
-| Flash | Bật/tắt hiệu ứng flash trắng khi chụp |
-| Chụp tay | Chụp ngay lập tức |
-| AUTO | Tự động chụp đủ số ảnh theo layout |
-| Chụp Lại | Reset toàn bộ, chụp lại từ đầu |
-| Video Recap | Toggle — Tạo video slideshow từ ảnh đã chụp |
-| Tải ảnh lên | Upload ảnh có sẵn từ thiết bị |
+| Lật ngang | Mirror camera theo chiều ngang |
+| Device Selector | Dropdown chọn camera/webcam (nếu có nhiều thiết bị) |
+| Bộ đếm `0 / 4` | Hiển thị số ảnh đã chụp / tổng slots |
+| Chụp | Đếm ngược rồi chụp 1 ảnh (flash trắng + capture frame) |
+| AUTO | Tự động chụp đủ số ảnh còn lại theo thứ tự |
+| Lại | Reset toàn bộ ảnh, frame, video recap — bắt đầu lại |
+| Video Recap | Toggle — ghi video từng slot trong khi chụp |
+| Tải ảnh lên | Upload ảnh từ thiết bị vào slot trống tiếp theo |
 
-#### Bộ Lọc Màu (áp dụng real-time lên camera)
-| Filter | Mô tả |
+#### Bộ Lọc Màu — áp dụng real-time lên camera (CSS filter)
+| Filter | CSS |
 |---|---|
-| Bình thường | Không filter |
-| Mono (Retro Effect) | Tông nâu vintage |
-| Đen trắng | Grayscale |
-| Mềm mại | Soft / warm tone |
-| Dazz Classic | Phong cách film cổ điển |
-| Dazz Instant | Phong cách Instax |
+| Bình Thường | `none` |
+| Mono (Retro) | `sepia(0.8) contrast(1.1) saturate(0.7)` |
+| Đen Trắng | `grayscale(1)` |
+| Mềm Mại | `brightness(1.1) saturate(1.2) contrast(0.9)` |
+| Dazz Classic | `sepia(0.4) contrast(1.15) saturate(1.3) hue-rotate(-10deg)` |
+| Dazz Instant | `saturate(1.4) contrast(1.05) brightness(1.05) hue-rotate(5deg)` |
 
-#### Hiệu Ứng (áp dụng sau khi chụp xong)
+#### Hiệu Ứng — áp dụng lên canvas sau khi chụp
 | Effect | Mô tả |
 |---|---|
 | 📅 TimeStamp | In ngày giờ lên ảnh |
 | ☀️ Light Leak | Hiệu ứng rò sáng |
 | 🌑 Vignette | Viền tối 4 góc |
 | 🎞️ Grain | Hạt film |
-| 🌈 Chromatic | Hiệu ứng aberration màu |
+| 🌈 Chromatic | Aberration màu |
 
 #### Photo Strip (cột phải)
-- Hiển thị các ảnh đã chụp theo slot
-- Mỗi slot có nút Upload để thay bằng ảnh từ máy
-- Counter `0/4` theo dõi tiến độ
-- Sau khi đủ ảnh → hiện nút **Tải Về** / **Chia Sẻ**
+- **Live composite preview**: render ngay khi có ảnh/frame mới (dùng `useStripPreview`, debounce 80ms)
+- **Mini slot thumbnails**: hàng dưới gồm các ô 32×32px, click để thay ảnh, hover để xóa slot
+- Counter `0/4` và nút **Tạo Ảnh** (khi đủ ảnh)
+- Sau khi build xong → hiện **Result Modal**
+
+#### Result Modal (sau khi tạo ảnh)
+Quy trình nhiều phase:
+| Phase | Mô tả |
+|---|---|
+| `confirm` | Xem preview ảnh + strip video recap; chọn "Tải lên" hoặc bỏ qua |
+| `uploading` | Upload ảnh lên `photobooth/` và strip video lên `recap/` (song song) |
+| `stamping` | Đóng dấu QR code (`stampQrOnImage`) chứa link Firebase vào góc ảnh |
+| `done` | Hiển thị ảnh hoàn chỉnh + QR code + nút Tải về / Chụp lại / Đổi khung |
+| `error` | Thông báo lỗi upload |
 
 ---
 
-### 3.2 Trang Feedbacks `/feedbacks`
+### 3.2 Admin Panel `/admin`
 
-Gallery ảnh từ cộng đồng người dùng gửi về.
-
-```
-┌────────────────────────────────────────────┐
-│  Bộ Sưu Tập Cộng Đồng                     │
-│  "Khoảnh Khắc Của Bạn 💗"                  │
-│                                            │
-│  Stats: [🖼️ 0+ ảnh] [🔒 Bảo mật] [🆓 Free] │
-│                                            │
-│  [Masonry Grid / Waterfall layout]         │
-│  ảnh 1  |  ảnh 2  |  ảnh 3               │
-│    ảnh 4   |   ảnh 5   |  ảnh 6           │
-│                                            │
-│  [Gửi ảnh của bạn →] (link Google Form)   │
-└────────────────────────────────────────────┘
-```
-
-- Ảnh được lưu trên Firebase Storage, metadata trên Firestore
-- Website **không lưu ảnh người dùng** chụp (chỉ xử lý local)
-- Người dùng tự nguyện gửi ảnh qua Google Form
-
----
-
-### 3.3 Trang Tải Lên Frame Riêng `/support` (Premium)
-
-Wizard 3 bước để upload frame cá nhân hoá:
+Giao diện quản lý media upload trên Firebase Storage. Yêu cầu đăng nhập (`/admin/login`).
 
 ```
-Bước 1: Bản thiết kế
-  └─ Upload file PNG trong suốt (max 10MB)
-
-Bước 2: Cấu hình
-  ├─ Chọn layout tương thích
-  ├─ Đặt tên frame
-  └─ Visibility: Chỉ mình tôi / Chia sẻ bằng mã
-
-Bước 3: Thanh toán
-  └─ Chọn gói thời hạn → thanh toán
+┌────────────────────────────────────────────────────────┐
+│  Sổ Media · Admin Panel   [user@email]  [↻] [🕐] [🗑] [←]│
+├────────────────────────────────────────────────────────┤
+│  Ảnh (N)  │  Video (N)                                 │
+├────────────────────────────────────────────────────────┤
+│  Grid: ảnh 3:4  hoặc  video 16:9 + play icon          │
+│  Hover: nút Xóa từng file                              │
+│  Click: Modal preview (ảnh / video autoplay)           │
+└────────────────────────────────────────────────────────┘
 ```
 
-**Quyền lợi gói trả phí:**
-- ✨ Xuất hiện ngay sau khi thanh toán
-- 🔑 Chia sẻ frame với người khác qua **mã frame**
-- 🛡️ Lưu trữ an toàn trong suốt thời hạn gói
-
----
-
-### 3.4 Trang Đóng Góp Frame `/community-contribution` (Free)
-
-Dành cho nhà thiết kế muốn chia sẻ frame miễn phí cho cộng đồng.
-
-```
-┌────────────────────────────────────────┐
-│  ✨ CHIA SẺ VÌ CỘNG ĐỒNG               │
-│  "Đóng Góp Frame"                      │
-│                                        │
-│  [Mở Form Đóng Góp Ngay] → Google Form│
-│                                        │
-│  Yêu cầu:                              │
-│  1. File PNG nền trong suốt            │
-│  2. Đúng tỷ lệ dải ảnh photobooth     │
-│  3. Không vi phạm bản quyền           │
-│                                        │
-│  Quy trình duyệt: 12-24h              │
-└────────────────────────────────────────┘
-```
+**Tính năng:**
+- Tab **Ảnh** (`photobooth/`) và **Video** (`recap/`) tách biệt
+- Xóa từng file (confirm dialog)
+- **Xóa tất cả** trong tab hiện tại
+- **Cũ > 7 ngày**: xóa đồng loạt ảnh + video cũ hơn 7 ngày
+- Preview modal: ảnh full-width / video autoplay, nút "Mở link ↗" và "Xóa"
+- Hiển thị ngày tạo + dung lượng mỗi file
 
 ---
 
 ## 4. Kiến Trúc Kỹ Thuật
 
-### 4.1 Frontend Architecture
+### 4.1 Frontend Architecture (thực tế)
 
 ```
 src/
 ├── components/
+│   ├── admin/
+│   │   └── ProtectedRoute.tsx        # Bảo vệ /admin
 │   ├── layout/
-│   │   └── MainLayout.tsx          # App shell + Navigation
-│   ├── photobooth/
-│   │   ├── CameraView.tsx          # Camera feed + WebRTC
-│   │   ├── PhotoStrip.tsx          # Dải ảnh kết quả
-│   │   ├── PhotoSlot.tsx           # 1 slot ảnh
-│   │   ├── ControlBar.tsx          # Toolbar điều khiển
-│   │   ├── FilterPanel.tsx         # Bộ lọc màu
-│   │   ├── EffectPanel.tsx         # Hiệu ứng
-│   │   ├── FrameSelector/
-│   │   │   ├── FrameModal.tsx      # Modal chọn khung
-│   │   │   ├── FrameCard.tsx       # 1 frame item
-│   │   │   └── FrameSearch.tsx     # Tìm kiếm frame
-│   │   └── DownloadPanel.tsx       # Tải về / chia sẻ
-│   ├── feedback/
-│   │   ├── FeedbackGallery.tsx     # Masonry grid
-│   │   └── FeedbackCard.tsx
-│   └── ui/                         # Shared UI components
-│       ├── CountdownOverlay.tsx
-│       └── FlashOverlay.tsx
-├── pages/
-│   ├── HomePage.tsx
-│   ├── FeedbacksPage.tsx
-│   ├── SupportPage.tsx
-│   ├── ContributionPage.tsx
-│   ├── ContactPage.tsx
-│   └── AppLandingPage.tsx
+│   │   ├── index.ts
+│   │   └── MainLayout.tsx            # Ant Design Layout shell (chỉ <Outlet/>)
+│   └── photobooth/
+│       ├── CameraView.tsx            # Camera feed + mirror + device selector
+│       ├── CaptureControls.tsx       # Chụp / AUTO / Lại / Video Recap / Upload
+│       ├── FilterPanel.tsx           # Bộ lọc màu + hiệu ứng
+│       ├── FrameModal.tsx            # Modal chọn khung (search, categories, slot filter)
+│       ├── PhotoSlot.tsx             # Helper slot (dùng trong PhotoStrip)
+│       ├── PhotoStrip.tsx            # Live preview + mini slots + nút build/download
+│       ├── ResultModal.tsx           # Modal kết quả (confirm→upload→QR→done)
+│       └── TopControls.tsx           # Chọn khung + đếm ngược
 ├── hooks/
-│   ├── useCamera.ts                # Camera stream, flip, flash
-│   ├── usePhotoCapture.ts          # Logic chụp, đếm ngược
-│   ├── useFilter.ts                # CSS filter real-time
-│   ├── useCanvasEffect.ts          # Canvas post-effects
-│   ├── usePhotoStrip.ts            # Ghép ảnh + frame → canvas
-│   └── useVideoRecap.ts            # Tạo video từ ảnh
+│   ├── useAdminAuth.ts               # Firebase Auth login/logout
+│   ├── useCamera.ts                  # WebRTC stream, mirror, device list, captureFrame
+│   ├── useStripPreview.ts            # Debounced live composite preview (canvas → blob URL)
+│   └── useVideoRecap.ts              # MediaRecorder per-slot, getVideoMimeType
 ├── lib/
-│   ├── firebase.ts                 # Firebase init
-│   ├── imageProcessing.ts          # Canvas utilities
-│   └── frameUtils.ts               # Frame PNG overlay
-├── stores/
-│   ├── photoboothStore.ts          # Zustand: trạng thái chụp
-│   └── frameStore.ts               # Zustand: frame đã chọn
+│   ├── firebase.ts                   # Firebase app + storage init
+│   ├── frames-static.ts              # STATIC_FRAMES[] — danh sách frame tĩnh
+│   ├── frameService.ts               # fetchFrames(), fetchCategories(), frameImageUrl()
+│   ├── imageProcessing.ts            # applyEffects, detectFrameSlots (DFS),
+│   │                                 # buildStripImage, buildStripVideo, stampQrOnImage
+│   └── uploadService.ts              # uploadPhotoToFirebase, uploadVideoToFirebase
+├── pages/
+│   ├── AdminLoginPage.tsx            # Form đăng nhập
+│   ├── AdminPage.tsx                 # Media manager
+│   └── HomePage.tsx                  # Photobooth studio
 ├── router/
-│   └── index.tsx
+│   └── index.tsx                     # createBrowserRouter: /, /admin/login, /admin
+├── stores/
+│   └── photoboothStore.ts            # Zustand: toàn bộ state photobooth
 └── types/
-    ├── frame.ts
-    └── photobooth.ts
+    └── photobooth.ts                 # FilterType, EffectType, LayoutType, LAYOUTS, FILTERS, EFFECTS
 ```
 
-### 4.2 Firebase Schema
+### 4.2 Firebase
 
-#### Firestore Collections
-
-**`frames`** — Thư viện khung ảnh công khai
-```ts
-{
-  id: string
-  name: string
-  category: string           // "trending" | "holiday" | "cute" | ...
-  thumbnailUrl: string       // Firebase Storage URL
-  frameUrl: string           // PNG trong suốt, Firebase Storage
-  layouts: LayoutType[]      // ["1x4", "2x2", ...]
-  contributor?: string       // Tên người đóng góp
-  isPublic: boolean
-  downloadCount: number
-  createdAt: Timestamp
-  approvedAt?: Timestamp
-  status: "pending" | "approved" | "rejected"
-}
+**Storage paths thực tế:**
+```
+/photobooth/
+  {timestamp}_{random}.jpg       ← ảnh strip upload từ ResultModal
+/recap/
+  {timestamp}_{random}.webm|mp4  ← strip video recap upload từ ResultModal
 ```
 
-**`privateFrames`** — Frame trả phí của người dùng
-```ts
-{
-  id: string
-  ownerId: string            // Firebase Auth UID
-  shareCode: string          // Random 6-char code để chia sẻ
-  frameUrl: string
-  thumbnailUrl: string
-  layouts: LayoutType[]
-  plan: "1month" | "3months" | "lifetime"
-  expiresAt: Timestamp
-  createdAt: Timestamp
-}
-```
+**Frame assets:** phục vụ tĩnh từ `/public/frames/*.png` — **không dùng Firebase Storage**.
 
-**`feedbacks`** — Ảnh cộng đồng
-```ts
-{
-  id: string
-  imageUrl: string           // Firebase Storage
-  caption?: string
-  submittedAt: Timestamp
-  approved: boolean
-}
-```
+**Auth:** Firebase Email/Password — chỉ dùng cho Admin Panel.
 
-**`contributions`** — Frame đóng góp (queue duyệt)
-```ts
-{
-  id: string
-  uploaderEmail: string
-  frameFileUrl: string       // Temp Storage, chờ duyệt
-  message?: string
-  submittedAt: Timestamp
-  status: "pending" | "approved" | "rejected"
-  reviewNote?: string
-}
-```
-
-#### Firebase Storage Structure
-```
-/frames/
-  public/{frameId}.png
-  thumbnails/{frameId}.jpg
-/privateFrames/
-  {userId}/{frameId}.png
-/feedbacks/
-  {feedbackId}.jpg
-```
+> **Firestore không được dùng** trong phiên bản hiện tại. Frame metadata lưu tĩnh trong `frames-static.ts`.
 
 ### 4.3 State Management (Zustand)
 
-**`photoboothStore`**
+**`photoboothStore`** — single store duy nhất:
 ```ts
 {
-  // Camera
-  stream: MediaStream | null
-  isMirrored: boolean
-  flashEnabled: boolean
+  // Layout & countdown
+  layout: LayoutConfig          // default: LAYOUTS[0] = 1×4 Strips
+  countdown: number             // 3 | 5 | 10
+  setLayout(layout)             // reset capturedSlots
+  setLayoutKeepPhotos(layout)   // chỉ đổi layout, giữ ảnh
+  setCountdown(n)
 
-  // Session
-  layout: LayoutConfig       // { type: "1x4", slots: 4 }
-  countdown: number          // 3 | 5 | 10
-  capturedPhotos: string[]   // base64 ảnh đã chụp
-  captureMode: "manual" | "auto"
-  isCapturing: boolean
-
-  // Frame & Filter
-  selectedFrame: Frame | null
+  // Filter & effects
   activeFilter: FilterType
   activeEffects: EffectType[]
+  setFilter(f)
+  toggleEffect(e)
+
+  // Captured photos
+  capturedSlots: (CapturedSlot | null)[]
+  addPhoto(dataUrl, fromCamera?)   // điền vào slot trống đầu tiên
+  replaceSlot(index, dataUrl)
+  resetPhotos()
+
+  // Flow control
+  isCapturing: boolean
+  setIsCapturing(v)
 
   // Output
   finalImageUrl: string | null
-  videoRecapUrl: string | null
+  setFinalImageUrl(url)
+
+  // Frame
+  frameUrl: string | null
+  setFrameUrl(url)
 }
 ```
 
@@ -336,171 +243,154 @@ src/
 
 ## 5. Các Layout Ảnh
 
-| Layout | Slots | Tỷ lệ output | Mô tả |
-|---|---|---|---|
-| 1×4 Strips | 4 | ~2:7 | 4 ảnh dọc xếp chồng |
-| 2×2 Grid | 4 | 1:1 | 2x2 ảnh vuông |
-| 1×3 Strips | 3 | ~2:5 | 3 ảnh dọc |
-| 1×2 Strips | 2 | ~2:3 | 2 ảnh dọc |
-| Full | 1 | 4:3 / 1:1 | 1 ảnh toàn màn hình |
+| Layout | Type | Slots | Cols | Rows | Mô tả |
+|---|---|---|---|---|---|
+| 1×4 Strips | `1x4` | 4 | 1 | 4 | 4 ảnh dọc xếp chồng (default) |
+| 2×2 Grid | `2x2` | 4 | 2 | 2 | 2×2 ảnh vuông |
+| 1×3 Strips | `1x3` | 3 | 1 | 3 | 3 ảnh dọc |
+| 2×3 Grid | `2x3` | 6 | 2 | 3 | 6 ảnh lưới lớn |
+| 1×2 Strips | `1x2` | 2 | 1 | 2 | 2 ảnh dọc |
+| 1×1 Full | `1x1` | 1 | 1 | 1 | 1 ảnh toàn màn hình |
+
+> Layout **tự động thay đổi** khi chọn frame — `detectFrameSlots` quét vùng trong suốt (DFS) để xác định số slot và loại layout phù hợp.
 
 ---
 
-## 6. Luồng Xử Lý Ảnh (Image Pipeline)
+## 6. Hệ Thống Frame
+
+- Frame phục vụ tĩnh từ `/public/frames/*.png` (PNG trong suốt)
+- Metadata trong `src/lib/frames-static.ts` — mảng `STATIC_FRAMES[]`
+- Mỗi frame: `id, filename, name, frame ('square'|'bigrectangle'|'grid'), categoryId, categoryName, slots (3|4|6)`
+- **Categories hiện có:** Frame Amazing ⭐️, Frame Cartoon, Frame Basic, Frame IDOL Hoạt Họa, Frame Chụp Cùng Idol, Frame Đại Học, Frame Sự Kiện
+- **Frame Modal:** search theo tên, lọc theo số ảnh, lọc theo danh mục, preview → "Áp dụng"
+- **Không có frame động từ Firestore / premium frame** trong phiên bản hiện tại
+
+---
+
+## 7. Luồng Xử Lý Ảnh (Image Pipeline)
 
 ```
 Camera Stream (WebRTC)
         │
         ▼
-  Apply CSS Filter (real-time preview)
+  Apply CSS Filter (real-time preview trên <video>)
+        │ [Chụp / AUTO — có countdown + flash white overlay]
+        ▼
+  captureFrame() → drawImage(<video>) → canvas.toDataURL()
         │
         ▼
-  [Capture] → drawImage to Canvas
-        │
-        ├─ Crop to slot aspect ratio
+  addPhoto(dataUrl) → capturedSlots[]
         │
         ▼
-  Apply Canvas Effects
-  (TimeStamp / Grain / Vignette / LightLeak / Chromatic)
+  useStripPreview (debounce 80ms)
+  → buildStripImage (preview, không effect) → previewUrl
+        │
+  [Đủ slots → tự động build strip hoặc mở FrameModal]
+        ▼
+  buildStripImage(capturedSlots, layout, activeEffects, frameUrl)
+  ┌─────────────────────────────────────────────┐
+  │ 1. detectFrameSlots(frameUrl) → slot rects  │
+  │ 2. Vẽ từng ảnh vào đúng slot rect           │
+  │ 3. applyEffects (Grain/Vignette/LightLeak/  │
+  │    Chromatic/TimeStamp) lên từng slot        │
+  │ 4. Overlay frame PNG lên toàn canvas         │
+  │    (hoặc fallback grid nếu không có frame)   │
+  └─────────────────────────────────────────────┘
         │
         ▼
-  Collect all slots
+  canvas.toBlob() → blobURL → finalImageUrl
         │
         ▼
-  Composite Strip Canvas
-  ┌───────────────────┐
-  │  Background color │
-  │  Photo slot 1     │
-  │  Photo slot 2     │
-  │  Photo slot 3     │
-  │  Photo slot 4     │
-  │  Frame PNG overlay│ ← drawImage(frame, 0, 0, w, h)
-  └───────────────────┘
+  ResultModal (confirm → upload → QR stamp → done)
         │
-        ▼
-  canvas.toBlob() → Blob URL
-        │
-        ├── Download as JPG/PNG
-        └── (Optional) Upload to Firebase Storage
+        ├── uploadPhotoToFirebase → photobooth/{name}.jpg
+        ├── uploadVideoToFirebase → recap/{name}.webm|mp4  (nếu có video)
+        ├── stampQrOnImage(blobUrl, firebaseUrl) → finalWithQr
+        └── downloadImage(finalWithQr)
+```
+
+### Video Recap Pipeline
+```
+[Chụp mỗi slot]
+  → startRecording(30fps) — MediaRecorder ghi <video> stream
+  → stopRecording() → blobUrl per clip → recapClips[]
+
+[Sau khi có finalImageUrl]
+  → buildStripVideo(recapClips, frameUrl, 24fps)
+     - Decode từng clip frames lên canvas
+     - Overlay frame PNG
+     - Encode lại bằng MediaRecorder
+  → recapStripUrl (combined strip video)
+
+[Upload trong ResultModal]
+  → uploadVideoToFirebase(recapStripUrl) → recap/{name}.webm|mp4
 ```
 
 ---
 
-## 7. Tính Năng Premium — Frame Riêng
+## 8. Responsive
 
-```
-User Upload PNG
-    │
-    ▼
-Validate (size, format, dimensions)
-    │
-    ▼
-Preview + Configure (layout, name, visibility)
-    │
-    ▼
-Payment (tích hợp cổng thanh toán VN)
-    │
-    ▼
-Upload to Firebase Storage (/privateFrames/{uid}/)
-    │
-    ▼
-Save to Firestore (privateFrames collection)
-Generate shareCode (6 chars)
-    │
-    ▼
-Frame xuất hiện trong Frame Selector của user
-    │
-    └── Chia sẻ qua shareCode → người khác nhập code để dùng
-```
-
----
-
-## 8. Navigation & Menu
-
-```
-[☰ Menu]
-├── Trang Chủ              /
-├── Xem Ảnh FeedBack       /feedbacks
-├── Tải Lên Frame Riêng    /support      [Premium]
-├── Đóng Góp Frame         /community-contribution
-├── Liên Hệ               /contact
-└── Tiện Ích Free Khác     [Dropdown external links]
-
---- Promo Banner ---
-[DÀNH CHO CHỦ SHOP ✨ → /app-photobooth]
-```
-
----
-
-## 9. Responsive & UX
-
-### Breakpoints
 | Breakpoint | Layout |
 |---|---|
-| Mobile (`< 768px`) | Stack dọc: Camera trên, Strip dưới |
-| Tablet (`768px–1024px`) | 2 cột, camera 55% / strip 45% |
-| Desktop (`> 1024px`) | 2 cột, camera 65% / strip 35% |
+| Mobile (`< md`) | Stack dọc: camera + controls trên, photo strip dưới |
+| Desktop (`≥ md`) | 2 cột: camera/controls bên trái (flex-1), photo strip bên phải (w-44/w-64 tùy layout) |
 
-### UX Notes
-- Camera loading state: skeleton + "Đang khởi động camera..."
-- Countdown overlay số lớn ở giữa màn hình
-- Flash effect: full-screen white overlay khi chụp
-- Nút Chụp tay / AUTO disable khi chưa đủ điều kiện
-- Photo slot hover: show nút thay thế ảnh
-- Frame Modal: lazy load, search, phân category
+Photo strip width: `md:w-64 lg:w-72` khi layout 2 cột, `md:w-44 lg:w-48` khi layout 1 cột.
 
 ---
 
-## 10. Màu Sắc & Design Token
+## 9. Màu Sắc & Design Token (Dark Theme)
 
-Lấy cảm hứng từ UI gốc — tông hồng pastel, nhẹ nhàng:
+App sử dụng theme **tối hoàn toàn**:
 
 ```css
-/* Primary palette */
---color-primary:        #F472B6   /* pink-400 */
---color-primary-light:  #FDF2F8   /* pink-50 */
---color-primary-dark:   #DB2777   /* pink-600 */
+/* Background layers */
+--bg-app:       #0a0a0a   /* nền app chính */
+--bg-surface:   #0d0d0d   /* card, strip container */
+--bg-elevated:  #111111   /* modal body, admin bg */
+--bg-panel:     #141414   /* header border, dividers */
+--bg-item:      #1a1a1a   /* cards trong admin */
+--bg-control:   #1e1e1e   /* buttons, inputs */
 
-/* Background */
---color-bg:             #FDF2F8   /* Hồng rất nhạt */
---color-surface:        #FFFFFF
---color-border:         #FBCFE8   /* pink-200 */
+/* Border */
+--border-subtle:  #141414
+--border-default: #1e1e1e
+--border-medium:  #2a2a2a
+--border-active:  #3a3a3a / #444
 
 /* Text */
---color-text:           #1F2937
---color-text-secondary: #6B7280
+--text-primary:   #ffffff
+--text-secondary: #aaaaaa
+--text-muted:     #666666
+--text-dim:       #555555
 
-/* Font */
---font-display: 'Dancing Script', cursive   /* Logo */
---font-body:    'Inter', sans-serif
+/* Active state pills */
+--pill-active-bg:    #ffffff
+--pill-active-text:  #000000
 ```
+
+Font: system-ui / sans-serif (không cấu hình font riêng hiện tại).
 
 ---
 
-## 11. Firebase Security Rules
+## 10. Firebase Security Rules
 
-```
-// Firestore
+```js
+// Storage — upload từ client được phép (ảnh strip + video recap)
 rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    // Frames: public read, admin write
-    match /frames/{frameId} {
-      allow read: if resource.data.isPublic == true;
-      allow write: if request.auth.token.admin == true;
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /photobooth/{file} {
+      allow read: if true;
+      allow write: if true;
     }
-
-    // Private frames: owner only
-    match /privateFrames/{frameId} {
-      allow read: if request.auth.uid == resource.data.ownerId
-                  || request.resource.data.shareCode == resource.data.shareCode;
-      allow write: if request.auth.uid == resource.data.ownerId;
+    match /recap/{file} {
+      allow read: if true;
+      allow write: if true;
     }
-
-    // Feedbacks: public read, authenticated create
-    match /feedbacks/{feedbackId} {
-      allow read: if resource.data.approved == true;
-      allow create: if request.auth != null;
+    match /frames/{file} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.token.admin == true;
     }
   }
 }
@@ -508,30 +398,38 @@ service cloud.firestore {
 
 ---
 
-## 12. Roadmap Tính Năng
+## 11. Roadmap / Trạng Thái Tính Năng
 
-### MVP (Phase 1)
-- [x] Camera capture với WebRTC
-- [x] Layout 1×4 Strips
-- [x] CSS filters (6 bộ lọc)
-- [x] Frame overlay (thư viện tĩnh)
-- [x] Download ảnh
-- [x] Upload ảnh từ máy
+### ✅ Hoàn thành (MVP)
+- [x] Camera capture với WebRTC (mirror, device selector)
+- [x] Đếm ngược + flash overlay
+- [x] Layout 1×4, 2×2, 1×3, 2×3, 1×2, 1×1
+- [x] CSS filters real-time (6 bộ lọc)
+- [x] Canvas post-effects (TimeStamp, Grain, Vignette, LightLeak, Chromatic)
+- [x] Frame overlay — thư viện tĩnh với search + category + slot filter
+- [x] Auto detect layout từ frame (DFS transparency scan)
+- [x] Live composite preview (debounced canvas render)
+- [x] Upload ảnh từ máy vào slot / replace / remove slot
+- [x] Build & download ảnh strip
+- [x] Video Recap per-slot + buildStripVideo với frame overlay
+- [x] Result Modal: confirm → upload → QR stamp → done
+- [x] Upload ảnh + video lên Firebase Storage
+- [x] QR code stamping (link về Firebase URL)
+- [x] Admin Panel: quản lý ảnh/video trên Storage (tab, preview, xóa)
+- [x] Admin Auth (Firebase Email/Password + ProtectedRoute)
+- [x] Xóa từng file / xóa tất cả / xóa cũ > 7 ngày
 
-### Phase 2
-- [ ] Thư viện frame từ Firestore (dynamic)
-- [ ] Multiple layouts (2×2, 1×3, 1×2)
-- [ ] Canvas post-effects (Grain, Vignette, v.v.)
-- [ ] Video Recap feature
-- [ ] Trang Feedbacks gallery
-
-### Phase 3 (Premium)
-- [ ] Auth (Google login / Zalo)
-- [ ] Private frame upload + payment
-- [ ] Share frame by code
-- [ ] Admin dashboard duyệt frame
-- [ ] Contribution flow
+### 🔲 Chưa implement
+- [ ] Trang Feedbacks gallery (`/feedbacks`)
+- [ ] Trang Premium Frame upload (`/support`)
+- [ ] Trang Community Contribution (`/community-contribution`)
+- [ ] Trang Contact (`/contact`)
+- [ ] Navigation menu
+- [ ] Frame động từ Firestore
+- [ ] Private frame + shareCode
+- [ ] Payment integration
+- [ ] Admin frame approval workflow
 
 ---
 
-*Tài liệu được tạo ngày 24/03/2026 — tham khảo photo.freehihi.com*
+*Cập nhật: 25/03/2026 — phản ánh code thực tế đang chạy*

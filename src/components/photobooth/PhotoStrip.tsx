@@ -1,6 +1,6 @@
 import { useRef } from 'react'
 import { DownloadOutlined, CloseOutlined } from '@ant-design/icons'
-import type { CapturedSlot, LayoutConfig } from '@/types/photobooth'
+import type { CapturedSlot, EffectType, LayoutConfig } from '@/types/photobooth'
 import { useStripPreview } from '@/hooks/useStripPreview'
 
 interface PhotoStripProps {
@@ -8,6 +8,7 @@ interface PhotoStripProps {
   slots: (CapturedSlot | null)[]
   finalImageUrl: string | null
   frameUrl: string | null
+  activeEffects: EffectType[]
   onUploadSlot: (index: number, dataUrl: string) => void
   onRemoveSlot: (index: number) => void
   onDownload: () => void
@@ -71,6 +72,7 @@ export default function PhotoStrip({
   slots,
   finalImageUrl,
   frameUrl,
+  activeEffects,
   onUploadSlot,
   onRemoveSlot,
   onDownload,
@@ -78,7 +80,7 @@ export default function PhotoStrip({
 }: PhotoStripProps) {
   const filled = slots.filter(Boolean).length
   const allFilled = filled === layout.slots
-  const { previewUrl, rendering } = useStripPreview(slots, frameUrl, layout)
+  const { previewUrl, rendering } = useStripPreview(slots, frameUrl, layout, activeEffects)
 
   return (
     <div className="flex flex-col gap-2">

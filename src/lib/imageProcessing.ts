@@ -8,7 +8,7 @@ const GAP = 10
 /**
  * Apply post-capture canvas effects to each slot image.
  */
-function applyEffects(
+export function applyEffects(
   ctx: CanvasRenderingContext2D,
   effects: EffectType[],
   x: number,

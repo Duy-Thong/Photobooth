@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
-import type { CapturedSlot, LayoutConfig } from '@/types/photobooth'
-import { detectFrameSlots, type SlotRect } from '@/lib/imageProcessing'
+import type { CapturedSlot, EffectType, LayoutConfig } from '@/types/photobooth'
+import { detectFrameSlots, applyEffects, type SlotRect } from '@/lib/imageProcessing'
 
 interface FrameCache {
   url: string
@@ -40,6 +40,7 @@ export function useStripPreview(
   slots: (CapturedSlot | null)[],
   frameUrl: string | null,
   layout: LayoutConfig,
+  effects: EffectType[] = [],
 ) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [rendering, setRendering] = useState(false)
@@ -125,6 +126,7 @@ export function useStripPreview(
           ctx.clip()
           if (img) {
             coverFit(ctx, img, x, y, w, h)
+            applyEffects(ctx, effects, x, y, w, h)
           } else {
             ctx.fillStyle = '#d8d8d8'
             ctx.fillRect(x, y, w, h)
@@ -173,6 +175,7 @@ export function useStripPreview(
           ctx.clip()
           if (img) {
             coverFit(ctx, img, x, y, SLOT_W, SLOT_H)
+            applyEffects(ctx, effects, x, y, SLOT_W, SLOT_H)
           } else {
             ctx.fillStyle = '#e0e0e0'
             ctx.fillRect(x, y, SLOT_W, SLOT_H)

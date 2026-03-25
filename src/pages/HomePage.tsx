@@ -4,7 +4,7 @@ import { useCamera } from '@/hooks/useCamera'
 import { useVideoRecap } from '@/hooks/useVideoRecap'
 import { usePhotoboothStore } from '@/stores/photoboothStore'
 import { buildStripImage, buildStripVideo, detectFrameSlots } from '@/lib/imageProcessing'
-import { LAYOUTS } from '@/types/photobooth'
+import { LAYOUTS, FILTERS } from '@/types/photobooth'
 import CameraView from '@/components/photobooth/CameraView'
 import PhotoStrip from '@/components/photobooth/PhotoStrip'
 import TopControls from '@/components/photobooth/TopControls'
@@ -90,7 +90,8 @@ export default function HomePage() {
           setCountdownValue(null)
           setShowFlash(true)
           setTimeout(() => setShowFlash(false), 150)
-          const dataUrl = captureFrame()
+          const filterCss = FILTERS.find(f => f.value === activeFilter)?.css
+          const dataUrl = captureFrame(filterCss !== 'none' ? filterCss : undefined)
           if (dataUrl) addPhoto(dataUrl, true)
           if (videoRecap) {
             stopRecording().then(url => {
@@ -108,7 +109,7 @@ export default function HomePage() {
         }
       }, 1000)
     })
-  }, [countdown, captureFrame, addPhoto, videoRecap, startRecording, stopRecording, getVideoMimeType])
+  }, [countdown, captureFrame, addPhoto, videoRecap, startRecording, stopRecording, getVideoMimeType, activeFilter])
 
   // ---------- Manual single capture ----------
   const handleManualCapture = useCallback(async () => {
@@ -338,11 +339,11 @@ export default function HomePage() {
                 slots={capturedSlots}
                 finalImageUrl={finalImageUrl}
                 frameUrl={frameUrl}
+                activeEffects={activeEffects}
                 onUploadSlot={handleUploadSlot}
                 onRemoveSlot={handleRemoveSlot}
                 onDownload={handleDownload}
                 onBuildStrip={handleBuildStrip}
-
               />
             </div>
           </div>
