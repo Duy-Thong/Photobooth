@@ -3,7 +3,7 @@ import { ref, listAll, getDownloadURL, deleteObject, getMetadata } from 'firebas
 import { storage } from '@/lib/firebase'
 import { useAdminAuth } from '@/hooks/useAdminAuth'
 import { Button, Modal, Spin, Empty, Tooltip } from 'antd'
-import { DeleteOutlined, ReloadOutlined, LogoutOutlined, PlayCircleOutlined } from '@ant-design/icons'
+import { DeleteOutlined, ReloadOutlined, LogoutOutlined, PlayCircleOutlined, DeleteFilled, ClockCircleOutlined } from '@ant-design/icons'
 
 interface MediaItem {
   name: string
@@ -30,6 +30,7 @@ export default function AdminPage() {
   const [videos, setVideos] = useState<MediaItem[]>([])
   const [loading, setLoading] = useState(true)
   const [deletingPath, setDeletingPath] = useState<string | null>(null)
+  const [bulkDeleting, setBulkDeleting] = useState(false)
   const [previewItem, setPreviewItem] = useState<MediaItem | null>(null)
   const [tab, setTab] = useState<'photos' | 'videos'>('photos')
 
@@ -97,6 +98,80 @@ export default function AdminPage() {
     })
   }
 
+  const handleDeleteAll = () => {
+    const list = tab === 'photos' ? photos : videos
+    if (list.length === 0) return
+    Modal.confirm({
+      title: 'Xóa tất cả?',
+      content: `Sẽ xóa ${list.length} file trong tab "${tab === 'photos' ? 'Ảnh' : 'Video'}". Hành động này không thể hoàn tác.`,
+      okText: 'Xóa tất cả',
+      okButtonProps: { danger: true },
+      cancelText: 'Hủy',
+      centered: true,
+      styles: {
+        body: { background: '#1a1a1a', color: '#e5e5e5' },
+        header: { background: '#1a1a1a' },
+        footer: { background: '#1a1a1a' },
+        mask: { backdropFilter: 'blur(4px)' },
+      },
+      onOk: async () => {
+        setBulkDeleting(true)
+        try {
+          await Promise.allSettled(list.map(item => deleteObject(ref(storage, item.fullPath))))
+          if (tab === 'photos') setPhotos([])
+          else setVideos([])
+        } finally {
+          setBulkDeleting(false)
+        }
+      },
+    })
+  }
+
+  const handleDeleteOlderThan7Days = () => {
+    const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000
+    const allItems = [...photos, ...videos]
+    const old = allItems.filter(item => new Date(item.timeCreated).getTime() < cutoff)
+    if (old.length === 0) {
+      Modal.info({
+        title: 'Không có dữ liệu cũ',
+        content: 'Tất cả file đều trong vòng 7 ngày gần nhất.',
+        centered: true,
+        okText: 'Đóng',
+        styles: {
+          body: { background: '#1a1a1a', color: '#e5e5e5' },
+          header: { background: '#1a1a1a' },
+          footer: { background: '#1a1a1a' },
+        },
+      })
+      return
+    }
+    Modal.confirm({
+      title: 'Xóa dữ liệu cũ hơn 7 ngày?',
+      content: `Tìm thấy ${old.length} file (${old.filter(i => i.type === 'photo').length} ảnh, ${old.filter(i => i.type === 'video').length} video). Hành động này không thể hoàn tác.`,
+      okText: `Xóa ${old.length} file`,
+      okButtonProps: { danger: true },
+      cancelText: 'Hủy',
+      centered: true,
+      styles: {
+        body: { background: '#1a1a1a', color: '#e5e5e5' },
+        header: { background: '#1a1a1a' },
+        footer: { background: '#1a1a1a' },
+        mask: { backdropFilter: 'blur(4px)' },
+      },
+      onOk: async () => {
+        setBulkDeleting(true)
+        try {
+          await Promise.allSettled(old.map(item => deleteObject(ref(storage, item.fullPath))))
+          const oldPaths = new Set(old.map(i => i.fullPath))
+          setPhotos(ps => ps.filter(p => !oldPaths.has(p.fullPath)))
+          setVideos(vs => vs.filter(v => !oldPaths.has(v.fullPath)))
+        } finally {
+          setBulkDeleting(false)
+        }
+      },
+    })
+  }
+
   const items = tab === 'photos' ? photos : videos
 
   return (
@@ -109,10 +184,24 @@ export default function AdminPage() {
         </div>
         <div className="flex items-center gap-3">
           <span className="text-[#555] text-xs hidden sm:block">{user?.email}</span>
-          <Button size="small" icon={<ReloadOutlined />} onClick={fetchAll}
+          <Button size="small" icon={<ReloadOutlined />} onClick={fetchAll} disabled={bulkDeleting}
             style={{ background: '#1e1e1e', border: '1px solid #2a2a2a', color: '#888' }}>
             Tải lại
           </Button>
+          <Tooltip title="Xóa dữ liệu cũ hơn 7 ngày (cả ảnh & video)">
+            <Button size="small" icon={<ClockCircleOutlined />} onClick={handleDeleteOlderThan7Days}
+              loading={bulkDeleting}
+              style={{ background: '#1e1e1e', border: '1px solid #2a2a2a', color: '#e67e22' }}>
+              <span className="hidden sm:inline">Cũ &gt; 7 ngày</span>
+            </Button>
+          </Tooltip>
+          <Tooltip title="Xóa tất cả trong tab hiện tại">
+            <Button size="small" icon={<DeleteFilled />} onClick={handleDeleteAll}
+              loading={bulkDeleting} danger
+              style={{ background: '#1e1e1e', border: '1px solid #3a1a1a' }}>
+              <span className="hidden sm:inline">Xóa tất cả</span>
+            </Button>
+          </Tooltip>
           <Button size="small" icon={<LogoutOutlined />} onClick={logout}
             style={{ background: '#1e1e1e', border: '1px solid #2a2a2a', color: '#888' }}>
             Đăng xuất

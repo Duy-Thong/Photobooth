@@ -29,7 +29,6 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
 
   const [phase, setPhase] = useState<Phase>('uploading')
   const [firebaseUrl, setFirebaseUrl] = useState<string | null>(null)
-  const [recapFirebaseUrls, setRecapFirebaseUrls] = useState<string[]>([])
   const [recapStripFirebaseUrl, setRecapStripFirebaseUrl] = useState<string | null>(null)
   const [finalWithQr, setFinalWithQr] = useState<string | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
@@ -43,7 +42,6 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
     // Reset and wait for user confirmation before uploading
     setPhase('confirm')
     setFirebaseUrl(null)
-    setRecapFirebaseUrls([])
     setRecapStripFirebaseUrl(null)
     setFinalWithQr(null)
     setErrorMsg(null)
@@ -58,17 +56,14 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
 
     async function run() {
       try {
-        // Step 1: Upload photo + all video clips + strip video in parallel
-        const [photoUrl, stripVideoUrl, ...videoUrls] = await Promise.all([
+        // Step 1: Upload photo + strip video in parallel (individual clips are NOT uploaded)
+        const [photoUrl, stripVideoUrl] = await Promise.all([
           uploadPhotoToFirebase(imageBlobUrl!),
           recapStripUrl ? uploadVideoToFirebase(recapStripUrl, recapMimeType ?? undefined) : Promise.resolve(null),
-          ...(recapClips ?? []).map(clip => uploadVideoToFirebase(clip, recapMimeType ?? undefined)),
         ])
         if (cancelled) return
         setFirebaseUrl(photoUrl)
         if (stripVideoUrl) setRecapStripFirebaseUrl(stripVideoUrl)
-        const uploadedVideos = videoUrls.filter(Boolean) as string[]
-        if (uploadedVideos.length > 0) setRecapFirebaseUrls(uploadedVideos)
 
         // Step 2: Stamp QR onto the image
         setPhase('stamping')
@@ -366,12 +361,7 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
                         className="text-[#555] hover:text-white text-xs underline transition-colors">
                         Tải về (local)
                       </a>
-                      {recapFirebaseUrls[currentClipIdx] && (
-                        <a href={recapFirebaseUrls[currentClipIdx]} target="_blank" rel="noopener noreferrer"
-                          className="text-[#555] hover:text-white text-xs underline transition-colors">
-                          Link Firebase ↗
-                        </a>
-                      )}
+
                     </div>
                   </div>
                 )}
