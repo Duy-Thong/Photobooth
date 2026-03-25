@@ -1,5 +1,6 @@
 import { RouterProvider } from 'react-router-dom'
 import { ConfigProvider, theme } from 'antd'
+import { Analytics } from '@vercel/analytics/react'
 import { router } from './router'
 
 function App() {
@@ -67,6 +68,7 @@ function App() {
       }}
     >
       <RouterProvider router={router} />
+      <Analytics />
     </ConfigProvider>
   )
 }
