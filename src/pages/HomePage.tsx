@@ -3,7 +3,7 @@ import { message } from 'antd'
 import { useCamera } from '@/hooks/useCamera'
 import { useVideoRecap } from '@/hooks/useVideoRecap'
 import { usePhotoboothStore } from '@/stores/photoboothStore'
-import { buildStripImage, detectFrameSlots } from '@/lib/imageProcessing'
+import { buildStripImage, buildStripVideo, detectFrameSlots } from '@/lib/imageProcessing'
 import { LAYOUTS } from '@/types/photobooth'
 import CameraView from '@/components/photobooth/CameraView'
 import PhotoStrip from '@/components/photobooth/PhotoStrip'
@@ -15,7 +15,6 @@ import ResultModal from '@/components/photobooth/ResultModal'
 
 export default function HomePage() {
   const { videoRef, isMirrored, isReady, error, toggleMirror, captureFrame, selectDevice, retryCamera, devices, activeDeviceId } = useCamera()
-  const { startRecording, stopRecording, cancelRecording, getVideoMimeType } = useVideoRecap(videoRef, isMirrored)
 
   const {
     layout, countdown, setCountdown,
@@ -26,18 +25,34 @@ export default function HomePage() {
     frameUrl,
   } = usePhotoboothStore()
 
+  const { startRecording, stopRecording, cancelRecording, getVideoMimeType } = useVideoRecap(videoRef, isMirrored, frameUrl)
+
   const [countdownValue, setCountdownValue] = useState<number | null>(null)
   const [showFlash, setShowFlash] = useState(false)
   const [videoRecap, setVideoRecap] = useState(false)
-  const [recapVideoUrl, setRecapVideoUrl] = useState<string | null>(null)
-  const [recapVideoMimeType, setRecapVideoMimeType] = useState<string>('video/webm')
+  const [recapClips, setRecapClips] = useState<string[]>([])
+  const [recapMimeType, setRecapMimeType] = useState<string>('video/webm')
+  const [recapStripUrl, setRecapStripUrl] = useState<string | null>(null)
+  const [buildingStrip, setBuildingStrip] = useState(false)
   const [frameModalOpen, setFrameModalOpen] = useState(false)
   const [resultModalOpen, setResultModalOpen] = useState(false)
   const [messageApi, contextHolder] = message.useMessage()
 
   const abortRef = useRef(false)
-  const isRecordingRef = useRef(false)
   const capturedCount = capturedSlots.filter(Boolean).length
+
+  // Build the combined strip video once we have all clips + a frame
+  useEffect(() => {
+    if (!finalImageUrl || recapClips.length === 0 || !frameUrl) return
+    setRecapStripUrl(null)
+    setBuildingStrip(true)
+    buildStripVideo(recapClips, frameUrl, 24)
+      .then(url => setRecapStripUrl(url))
+      .catch(() => {})
+      .finally(() => setBuildingStrip(false))
+  // Re-run only when finalImageUrl changes (clips + frameUrl are stable at that point)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [finalImageUrl])
 
   // ---------- Auto-open frame modal or auto-build when all slots filled ----------
   // If a frame is already chosen, skip the modal and build directly.
@@ -61,8 +76,11 @@ export default function HomePage() {
   }, [capturedCount, layout.slots, finalImageUrl, isCapturing, frameUrl])
 
   // ---------- Single shot with countdown ----------
+  // If videoRecap is on: start recording when countdown begins, stop when photo is taken.
+  // This produces one clip per slot.
   const takeOnePhoto = useCallback((): Promise<void> => {
     return new Promise((resolve) => {
+      if (videoRecap) startRecording(24)
       let count = countdown
       setCountdownValue(count)
       const tick = setInterval(() => {
@@ -74,75 +92,55 @@ export default function HomePage() {
           setTimeout(() => setShowFlash(false), 150)
           const dataUrl = captureFrame()
           if (dataUrl) addPhoto(dataUrl, true)
-          resolve()
+          if (videoRecap) {
+            stopRecording().then(url => {
+              if (url) {
+                setRecapClips(prev => [...prev, url])
+                setRecapMimeType(getVideoMimeType())
+              }
+              resolve()
+            })
+          } else {
+            resolve()
+          }
         } else {
           setCountdownValue(count)
         }
       }, 1000)
     })
-  }, [countdown, captureFrame, addPhoto])
-
-  // Stop recording (and save URL) when all slots are finally filled via manual shots
-  useEffect(() => {
-    if (capturedCount === layout.slots && !isCapturing && isRecordingRef.current) {
-      stopRecording().then(url => {
-        isRecordingRef.current = false
-        if (url) {
-          setRecapVideoUrl(url)
-          setRecapVideoMimeType(getVideoMimeType())
-        }
-      })
-    }
-  }, [capturedCount, layout.slots, isCapturing, stopRecording, getVideoMimeType])
+  }, [countdown, captureFrame, addPhoto, videoRecap, startRecording, stopRecording, getVideoMimeType])
 
   // ---------- Manual single capture ----------
   const handleManualCapture = useCallback(async () => {
     if (!isReady || isCapturing) return
     setIsCapturing(true)
-    // Start recording on the very first shot of a fresh session
-    if (videoRecap && !isRecordingRef.current && capturedSlots.filter(Boolean).length === 0) {
-      startRecording(12)
-      isRecordingRef.current = true
-    }
     await takeOnePhoto()
     setIsCapturing(false)
-  }, [isReady, isCapturing, setIsCapturing, takeOnePhoto, videoRecap, capturedSlots, startRecording])
+  }, [isReady, isCapturing, setIsCapturing, takeOnePhoto])
 
   // ---------- AUTO — capture all remaining slots ----------
   const handleAutoCapture = useCallback(async () => {
     if (!isReady || isCapturing) return
     abortRef.current = false
     setIsCapturing(true)
-    if (videoRecap && !isRecordingRef.current) {
-      startRecording(12)
-      isRecordingRef.current = true
-    }
     const remaining = capturedSlots.filter(s => s === null).length
     for (let i = 0; i < remaining; i++) {
       if (abortRef.current) break
       await takeOnePhoto()
       if (i < remaining - 1) await new Promise(r => setTimeout(r, 500))
     }
-    // For auto-mode we know all shots are done — stop immediately
-    if (isRecordingRef.current) {
-      const url = await stopRecording()
-      isRecordingRef.current = false
-      if (url) {
-        setRecapVideoUrl(url)
-        setRecapVideoMimeType(getVideoMimeType())
-      }
-    }
     setIsCapturing(false)
-  }, [isReady, isCapturing, setIsCapturing, capturedSlots, takeOnePhoto, videoRecap, startRecording, stopRecording])
+  }, [isReady, isCapturing, setIsCapturing, capturedSlots, takeOnePhoto])
 
   // ---------- Retake ----------
   const handleRetake = useCallback(() => {
     abortRef.current = true
     setIsCapturing(false)
     cancelRecording()
-    isRecordingRef.current = false
-    setRecapVideoUrl(null)
-    setRecapVideoMimeType('video/webm')
+    setRecapClips([])
+    setRecapMimeType('video/webm')
+    setRecapStripUrl(null)
+    setBuildingStrip(false)
     resetPhotos()
     setFinalImageUrl(null)
     setCountdownValue(null)
@@ -253,8 +251,10 @@ export default function HomePage() {
       <ResultModal
         open={resultModalOpen}
         imageBlobUrl={finalImageUrl}
-        recapVideoUrl={recapVideoUrl}
-        recapVideoMimeType={recapVideoMimeType}
+        recapClips={recapClips}
+        recapMimeType={recapMimeType}
+        recapStripUrl={recapStripUrl}
+        buildingStrip={buildingStrip}
         onClose={() => setResultModalOpen(false)}
         onRetake={() => {
           handleRetake()

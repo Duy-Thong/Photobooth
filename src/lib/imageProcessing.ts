@@ -312,6 +312,119 @@ export async function buildStripImage(
   })
 }
 
+/**
+ * Composite N per-slot clip blob URLs into a single "strip video" where all
+ * clips play simultaneously inside the matching transparent slot regions of
+ * the frame PNG (same detection logic as buildStripImage).
+ * The frame is drawn at its natural size on top of the videos.
+ * Returns a blob URL, or null on failure.
+ */
+export async function buildStripVideo(
+  clipUrls: string[],
+  frameUrl: string,
+  fps: 12 | 24 = 12,
+): Promise<string | null> {
+  if (!clipUrls.length) return null
+
+  const frameImg = await loadImage(frameUrl)
+  const frameSlots = detectSlotsFromImg(frameImg)
+  if (!frameSlots.length) return null
+
+  const fW = frameImg.naturalWidth  || frameImg.width
+  const fH = frameImg.naturalHeight || frameImg.height
+
+  // Create a video element for each clip
+  const videos: HTMLVideoElement[] = clipUrls.map(url => {
+    const v = document.createElement('video')
+    v.src = url
+    v.muted = true
+    v.playsInline = true
+    v.preload = 'metadata'
+    return v
+  })
+
+  // Wait until metadata is available so we have duration + dimensions
+  await Promise.all(videos.map(v =>
+    new Promise<void>(resolve => {
+      if (v.readyState >= 1) { resolve(); return }
+      v.onloadedmetadata = () => resolve()
+      v.onerror = () => resolve()
+      v.load()
+    }),
+  ))
+
+  const canvas = document.createElement('canvas')
+  canvas.width  = fW
+  canvas.height = fH
+  const ctx = canvas.getContext('2d')!
+
+  const recMime =
+    MediaRecorder.isTypeSupported('video/mp4;codecs=avc1') ? 'video/mp4;codecs=avc1' :
+    MediaRecorder.isTypeSupported('video/mp4')             ? 'video/mp4'             :
+    MediaRecorder.isTypeSupported('video/webm;codecs=vp9') ? 'video/webm;codecs=vp9' :
+    MediaRecorder.isTypeSupported('video/webm')            ? 'video/webm'            : ''
+
+  const chunks: Blob[] = []
+  let recorder: MediaRecorder
+  try {
+    recorder = recMime
+      ? new MediaRecorder(canvas.captureStream(fps), { mimeType: recMime })
+      : new MediaRecorder(canvas.captureStream(fps))
+  } catch {
+    videos.forEach(v => { v.src = '' })
+    return null
+  }
+  recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data) }
+
+  function drawFrame() {
+    ctx.fillStyle = STRIP_BG
+    ctx.fillRect(0, 0, fW, fH)
+    frameSlots.forEach(({ x, y, w, h }, i) => {
+      const vid = videos[i]
+      if (!vid || !vid.videoWidth) return
+      const scale = Math.max(w / vid.videoWidth, h / vid.videoHeight)
+      const dw = vid.videoWidth  * scale
+      const dh = vid.videoHeight * scale
+      ctx.save()
+      ctx.beginPath()
+      ctx.rect(x, y, w, h)
+      ctx.clip()
+      ctx.drawImage(vid, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh)
+      ctx.restore()
+    })
+    ctx.drawImage(frameImg, 0, 0, fW, fH)
+  }
+
+  return new Promise(resolve => {
+    recorder.onstop = () => {
+      const blob = new Blob(chunks, { type: recorder.mimeType || recMime || 'video/webm' })
+      videos.forEach(v => { v.src = '' })
+      resolve(blob.size > 0 ? URL.createObjectURL(blob) : null)
+    }
+
+    recorder.start(200)
+
+    const maxDuration = Math.max(...videos.map(v => (isFinite(v.duration) ? v.duration : 0)))
+    const safetyMs = (maxDuration > 0 ? maxDuration * 1000 : 15_000) + 2_000
+    let stopped = false
+    const stop = () => {
+      if (stopped) return
+      stopped = true
+      clearInterval(interval)
+      if (recorder.state !== 'inactive') recorder.stop()
+    }
+
+    const interval = setInterval(() => {
+      drawFrame()
+      if (videos.every(v => v.ended || !!v.error)) stop()
+    }, Math.round(1000 / fps))
+
+    setTimeout(stop, safetyMs)
+
+    videos.forEach(v => v.play().catch(() => {}))
+  })
+}
+
 export function downloadImage(url: string, filename = 'photobooth.jpg') {
   const a = document.createElement('a')
   a.href = url

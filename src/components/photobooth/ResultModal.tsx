@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Modal, QRCode, Spin, Button } from 'antd'
-import { DownloadOutlined, ReloadOutlined, PictureOutlined } from '@ant-design/icons'
+import { DownloadOutlined, ReloadOutlined, PictureOutlined, LoadingOutlined } from '@ant-design/icons'
 import { uploadPhotoToFirebase, uploadVideoToFirebase } from '@/lib/uploadService'
 import { stampQrOnImage, downloadImage } from '@/lib/imageProcessing'
 
@@ -10,23 +10,30 @@ interface ResultModalProps {
   open: boolean
   /** blob URL of the final composited strip (without QR) */
   imageBlobUrl: string | null
-  /** object URL of the video recap (optional) */
-  recapVideoUrl?: string | null
-  /** MIME type of the recap video, e.g. 'video/mp4' or 'video/webm' */
-  recapVideoMimeType?: string | null
+  /** One blob URL per captured slot (from per-slot recording) */
+  recapClips?: string[]
+  /** MIME type shared across all clips, e.g. 'video/mp4' or 'video/webm' */
+  recapMimeType?: string | null
+  /** Combined strip video with frame overlay */
+  recapStripUrl?: string | null
+  /** True while buildStripVideo is still running */
+  buildingStrip?: boolean
   onClose: () => void
   onRetake: () => void
   onChangeFrame: () => void
 }
 
-export default function ResultModal({ open, imageBlobUrl, recapVideoUrl, recapVideoMimeType, onClose, onRetake, onChangeFrame }: ResultModalProps) {
-  const recapExt = recapVideoMimeType?.startsWith('video/mp4') ? 'mp4' : 'webm'
+export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeType, recapStripUrl, buildingStrip, onClose, onRetake, onChangeFrame }: ResultModalProps) {
+  const recapExt = recapMimeType?.startsWith('video/mp4') ? 'mp4' : 'webm'
+  const hasClips = !!recapClips && recapClips.length > 0
 
   const [phase, setPhase] = useState<Phase>('uploading')
   const [firebaseUrl, setFirebaseUrl] = useState<string | null>(null)
-  const [recapFirebaseUrl, setRecapFirebaseUrl] = useState<string | null>(null)
+  const [recapFirebaseUrls, setRecapFirebaseUrls] = useState<string[]>([])
+  const [recapStripFirebaseUrl, setRecapStripFirebaseUrl] = useState<string | null>(null)
   const [finalWithQr, setFinalWithQr] = useState<string | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [currentClipIdx, setCurrentClipIdx] = useState(0)
   // Incremented each time the user explicitly triggers an upload.
   // Used as the effect dep so phase changes mid-async don't cancel the run.
   const [uploadKey, setUploadKey] = useState(0)
@@ -36,9 +43,11 @@ export default function ResultModal({ open, imageBlobUrl, recapVideoUrl, recapVi
     // Reset and wait for user confirmation before uploading
     setPhase('confirm')
     setFirebaseUrl(null)
-    setRecapFirebaseUrl(null)
+    setRecapFirebaseUrls([])
+    setRecapStripFirebaseUrl(null)
     setFinalWithQr(null)
     setErrorMsg(null)
+    setCurrentClipIdx(0)
   }, [open, imageBlobUrl])
 
   // Upload flow — only starts when user explicitly triggers via uploadKey
@@ -49,14 +58,17 @@ export default function ResultModal({ open, imageBlobUrl, recapVideoUrl, recapVi
 
     async function run() {
       try {
-        // Step 1: Upload photo + video in parallel
-        const [photoUrl, videoUrl] = await Promise.all([
+        // Step 1: Upload photo + all video clips + strip video in parallel
+        const [photoUrl, stripVideoUrl, ...videoUrls] = await Promise.all([
           uploadPhotoToFirebase(imageBlobUrl!),
-          recapVideoUrl ? uploadVideoToFirebase(recapVideoUrl, recapVideoMimeType ?? undefined) : Promise.resolve(null),
+          recapStripUrl ? uploadVideoToFirebase(recapStripUrl, recapMimeType ?? undefined) : Promise.resolve(null),
+          ...(recapClips ?? []).map(clip => uploadVideoToFirebase(clip, recapMimeType ?? undefined)),
         ])
         if (cancelled) return
         setFirebaseUrl(photoUrl)
-        if (videoUrl) setRecapFirebaseUrl(videoUrl)
+        if (stripVideoUrl) setRecapStripFirebaseUrl(stripVideoUrl)
+        const uploadedVideos = videoUrls.filter(Boolean) as string[]
+        if (uploadedVideos.length > 0) setRecapFirebaseUrls(uploadedVideos)
 
         // Step 2: Stamp QR onto the image
         setPhase('stamping')
@@ -78,7 +90,7 @@ export default function ResultModal({ open, imageBlobUrl, recapVideoUrl, recapVi
   // to fire (cancelled=true) when phase changes from 'uploading' to 'stamping',
   // which would leave the modal stuck at the stamping screen permanently.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [uploadKey, imageBlobUrl, recapVideoUrl, recapVideoMimeType])
+  }, [uploadKey, imageBlobUrl, recapClips, recapMimeType, recapStripUrl])
 
   const handleDownload = () => {
     const src = finalWithQr || imageBlobUrl
@@ -131,28 +143,80 @@ export default function ResultModal({ open, imageBlobUrl, recapVideoUrl, recapVi
           </div>
 
           {/* Right — video recap + actions */}
-          <div className="flex-1 flex flex-col gap-4 justify-between min-h-[300px]">
-            {recapVideoUrl ? (
-              <div className="flex flex-col gap-2">
-                <p className="text-[#666] text-[10px] uppercase tracking-widest">Video Recap</p>
+          <div className="flex-1 flex flex-col gap-3 justify-between min-h-[300px]">
+            {/* ── Strip video (combined, with frame) ── */}
+            {(recapStripUrl || buildingStrip) && (
+              <div className="flex flex-col gap-1.5">
+                <p className="text-[#666] text-[10px] uppercase tracking-widest flex items-center gap-1.5">
+                  Strip Video
+                  {buildingStrip && !recapStripUrl && <LoadingOutlined className="text-[#555]" />}
+                </p>
+                {recapStripUrl ? (
+                  <>
+                    <video
+                      src={recapStripUrl}
+                      controls
+                      autoPlay
+                      loop
+                      playsInline
+                      className="w-full rounded-lg border border-[#2a2a2a] bg-black object-contain max-h-48"
+                    />
+                    <a
+                      href={recapStripUrl}
+                      download={`somedia-strip-${Date.now()}.${recapExt}`}
+                      className="text-[#555] hover:text-white text-xs underline transition-colors text-center"
+                    >
+                      Tải strip video về máy
+                    </a>
+                  </>
+                ) : (
+                  <div className="flex items-center justify-center gap-2 py-3 text-[#555] text-xs">
+                    <LoadingOutlined />
+                    <span>Đang tạo strip video...</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── Individual clips (no frame) ── */}
+            {hasClips && (
+              <div className="flex flex-col gap-1.5">
+                <p className="text-[#666] text-[10px] uppercase tracking-widest">
+                  Clip đơn ({currentClipIdx + 1}&nbsp;/&nbsp;{recapClips!.length})
+                </p>
                 <video
-                  src={recapVideoUrl}
+                  key={currentClipIdx}
+                  src={recapClips![currentClipIdx]}
                   controls
                   autoPlay
-                  loop
-                  muted
                   playsInline
-                  className="w-full rounded-lg border border-[#2a2a2a] bg-black object-contain"
+                  onEnded={() => setCurrentClipIdx(i => (i + 1) % recapClips!.length)}
+                  className="w-full rounded-lg border border-[#2a2a2a] bg-black object-contain max-h-32"
                 />
+                {recapClips!.length > 1 && (
+                  <div className="flex gap-1.5 justify-center">
+                    {recapClips!.map((_, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setCurrentClipIdx(i)}
+                        className={`w-2 h-2 rounded-full transition-colors ${
+                          i === currentClipIdx ? 'bg-white' : 'bg-[#444] hover:bg-[#666]'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                )}
                 <a
-                  href={recapVideoUrl}
-                  download={`somedia-recap-${Date.now()}.${recapExt}`}
+                  href={recapClips![currentClipIdx]}
+                  download={`somedia-clip-${currentClipIdx + 1}-${Date.now()}.${recapExt}`}
                   className="text-[#555] hover:text-white text-xs underline transition-colors text-center"
                 >
-                  Tải video về máy (offline)
+                  Tải clip {currentClipIdx + 1} về máy
                 </a>
               </div>
-            ) : (
+            )}
+
+            {!recapStripUrl && !buildingStrip && !hasClips && (
               <p className="text-[#444] text-xs text-center mt-4">
                 Nhấn <span className="text-white font-medium">Upload &amp; Lấy QR</span> để lưu lên đám mây.<br />
                 Hoặc <span className="text-white font-medium">Tải về</span> ngay không cần upload.
@@ -231,28 +295,84 @@ export default function ResultModal({ open, imageBlobUrl, recapVideoUrl, recapVi
             </div>
 
             {/* Video recap */}
-            {recapVideoUrl && (
+            {(recapStripUrl || buildingStrip || hasClips) && (
               <div className="w-full flex flex-col gap-2">
-                <p className="text-[#666] text-[10px] uppercase tracking-widest">Video Recap</p>
-                <video
-                  src={recapVideoUrl}
-                  controls
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  className="w-full rounded-lg border border-[#2a2a2a] bg-black object-contain"
-                />
-                {recapFirebaseUrl && (
-                  <div className="flex items-center justify-center gap-3">
-                    <a href={recapVideoUrl} download={`somedia-recap-${Date.now()}.${recapExt}`}
-                      className="text-[#555] hover:text-white text-xs underline transition-colors">
-                      Tải về (local)
-                    </a>
-                    <a href={recapFirebaseUrl} target="_blank" rel="noopener noreferrer"
-                      className="text-[#555] hover:text-white text-xs underline transition-colors">
-                      Link Firebase ↗
-                    </a>
+                {/* Strip video */}
+                {(recapStripUrl || buildingStrip) && (
+                  <div className="flex flex-col gap-1.5">
+                    <p className="text-[#666] text-[10px] uppercase tracking-widest flex items-center gap-1.5">
+                      Strip Video
+                      {buildingStrip && !recapStripUrl && <LoadingOutlined className="text-[#555]" />}
+                    </p>
+                    {recapStripUrl ? (
+                      <>
+                        <video
+                          src={recapStripUrl}
+                          controls
+                          autoPlay
+                          loop
+                          playsInline
+                          className="w-full rounded-lg border border-[#2a2a2a] bg-black object-contain max-h-44"
+                        />
+                        <div className="flex items-center justify-center gap-3">
+                          <a href={recapStripUrl} download={`somedia-strip-${Date.now()}.${recapExt}`}
+                            className="text-[#555] hover:text-white text-xs underline transition-colors">
+                            Tải về (local)
+                          </a>
+                          {recapStripFirebaseUrl && (
+                            <a href={recapStripFirebaseUrl} target="_blank" rel="noopener noreferrer"
+                              className="text-[#555] hover:text-white text-xs underline transition-colors">
+                              Link Firebase ↗
+                            </a>
+                          )}
+                        </div>
+                      </>
+                    ) : (
+                      <div className="flex items-center justify-center gap-2 py-3 text-[#555] text-xs">
+                        <LoadingOutlined /><span>Đang tạo strip video...</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Individual clips */}
+                {hasClips && (
+                  <div className="flex flex-col gap-1.5 mt-1">
+                    <p className="text-[#666] text-[10px] uppercase tracking-widest">
+                      Clip đơn ({currentClipIdx + 1}&nbsp;/&nbsp;{recapClips!.length})
+                    </p>
+                    <video
+                      key={currentClipIdx}
+                      src={recapClips![currentClipIdx]}
+                      controls
+                      autoPlay
+                      playsInline
+                      onEnded={() => setCurrentClipIdx(i => (i + 1) % recapClips!.length)}
+                      className="w-full rounded-lg border border-[#2a2a2a] bg-black object-contain max-h-28"
+                    />
+                    {recapClips!.length > 1 && (
+                      <div className="flex gap-1.5 justify-center">
+                        {recapClips!.map((_, i) => (
+                          <button key={i} onClick={() => setCurrentClipIdx(i)}
+                            className={`w-2 h-2 rounded-full transition-colors ${
+                              i === currentClipIdx ? 'bg-white' : 'bg-[#444] hover:bg-[#666]'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    )}
+                    <div className="flex items-center justify-center gap-3">
+                      <a href={recapClips![currentClipIdx]} download={`somedia-clip-${currentClipIdx + 1}-${Date.now()}.${recapExt}`}
+                        className="text-[#555] hover:text-white text-xs underline transition-colors">
+                        Tải về (local)
+                      </a>
+                      {recapFirebaseUrls[currentClipIdx] && (
+                        <a href={recapFirebaseUrls[currentClipIdx]} target="_blank" rel="noopener noreferrer"
+                          className="text-[#555] hover:text-white text-xs underline transition-colors">
+                          Link Firebase ↗
+                        </a>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
