@@ -1,6 +1,9 @@
 import type { CameraDevice } from '@/hooks/useCamera'
 import { FILTERS } from '@/types/photobooth'
-import type { FilterType } from '@/types/photobooth'
+import type { FilterType, AR3DFilterType, BackgroundType } from '@/types/photobooth'
+import AR3DOverlay from './AR3DOverlay'
+import BackgroundView from './BackgroundView'
+import { useRef, useImperativeHandle, forwardRef } from 'react'
 
 interface CameraViewProps {
   videoRef: React.RefObject<HTMLVideoElement>
@@ -8,6 +11,8 @@ interface CameraViewProps {
   isReady: boolean
   error: string | null
   activeFilter: FilterType
+  active3DFilter: AR3DFilterType | null
+  activeBackground: BackgroundType | null
   capturedCount: number
   totalSlots: number
   countdownValue: number | null
@@ -17,6 +22,10 @@ interface CameraViewProps {
   onSelectDevice: (deviceId: string) => void
   onToggleMirror: () => void
   onRetry: () => void
+}
+
+export interface CameraViewRef {
+  capture: (filterCss?: string) => string | null
 }
 
 function CamBtn({ onClick, title, children }: { onClick: () => void; title: string; children: React.ReactNode }) {
@@ -31,12 +40,14 @@ function CamBtn({ onClick, title, children }: { onClick: () => void; title: stri
   )
 }
 
-export default function CameraView({
+const CameraView = forwardRef<CameraViewRef, CameraViewProps>(({
   videoRef,
   isMirrored,
   isReady,
   error,
   activeFilter,
+  active3DFilter,
+  activeBackground,
   capturedCount,
   totalSlots,
   countdownValue,
@@ -46,8 +57,46 @@ export default function CameraView({
   onSelectDevice,
   onToggleMirror,
   onRetry,
-}: CameraViewProps) {
+}, ref) => {
   const filterCss = FILTERS.find(f => f.value === activeFilter)?.css ?? 'none'
+  const bgCanvasRef = useRef<HTMLCanvasElement>(null)
+  const arContainerRef = useRef<HTMLDivElement>(null)
+
+  useImperativeHandle(ref, () => ({
+    capture: (filterCss?: string) => {
+      const video = videoRef.current
+      if (!video || !isReady) return null
+
+      const canvas = document.createElement('canvas')
+      canvas.width = video.videoWidth
+      canvas.height = video.videoHeight
+      const ctx = canvas.getContext('2d')!
+
+      if (filterCss && filterCss !== 'none') {
+        ctx.filter = filterCss
+      }
+
+      if (isMirrored) {
+        ctx.translate(canvas.width, 0)
+        ctx.scale(-1, 1)
+      }
+
+      // 1. Draw Background (if active) OR Video
+      if (activeBackground && activeBackground !== 'none' && bgCanvasRef.current) {
+        ctx.drawImage(bgCanvasRef.current, 0, 0, canvas.width, canvas.height)
+      } else {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+      }
+
+      // 2. Draw AR Overlay (if active)
+      const arCanvas = arContainerRef.current?.querySelector('canvas')
+      if (active3DFilter && arCanvas) {
+        ctx.drawImage(arCanvas, 0, 0, canvas.width, canvas.height)
+      }
+
+      return canvas.toDataURL('image/jpeg', 0.95)
+    }
+  }))
 
   return (
     <div className="relative w-full rounded-xl overflow-hidden bg-[#080808] border border-[#1a1a1a] aspect-4/3">
@@ -56,12 +105,30 @@ export default function CameraView({
         autoPlay
         playsInline
         muted
-        className="w-full h-full object-cover"
+        className={`w-full h-full object-cover transition-opacity duration-300 ${activeBackground && activeBackground !== 'none' ? 'opacity-0' : 'opacity-100'}`}
         style={{
           transform: isMirrored ? 'scaleX(-1)' : 'none',
           filter: filterCss,
           display: isReady ? 'block' : 'none',
         }}
+      />
+
+      {/* AI Background Layer */}
+      <BackgroundView
+        ref={bgCanvasRef}
+        videoElement={videoRef.current}
+        activeBackground={activeBackground}
+        isEnabled={isReady}
+        isMirrored={isMirrored}
+      />
+
+      {/* AR 3D Filter Overlay */}
+      <AR3DOverlay
+        ref={arContainerRef}
+        videoElement={videoRef.current}
+        activeFilter={active3DFilter}
+        isEnabled={!!active3DFilter && isReady}
+        isMirrored={isMirrored}
       />
 
       {!isReady && !error && (
@@ -132,4 +199,6 @@ export default function CameraView({
       </div>
     </div>
   )
-}
+})
+
+export default CameraView

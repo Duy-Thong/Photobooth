@@ -5,7 +5,7 @@ import { useVideoRecap } from '@/hooks/useVideoRecap'
 import { usePhotoboothStore } from '@/stores/photoboothStore'
 import { buildStripImage, buildStripVideo, detectFrameSlots } from '@/lib/imageProcessing'
 import { LAYOUTS, FILTERS } from '@/types/photobooth'
-import CameraView from '@/components/photobooth/CameraView'
+import CameraView, { CameraViewRef } from '@/components/photobooth/CameraView'
 import PhotoStrip from '@/components/photobooth/PhotoStrip'
 import TopControls from '@/components/photobooth/TopControls'
 import CaptureControls from '@/components/photobooth/CaptureControls'
@@ -14,11 +14,14 @@ import FrameModal from '@/components/photobooth/FrameModal'
 import ResultModal from '@/components/photobooth/ResultModal'
 
 export default function HomePage() {
-  const { videoRef, isMirrored, isReady, error, toggleMirror, captureFrame, selectDevice, retryCamera, devices, activeDeviceId } = useCamera()
+  const { videoRef, isMirrored, isReady, error, toggleMirror, selectDevice, retryCamera, devices, activeDeviceId } = useCamera()
+  const cameraRef = useRef<CameraViewRef>(null)
 
   const {
     layout, countdown, setCountdown,
     activeFilter, activeEffects, setFilter, toggleEffect,
+    active3DFilter, set3DFilter,
+    activeBackground,
     capturedSlots, addPhoto, replaceSlot, resetPhotos,
     isCapturing, setIsCapturing,
     finalImageUrl, setFinalImageUrl,
@@ -50,16 +53,12 @@ export default function HomePage() {
       .then(url => setRecapStripUrl(url))
       .catch(() => {})
       .finally(() => setBuildingStrip(false))
-  // Re-run only when finalImageUrl changes (clips + frameUrl are stable at that point)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [finalImageUrl])
 
   // ---------- Auto-open frame modal or auto-build when all slots filled ----------
-  // If a frame is already chosen, skip the modal and build directly.
   useEffect(() => {
     if (capturedCount !== layout.slots || finalImageUrl || isCapturing) return
     if (frameUrl) {
-      // Frame already selected — build with it immediately
       const timer = setTimeout(async () => {
         try {
           const { capturedSlots: cs, layout: l, activeEffects: fx } = usePhotoboothStore.getState()
@@ -76,8 +75,6 @@ export default function HomePage() {
   }, [capturedCount, layout.slots, finalImageUrl, isCapturing, frameUrl])
 
   // ---------- Single shot with countdown ----------
-  // If videoRecap is on: start recording when countdown begins, stop when photo is taken.
-  // This produces one clip per slot.
   const takeOnePhoto = useCallback((): Promise<void> => {
     return new Promise((resolve) => {
       if (videoRecap) startRecording(30)
@@ -90,8 +87,11 @@ export default function HomePage() {
           setCountdownValue(null)
           setShowFlash(true)
           setTimeout(() => setShowFlash(false), 150)
+          
           const filterCss = FILTERS.find(f => f.value === activeFilter)?.css
-          const dataUrl = captureFrame(filterCss !== 'none' ? filterCss : undefined)
+          // Use NEW capture method that includes backgrounds!
+          const dataUrl = cameraRef.current?.capture(filterCss !== 'none' ? filterCss : undefined)
+          
           if (dataUrl) addPhoto(dataUrl, true)
           if (videoRecap) {
             stopRecording().then(url => {
@@ -109,7 +109,7 @@ export default function HomePage() {
         }
       }, 1000)
     })
-  }, [countdown, captureFrame, addPhoto, videoRecap, startRecording, stopRecording, getVideoMimeType, activeFilter])
+  }, [countdown, addPhoto, videoRecap, startRecording, stopRecording, getVideoMimeType, activeFilter])
 
   // ---------- Manual single capture ----------
   const handleManualCapture = useCallback(async () => {
@@ -163,11 +163,6 @@ export default function HomePage() {
     }
   }, [capturedSlots, layout, activeEffects, frameUrl, setFinalImageUrl, messageApi])
 
-  // ---------- Download / Show Result ----------
-  const handleDownload = useCallback(() => {
-    if (finalImageUrl) setResultModalOpen(true)
-  }, [finalImageUrl])
-
   // ---------- Slot management ----------
   const handleUploadSlot = useCallback((index: number, dataUrl: string) => {
     replaceSlot(index, dataUrl)
@@ -195,29 +190,18 @@ export default function HomePage() {
         currentLayout={layout}
         selectedFrameUrl={frameUrl}
         onSelect={async (url, frameItem) => {
-          // Detect how many transparent slots the frame PNG actually has
           let detectedSlots = 0
           try { detectedSlots = (await detectFrameSlots(url)).length } catch { /* noop */ }
-
-          // Find best matching layout
           const store = usePhotoboothStore.getState()
           let targetLayout = store.layout
           if (detectedSlots > 0) {
             const match = LAYOUTS.find(l => l.slots === detectedSlots && (
-              // For 4-slot frames: pick 2×2 if grid type, else 1×4
-              // For 6-slot frames: pick 2×3 (always 2 cols)
-              detectedSlots === 4
-                ? (frameItem.frame === 'grid' ? l.cols === 2 : l.cols === 1)
-                : detectedSlots === 6
-                  ? l.cols === 2
-                  : true
+              detectedSlots === 4 ? (frameItem.frame === 'grid' ? l.cols === 2 : l.cols === 1) : detectedSlots === 6 ? l.cols === 2 : true
             )) ?? LAYOUTS.find(l => l.slots === detectedSlots)
             if (match && match.type !== store.layout.type) {
               if (match.slots === store.layout.slots) {
-                // Same slot count, different arrangement — keep photos
                 store.setLayoutKeepPhotos(match)
               } else {
-                // Slot count changed — must reset photos
                 store.setLayout(match)
                 store.setFinalImageUrl(null)
               }
@@ -225,12 +209,9 @@ export default function HomePage() {
               targetLayout = match
             }
           }
-
           store.setFrameUrl(url)
           setFrameModalOpen(false)
           setFinalImageUrl(null)
-
-          // If all slots are already filled after layout (possibly changed), auto-build
           const refreshed = usePhotoboothStore.getState()
           if (refreshed.capturedSlots.every(s => s !== null)) {
             setTimeout(async () => {
@@ -267,7 +248,6 @@ export default function HomePage() {
         }}
       />
       <div className="min-h-dvh bg-[#0a0a0a] flex flex-col">
-        {/* Header */}
         <header className="text-center pt-5 pb-4 border-b border-[#141414]">
           <h1 className="text-2xl font-bold text-white" style={{ letterSpacing: '-0.03em' }}>
             Sổ Media
@@ -275,7 +255,6 @@ export default function HomePage() {
           <p className="text-white text-[9px] tracking-[0.35em] uppercase mt-0.5 font-medium">Photobooth</p>
         </header>
 
-        {/* Top controls bar */}
         <div className="border-b border-[#141414] px-4 py-2.5">
           <div className="max-w-5xl mx-auto">
             <TopControls
@@ -291,17 +270,18 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Main */}
         <div className="flex-1 max-w-5xl mx-auto w-full px-3 md:px-4 py-4">
           <div className="flex flex-col md:flex-row gap-3 h-full">
-            {/* Left: camera + controls + filters */}
             <div className="flex-1 flex flex-col gap-2.5 min-w-0">
               <CameraView
+                ref={cameraRef}
                 videoRef={videoRef as React.RefObject<HTMLVideoElement>}
                 isMirrored={isMirrored}
                 isReady={isReady}
                 error={error}
-                activeFilter={activeFilter}
+                activeFilter={activeFilter as any}
+                active3DFilter={active3DFilter}
+                activeBackground={activeBackground as any}
                 capturedCount={capturedCount}
                 totalSlots={layout.slots}
                 countdownValue={countdownValue}
@@ -327,12 +307,13 @@ export default function HomePage() {
               <FilterPanel
                 activeFilter={activeFilter}
                 activeEffects={activeEffects}
+                active3DFilter={active3DFilter}
                 onFilterChange={setFilter}
                 onEffectToggle={toggleEffect}
+                on3DFilterChange={set3DFilter}
               />
             </div>
 
-            {/* Right: photo strip — width depends on layout cols, self-start so it doesn't grow to camera height */}
             <div className={`shrink-0 w-full md:self-start ${layout.cols === 2 ? 'md:w-64 lg:w-72' : 'md:w-44 lg:w-48'}`}>
               <PhotoStrip
                 layout={layout}
@@ -342,7 +323,7 @@ export default function HomePage() {
                 activeEffects={activeEffects}
                 onUploadSlot={handleUploadSlot}
                 onRemoveSlot={handleRemoveSlot}
-                onDownload={handleDownload}
+                onDownload={() => setResultModalOpen(true)}
                 onBuildStrip={handleBuildStrip}
               />
             </div>

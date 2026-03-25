@@ -427,9 +427,14 @@ export async function buildStripVideo(
 
 export function downloadImage(url: string, filename = 'photobooth.jpg') {
   const a = document.createElement('a')
+  a.style.display = 'none'
   a.href = url
   a.download = filename
+  document.body.appendChild(a)
   a.click()
+  setTimeout(() => {
+    document.body.removeChild(a)
+  }, 100)
 }
 
 /**

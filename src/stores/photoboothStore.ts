@@ -1,6 +1,5 @@
 import { create } from 'zustand'
-import { type FilterType, type EffectType, type LayoutConfig, type CapturedSlot, LAYOUTS } from '@/types/photobooth'
-
+import { type FilterType, type EffectType, type AR3DFilterType, type LayoutConfig, type CapturedSlot, LAYOUTS } from '@/types/photobooth'
 interface PhotoboothState {
   // Layout
   layout: LayoutConfig
@@ -10,10 +9,16 @@ interface PhotoboothState {
   setCountdown: (n: number) => void
 
   // Filter & Effects
-  activeFilter: FilterType
+  activeFilter: FilterType | null
   activeEffects: EffectType[]
-  setFilter: (f: FilterType) => void
+  setFilter: (f: FilterType | null) => void
   toggleEffect: (e: EffectType) => void
+
+  active3DFilter: AR3DFilterType | null
+  set3DFilter: (filter: AR3DFilterType | null) => void
+
+  activeBackground: string | null // 'none' | 'blur' | imageId
+  setBackground: (background: string | null) => void
 
   // Captured photos
   capturedSlots: (CapturedSlot | null)[]
@@ -41,7 +46,7 @@ export const usePhotoboothStore = create<PhotoboothState>((set, get) => ({
   setLayoutKeepPhotos: (layout) => set({ layout }),
   setCountdown: (countdown) => set({ countdown }),
 
-  activeFilter: 'none',
+  activeFilter: null,
   activeEffects: [],
   setFilter: (activeFilter) => set({ activeFilter }),
   toggleEffect: (effect) => set((s) => ({
@@ -49,6 +54,12 @@ export const usePhotoboothStore = create<PhotoboothState>((set, get) => ({
       ? s.activeEffects.filter(e => e !== effect)
       : [...s.activeEffects, effect],
   })),
+
+  active3DFilter: null,
+  set3DFilter: (active3DFilter) => set({ active3DFilter }),
+
+  activeBackground: null,
+  setBackground: (activeBackground) => set({ activeBackground }),
 
   capturedSlots: Array(LAYOUTS[0].slots).fill(null),
   addPhoto: (dataUrl, fromCamera = true) => {

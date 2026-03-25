@@ -15,6 +15,19 @@ export type EffectType =
 
 export type LayoutType = '1x4' | '2x2' | '1x3' | '2x3' | '1x2' | '1x1'
 
+export type AR3DFilterType = string
+
+export interface ModelAsset {
+  id: string
+  name: string
+  path: string
+  type: string
+  scale: number
+  positionOffset: { x: number; y: number; z: number }
+  rotationOffset: { x: number; y: number; z: number }
+  anchorIndex: number
+}
+
 export type CaptureMode = 'manual' | 'auto'
 
 export interface LayoutConfig {
@@ -56,4 +69,16 @@ export const EFFECTS: { value: EffectType; label: string; emoji: string }[] = [
   { value: 'vignette',   label: 'Vignette',   emoji: '🌑' },
   { value: 'grain',      label: 'Grain',      emoji: '🎞️' },
   { value: 'chromatic',  label: 'Chromatic',  emoji: '🌈' },
+]
+
+export type BackgroundType = 'none' | 'blur' | 'studio' | 'studio-blue' | 'office' | 'beach' | 'cafe'
+
+export const BACKGROUNDS: { id: BackgroundType; name: string; url?: string }[] = [
+  { id: 'none', name: 'Gốc' },
+  { id: 'blur', name: 'Làm mờ' },
+  { id: 'studio', name: 'Studio Đỏ' },
+  { id: 'studio-blue', name: 'Studio Xanh' },
+  { id: 'office', name: 'Văn phòng', url: 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=800&q=80' },
+  { id: 'beach', name: 'Bãi biển', url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80' },
+  { id: 'cafe', name: 'Quán cafe', url: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=800&q=80' },
 ]
