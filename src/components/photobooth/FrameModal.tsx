@@ -80,7 +80,7 @@ export default function FrameModal({
 
   function handleConfirm() {
     if (!preview) return
-    onSelect(frameImageUrl(preview.filename), preview)
+    onSelect(frameImageUrl(preview.filename, preview.storageUrl), preview)
     setPreview(null)
   }
 
@@ -182,7 +182,7 @@ export default function FrameModal({
           {!loading && !error && filtered.length > 0 && (
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
               {filtered.map((frame) => {
-                const imgUrl = frameImageUrl(frame.filename)
+                const imgUrl = frameImageUrl(frame.filename, frame.storageUrl)
                 const isActive = selectedFrameUrl === imgUrl
                 return (
                   <button
@@ -245,7 +245,7 @@ export default function FrameModal({
         {preview && (
           <div className="flex flex-col items-center gap-3 py-3">
             <img
-              src={frameImageUrl(preview.filename)}
+              src={frameImageUrl(preview.filename, preview.storageUrl)}
               alt={preview.name}
               className="w-44 object-contain rounded-md"
             />
