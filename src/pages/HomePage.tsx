@@ -15,7 +15,7 @@ import ResultModal from '@/components/photobooth/ResultModal'
 import ContributeFrameModal from '@/components/photobooth/ContributeFrameModal'
 
 export default function HomePage() {
-  const { videoRef, isMirrored, isReady, error, toggleMirror, captureFrame, selectDevice, retryCamera, devices, activeDeviceId, soundEnabled, toggleSound } = useCamera()
+  const { videoRef, stream, isMirrored, isReady, error, toggleMirror, captureFrame, selectDevice, retryCamera, devices, activeDeviceId, soundEnabled, toggleSound } = useCamera()
 
   const {
     layout, countdown, setCountdown,
@@ -350,13 +350,15 @@ export default function HomePage() {
             </div>
 
             {/* Right: photo strip — width depends on layout cols, self-start so it doesn't grow to camera height */}
-            <div className={`shrink-0 w-full md:self-start ${layout.cols === 2 ? 'md:w-80 lg:w-96' : 'md:w-56 lg:w-64'}`}>
+            <div className={`shrink-0 w-full md:self-start ${layout.cols === 2 ? 'md:w-72 lg:w-80' : 'md:w-48 lg:w-56'}`}>
               <PhotoStrip
                 layout={layout}
                 slots={capturedSlots}
                 finalImageUrl={finalImageUrl}
                 selectedFrame={selectedFrame}
                 activeEffects={activeEffects}
+                stream={stream}
+                isMirrored={isMirrored}
                 onUploadSlot={handleUploadSlot}
                 onRemoveSlot={handleRemoveSlot}
                 onDownload={handleDownload}

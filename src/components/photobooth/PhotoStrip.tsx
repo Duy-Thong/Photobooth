@@ -10,6 +10,8 @@ interface PhotoStripProps {
   finalImageUrl: string | null
   selectedFrame: FrameItem | null
   activeEffects: EffectType[]
+  stream: MediaStream | null
+  isMirrored: boolean
   onUploadSlot: (index: number, dataUrl: string) => void
   onRemoveSlot: (index: number) => void
   onDownload: () => void
@@ -73,6 +75,8 @@ export default function PhotoStrip({
   finalImageUrl,
   selectedFrame,
   activeEffects,
+  stream,
+  isMirrored,
   onUploadSlot,
   onRemoveSlot,
   onDownload,
@@ -80,18 +84,58 @@ export default function PhotoStrip({
 }: PhotoStripProps) {
   const filled = slots.filter(Boolean).length
   const allFilled = filled === layout.slots
-  const { previewUrl, rendering } = useStripPreview(slots, selectedFrame, layout, activeEffects)
+  const nextTargetIndex = slots.findIndex(s => s === null)
+  const { previewUrl, rendering, detectedSlots, dimensions } = useStripPreview(slots, selectedFrame, layout, activeEffects)
 
   return (
     <div className="flex flex-col gap-2">
 
       {/* ── Live composite preview ── */}
-      <div className="relative bg-[#0d0d0d] rounded-xl border border-[#141414] overflow-hidden flex items-center justify-center" style={{ aspectRatio: layout.cols === 2 ? '2/3' : '1/2.2' }}>
+      <div className="relative bg-[#0d0d0d] rounded-xl border border-[#141414] overflow-hidden flex items-center justify-center p-0.5 shadow-2xl" 
+        style={{ aspectRatio: layout.cols === 2 ? '2/3.1' : '1/3' }}>
+        
+        {/* Layer 0: Individual Live Videos for each empty slot (positioned exactly in the holes) */}
+        {!finalImageUrl && stream && dimensions && detectedSlots.length > 0 && (
+          <div className="absolute inset-0 z-0">
+            {detectedSlots.map((rect, i) => {
+              // Only show live video for the NEXT slot to be captured
+              if (i !== nextTargetIndex) return null
+              
+              const left = (rect.x / dimensions.w) * 100
+              const top = (rect.y / dimensions.h) * 100
+              const width = (rect.w / dimensions.w) * 100
+              const height = (rect.h / dimensions.h) * 100
+
+              return (
+                <div 
+                  key={`live-${i}`}
+                  className="absolute overflow-hidden"
+                  style={{ 
+                    left: `${left}%`, 
+                    top: `${top}%`, 
+                    width: `${width}%`, 
+                    height: `${height}%` 
+                  }}
+                >
+                  <video
+                    autoPlay
+                    playsInline
+                    muted
+                    ref={(el) => { if (el && stream) el.srcObject = stream }}
+                    className="w-full h-full object-cover"
+                    style={{ transform: isMirrored ? 'scaleX(-1)' : 'none' }}
+                  />
+                </div>
+              )
+            })}
+          </div>
+        )}
+
         {previewUrl ? (
           <img
             src={previewUrl}
             alt="preview"
-            className="w-full h-full object-contain"
+            className="w-full h-full object-contain relative z-10"
           />
         ) : (
           /* No preview yet — show empty slot placeholders */
@@ -99,18 +143,20 @@ export default function PhotoStrip({
             className="w-full h-full p-1.5 grid gap-1"
             style={{ gridTemplateColumns: `repeat(${layout.cols}, 1fr)` }}
           >
-            {slots.map((slot, i) => (
-              <div
-                key={i}
-                className={`${layout.cols === 1 ? 'aspect-4/3' : 'aspect-square'} bg-[#111] rounded-lg border border-dashed border-[#1a1a1a] flex items-center justify-center`}
-              >
-                {slot ? (
-                  <img src={slot.dataUrl} alt="" className="w-full h-full object-cover rounded-lg" />
-                ) : (
-                  <span className="text-[#1e1e1e] text-lg font-light select-none">{i + 1}</span>
-                )}
-              </div>
-            ))}
+            {slots.map((slot, i) => {
+              return (
+                <div
+                  key={i}
+                  className={`${layout.cols === 1 ? 'aspect-4/3' : 'aspect-square'} bg-transparent rounded-lg border border-dashed border-white/10 flex items-center justify-center overflow-hidden relative`}
+                >
+                  {slot ? (
+                    <img src={slot.dataUrl} alt="" className="w-full h-full object-cover rounded-lg" />
+                  ) : (
+                    <span className="text-[#131313] text-lg font-bold select-none opacity-0">{i + 1}</span>
+                  )}
+                </div>
+              )
+            })}
           </div>
         )}
 

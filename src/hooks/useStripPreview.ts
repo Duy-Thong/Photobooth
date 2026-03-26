@@ -46,6 +46,8 @@ export function useStripPreview(
   const frameUrl = selectedFrame ? (selectedFrame.storageUrl ?? `/frames/${selectedFrame.filename}`) : null;
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [rendering, setRendering] = useState(false)
+  const [detectedSlots, setDetectedSlots] = useState<SlotRect[]>([])
+  const [dimensions, setDimensions] = useState<{ w: number; h: number } | null>(null)
   const frameCacheRef = useRef<FrameCache | null>(null)
   // Changes when a new frame finishes loading — triggers the render effect
   const [frameCacheKey, setFrameCacheKey] = useState<string | null>(null)
@@ -77,6 +79,8 @@ export function useStripPreview(
 
     const handleLoaded = (img: HTMLImageElement, slots: SlotRect[]) => {
       frameCacheRef.current = { url: frameUrl, img, slots }
+      setDetectedSlots(slots)
+      setDimensions({ w: img.naturalWidth || img.width, h: img.naturalHeight || img.height })
       setFrameCacheKey(frameUrl)
     }
 
@@ -115,7 +119,6 @@ export function useStripPreview(
     const render = async (): Promise<string> => {
       const canvas = document.createElement('canvas')
       const ctx = canvas.getContext('2d')!
-      const photos = slots.filter((s): s is CapturedSlot => s !== null)
 
       if (frameReady && frameCacheRef.current) {
         // ── Frame-based composite ──
@@ -125,18 +128,21 @@ export function useStripPreview(
         canvas.width = fW
         canvas.height = fH
 
-        ctx.fillStyle = '#fff'
-        ctx.fillRect(0, 0, fW, fH)
+        // Start with transparent or solid background based on frame
+        // Actually clear everything to be safe for transparency
+        ctx.clearRect(0, 0, fW, fH)
 
         // Load all slot images in parallel first (safe), then draw sequentially
         // (canvas clip state is shared — concurrent save/clip/restore interleaves and corrupts clip regions)
         const frameImgMap = await Promise.all(
           frameSlots.map(async (_: SlotRect, i: number) => {
-            const photo = photos[i]
+            const photo = slots[i]
             if (!photo) return null
             try { return await loadImg(photo.dataUrl) } catch { return null }
           })
         )
+
+        const activeIndex = slots.findIndex(s => s === null)
 
         for (let i = 0; i < frameSlots.length; i++) {
           const { x, y, w, h } = frameSlots[i]
@@ -148,11 +154,15 @@ export function useStripPreview(
           if (img) {
             coverFit(ctx, img, x, y, w, h)
             applyEffects(ctx, effects, x, y, w, h)
+          } else if (i === activeIndex) {
+            // ONLY the next slot to be captured is transparent for live video
+            ctx.clearRect(x, y, w, h)
           } else {
+            // Future slots show placeholder grey + number
             ctx.fillStyle = '#d8d8d8'
             ctx.fillRect(x, y, w, h)
-            ctx.fillStyle = '#b0b0b0'
-            ctx.font = `bold ${Math.max(14, Math.round(w * 0.08))}px sans-serif`
+            ctx.fillStyle = '#9a9a9a'
+            ctx.font = `bold ${Math.max(14, Math.round(w * 0.12))}px sans-serif`
             ctx.textAlign = 'center'
             ctx.textBaseline = 'middle'
             ctx.fillText(String(i + 1), x + w / 2, y + h / 2)
@@ -172,17 +182,18 @@ export function useStripPreview(
         canvas.width = cols * SLOT_W + (cols - 1) * GAP + PAD * 2
         canvas.height = rows * SLOT_H + (rows - 1) * GAP + PAD * 2
 
-        ctx.fillStyle = '#f5f5f5'
-        ctx.fillRect(0, 0, canvas.width, canvas.height)
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
 
         // Load in parallel, draw sequentially to avoid canvas clip region corruption
         const gridImgMap = await Promise.all(
           Array.from({ length: layout.slots }, async (_, i) => {
-            const photo = photos[i]
+            const photo = slots[i]
             if (!photo) return null
             try { return await loadImg(photo.dataUrl) } catch { return null }
           })
         )
+
+        const activeIndex = slots.findIndex(s => s === null)
 
         for (let i = 0; i < layout.slots; i++) {
           const col = i % cols
@@ -197,9 +208,16 @@ export function useStripPreview(
           if (img) {
             coverFit(ctx, img, x, y, SLOT_W, SLOT_H)
             applyEffects(ctx, effects, x, y, SLOT_W, SLOT_H)
+          } else if (i === activeIndex) {
+            ctx.clearRect(x, y, SLOT_W, SLOT_H)
           } else {
             ctx.fillStyle = '#e0e0e0'
             ctx.fillRect(x, y, SLOT_W, SLOT_H)
+            ctx.fillStyle = '#9a9a9a'
+            ctx.font = 'bold 32px sans-serif'
+            ctx.textAlign = 'center'
+            ctx.textBaseline = 'middle'
+            ctx.fillText(String(i + 1), x + SLOT_W / 2, y + SLOT_H / 2)
           }
           ctx.restore()
         }
@@ -208,8 +226,8 @@ export function useStripPreview(
       return new Promise<string>((resolve, reject) => {
         canvas.toBlob(
           blob => blob ? resolve(URL.createObjectURL(blob)) : reject(new Error('toBlob failed')),
-          'image/jpeg',
-          0.82,
+          'image/png',
+          1.0
         )
       })
     }
@@ -225,5 +243,5 @@ export function useStripPreview(
       .finally(() => { if (runId === runIdRef.current) setRendering(false) })
   }, [slots, frameCacheKey, frameUrl, layout])
 
-  return { previewUrl, rendering }
+  return { previewUrl, rendering, detectedSlots, dimensions }
 }
