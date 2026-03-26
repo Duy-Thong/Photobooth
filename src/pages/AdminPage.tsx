@@ -41,6 +41,17 @@ function formatDate(iso: string) {
   return new Date(iso).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' })
 }
 
+const getPathFromUrl = (url: string) => {
+  if (!url) return null
+  try {
+    if (url.includes('/o/')) {
+      const parts = url.split('/o/')[1].split('?')[0]
+      return decodeURIComponent(parts)
+    }
+    return null
+  } catch { return null }
+}
+
 export default function AdminPage() {
   const { logout } = useAdminAuth()
   const [photos, setPhotos] = useState<MediaItem[]>([])
@@ -51,6 +62,7 @@ export default function AdminPage() {
   const [previewItem, setPreviewItem] = useState<MediaItem | null>(null)
   const [tab, setTab] = useState<'photos' | 'videos' | 'frames' | 'requests'>('photos')
   const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set())
+  const [brokenPaths, setBrokenPaths] = useState<Set<string>>(new Set())
 
   // ── Frames tab state ────────────────────────────────────────────────────────
   const [customFrames, setCustomFrames] = useState<FrameItem[]>([])
@@ -202,7 +214,7 @@ export default function AdminPage() {
       for (const s of sessions) {
         sessionPhotos.push({
           name: `Session ${s.id.slice(0, 8)}`,
-          fullPath: `sessions/${s.id}/strip.jpg`,
+          fullPath: getPathFromUrl(s.imageUrl) || `sessions/${s.id}/strip.jpg`,
           url: s.imageUrl,
           timeCreated: s.createdAt,
           size: 0,
@@ -213,7 +225,7 @@ export default function AdminPage() {
           const ext = s.videoUrl.includes('.mp4') ? 'mp4' : 'webm'
           sessionVideos.push({
             name: `Session Recap ${s.id.slice(0, 8)}`,
-            fullPath: `sessions/${s.id}/strip.${ext}`,
+            fullPath: getPathFromUrl(s.videoUrl) || `sessions/${s.id}/strip.${ext}`,
             url: s.videoUrl,
             timeCreated: s.createdAt,
             size: 0,
@@ -438,6 +450,125 @@ export default function AdminPage() {
     setSelectedPaths(new Set())
   }
 
+  const handleCleanupSessions = () => {
+    Modal.confirm({
+      title: 'Dọn dẹp Database tích cực?',
+      content: 'Hệ thống sẽ quét sâu toàn bộ 133+ bản ghi và xóa sạch những session không còn file trên Storage (bao gồm các bản cũ ở thư mục photobooth/recap). Bạn có muốn tiếp tục?',
+      okText: 'Bắt đầu ngay',
+      centered: true,
+      onOk: async () => {
+        setBulkDeleting(true)
+        try {
+          let cleaned = 0
+          // Refresh list first to ensure we have latest IDs
+          await fetchAll()
+          
+          const allItems = [...photos, ...videos]
+          const sessionsWithId = allItems.filter(i => i.sessionId)
+          
+          console.log(`[Cleanup] Bắt đầu quét ${sessionsWithId.length} sessions...`)
+
+          // Process in chunks with small delay
+          for (let i = 0; i < sessionsWithId.length; i += 5) {
+            const chunk = sessionsWithId.slice(i, i + 5)
+            await Promise.allSettled(chunk.map(async item => {
+              try {
+                // Force check metadata
+                await getMetadata(ref(storage, item.fullPath))
+              } catch (err: any) {
+                // If ANY error occurs during metadata fetch (especially 404), candidate for cleanup
+                console.log(`[Cleanup] Lỗi khi check ${item.fullPath}:`, err.code || err.message)
+                
+                // We are very aggressive here: any 404 variation = delete
+                const is404 = err.code?.includes('not-found') || 
+                             err.message?.includes('404') || 
+                             err.status === 404 ||
+                             err.serverResponse?.includes('404')
+
+                if (is404) {
+                  console.log(`[Cleanup] ĐANG XÓA SESSION LỖI: ${item.sessionId}`)
+                  await deleteSession(item.sessionId!).catch(e => console.error('Lỗi xóa Firestore:', e))
+                  cleaned++
+                }
+              }
+            }))
+            // Small pause to keep Firestore happy
+            await new Promise(r => setTimeout(r, 100))
+          }
+          
+          Modal.success({ 
+            title: 'Hoàn tất dọn dẹp', 
+            content: `Đã dọn dẹp xong. Hệ thống đã xóa ${cleaned} bản ghi lỗi. Danh sách sẽ được tải lại ngay bây giờ.`, 
+            centered: true 
+          })
+          fetchAll()
+        } catch (e) {
+          console.error('[Cleanup] Fatal Error:', e)
+          Modal.error({ title: 'Dọn dẹp thất bại', centered: true })
+        } finally {
+          setBulkDeleting(false)
+        }
+      }
+    })
+  }
+
+  const handlePrint = (item: MediaItem) => {
+    const win = window.open('', '_blank')
+    if (!win) {
+      Modal.error({ title: 'Không thể mở cửa sổ in', content: 'Vui lòng tắt trình chặn popup và thử lại.', centered: true })
+      return
+    }
+    win.document.write(`
+      <html>
+        <head>
+          <title>In ảnh - ${item.name}</title>
+          <style>
+            @page { margin: 0; size: auto; }
+            body { margin: 0; padding: 0; display: flex; justify-content: center; align-items: start; background: white; }
+            img { width: 100%; height: auto; display: block; }
+          </style>
+        </head>
+        <body>
+          <img id="print-image" src="${item.url}" />
+          <script>
+            const img = document.getElementById('print-image');
+            const doPrint = () => {
+              window.print();
+              setTimeout(() => window.close(), 500);
+            };
+            if (img.complete) {
+              doPrint();
+            } else {
+              img.onload = doPrint;
+              img.onerror = () => {
+                alert('Không thể tải ảnh để in.');
+                window.close();
+              };
+            }
+          </script>
+        </body>
+      </html>
+    `)
+    win.document.close()
+  }
+
+  const handlePrintSelected = () => {
+    if (selectedPaths.size === 0) return
+    const toPrint = photos.filter(i => selectedPaths.has(i.fullPath))
+    if (toPrint.length === 0) return
+
+    if (toPrint.length > 5) {
+      Modal.confirm({
+        title: `In ${toPrint.length} ảnh?`,
+        content: 'Bạn đang yêu cầu in số lượng lớn ảnh cùng lúc. Điều này sẽ mở nhiều hộp thoại in. Tiếp tục?',
+        onOk: () => toPrint.forEach(item => handlePrint(item)),
+        centered: true
+      })
+    } else {
+      toPrint.forEach(item => handlePrint(item))
+    }
+  }
+
   // ── Frame upload / delete handlers ─────────────────────────────────────────
 
   const handleFileSelect = async (file: File) => {
@@ -531,6 +662,13 @@ export default function AdminPage() {
           {selectedPaths.size > 0 && (
             <div className="flex items-center gap-2 bg-[#1a1a1a] border border-blue-900/50 rounded-lg px-2 py-1 mr-2">
               <span className="text-blue-400 text-[10px] font-bold px-1 uppercase tracking-wider">Đã chọn {selectedPaths.size}</span>
+              
+              {tab === 'photos' && (
+                <Button size="small" type="primary" icon={<PictureOutlined />} onClick={handlePrintSelected} style={{ background: '#27ae60', borderColor: '#27ae60' }}>
+                  In {selectedPaths.size} ảnh
+                </Button>
+              )}
+
               <Button size="small" type="primary" danger icon={<DeleteFilled />} onClick={handleDeleteSelected}>
                 Xóa {selectedPaths.size}
               </Button>
@@ -557,6 +695,13 @@ export default function AdminPage() {
               loading={bulkDeleting}
               style={{ background: '#1e1e1e', border: '1px solid #2a2a2a', color: '#e67e22' }}>
               <span className="hidden sm:inline">Cũ &gt; 7 ngày</span>
+            </Button>
+          </Tooltip>
+          <Tooltip title="Quét và xóa các bản ghi không còn file ảnh/video thực tế">
+            <Button size="small" icon={<ReloadOutlined />} onClick={handleCleanupSessions}
+              loading={bulkDeleting}
+              style={{ background: '#1e1e1e', border: '1px solid #2a2a2a', color: '#3498db' }}>
+              <span className="hidden sm:inline">Dọn dẹp DB</span>
             </Button>
           </Tooltip>
           <Tooltip title="Xóa tất cả trong tab hiện tại">
@@ -816,22 +961,43 @@ export default function AdminPage() {
                   className="relative cursor-pointer"
                   onClick={() => {
                     if (selectedPaths.size > 0) toggleSelect(item.fullPath)
-                    else setPreviewItem(item)
+                    else if (!brokenPaths.has(item.fullPath)) setPreviewItem(item)
                   }}
                 >
                   {item.type === 'photo' ? (
-                    <img
-                      src={item.url}
-                      alt={item.name}
-                      className="w-full aspect-3/4 object-cover"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="w-full aspect-video bg-black flex items-center justify-center">
-                      <video src={item.url} className="w-full h-full object-cover" />
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                        <PlayCircleOutlined className="text-white text-4xl" />
+                    brokenPaths.has(item.fullPath) ? (
+                      <div className="w-full aspect-3/4 bg-[#111] flex flex-col items-center justify-center text-[#333] gap-2">
+                        <CloseOutlined style={{ fontSize: 24 }} />
+                        <span className="text-[10px] uppercase">File missing</span>
                       </div>
+                    ) : (
+                      <img
+                        src={item.url}
+                        alt={item.name}
+                        className="w-full aspect-3/4 object-cover"
+                        loading="lazy"
+                        onError={() => setBrokenPaths(prev => new Set(prev).add(item.fullPath))}
+                      />
+                    )
+                  ) : (
+                    <div className="w-full aspect-video bg-black flex items-center justify-center overflow-hidden">
+                      {brokenPaths.has(item.fullPath) ? (
+                        <div className="flex flex-col items-center justify-center text-[#333] gap-2">
+                          <CloseOutlined style={{ fontSize: 24 }} />
+                          <span className="text-[10px] uppercase">Video missing</span>
+                        </div>
+                      ) : (
+                        <>
+                          <video 
+                            src={item.url} 
+                            className="w-full h-full object-cover" 
+                            onError={() => setBrokenPaths(prev => new Set(prev).add(item.fullPath))}
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                            <PlayCircleOutlined className="text-white text-4xl" />
+                          </div>
+                        </>
+                      )}
                     </div>
                   )}
 
@@ -854,18 +1020,31 @@ export default function AdminPage() {
                   <p className="text-white text-[10px]">{formatBytes(item.size)}</p>
                 </div>
 
-                {/* Delete btn */}
-                <Tooltip title="Xóa">
-                  <button
-                    onClick={() => handleDelete(item)}
-                    disabled={deletingPath === item.fullPath}
-                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/70 hover:bg-red-600 text-white rounded-lg p-1.5"
-                  >
-                    {deletingPath === item.fullPath
-                      ? <Spin size="small" />
-                      : <DeleteOutlined />}
-                  </button>
-                </Tooltip>
+                {/* Actions btn */}
+                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+                  {item.type === 'photo' && (
+                    <Tooltip title="In ảnh">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handlePrint(item); }}
+                        className="bg-black/70 hover:bg-green-600 text-white rounded-lg p-1.5"
+                      >
+                        <PictureOutlined />
+                      </button>
+                    </Tooltip>
+                  )}
+                  
+                  <Tooltip title="Xóa">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleDelete(item); }}
+                      disabled={deletingPath === item.fullPath}
+                      className="bg-black/70 hover:bg-red-600 text-white rounded-lg p-1.5"
+                    >
+                      {deletingPath === item.fullPath
+                        ? <Spin size="small" />
+                        : <DeleteOutlined />}
+                    </button>
+                  </Tooltip>
+                </div>
               </div>
             ))}
           </div>
