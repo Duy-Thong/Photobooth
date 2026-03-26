@@ -132,8 +132,14 @@ export async function updateFrame(
   firestoreId: string,
   patch: Partial<Pick<FrameItem, 'name' | 'categoryName' | 'slots' | 'frame'>>,
 ): Promise<void> {
-  const updates: Record<string, unknown> = { ...patch }
-  if (patch.categoryName) updates.categoryId = deriveCategoryId(patch.categoryName)
+  const updates: Record<string, string | number> = {}
+  if (patch.name !== undefined) updates.name = patch.name
+  if (patch.categoryName !== undefined) {
+    updates.categoryName = patch.categoryName
+    updates.categoryId = deriveCategoryId(patch.categoryName)
+  }
+  if (patch.slots !== undefined) updates.slots = patch.slots
+  if (patch.frame !== undefined) updates.frame = patch.frame
   await updateDoc(doc(db, FRAMES_COLLECTION, firestoreId), updates)
 }
 

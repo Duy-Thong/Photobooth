@@ -45,6 +45,7 @@ export default function FrameModal({
     // Show static frames right away so user sees content immediately
     if (frames.length === 0) {
       setFrames(STATIC_FRAMES)
+      setLoading(false)
     }
     if (categories.length === 0) {
       fetchCategories().then(c => setCategories(c)).catch(() => {})
