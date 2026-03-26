@@ -1,4 +1,4 @@
-import { collection, getDocs, addDoc, deleteDoc, doc, query, orderBy } from 'firebase/firestore'
+import { collection, getDocs, addDoc, deleteDoc, doc, query, orderBy, updateDoc } from 'firebase/firestore'
 import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
 import { db, storage } from './firebase'
 import { STATIC_FRAMES } from './frames-static'
@@ -106,5 +106,102 @@ export async function fetchCategories(): Promise<FrameCategory[]> {
     if (!seen.has(f.categoryId)) seen.set(f.categoryId, f.categoryName)
   }
   return Array.from(seen.entries()).map(([id, name]) => ({ id, name }))
+}
+
+// ─── Frame update ──────────────────────────────────────────────────────────────
+
+export async function updateFrame(
+  firestoreId: string,
+  patch: Partial<Pick<FrameItem, 'name' | 'categoryName' | 'slots' | 'frame'>>,
+): Promise<void> {
+  const updates: Record<string, unknown> = { ...patch }
+  if (patch.categoryName) updates.categoryId = deriveCategoryId(patch.categoryName)
+  await updateDoc(doc(db, FRAMES_COLLECTION, firestoreId), updates)
+}
+
+// ─── Frame contribution requests ──────────────────────────────────────────────
+
+const REQUESTS_COLLECTION = 'frame_requests'
+
+export type FrameRequestStatus = 'pending' | 'approved' | 'rejected'
+
+export interface FrameRequest {
+  firestoreId: string
+  filename: string
+  storageUrl: string
+  submitterName: string
+  submitterContact: string  // email or social handle
+  suggestedName: string
+  suggestedCategory: string
+  suggestedFrame: FrameItem['frame']
+  slots: number
+  note: string
+  status: FrameRequestStatus
+  submittedAt: string  // ISO
+}
+
+/** User: submit a frame contribution. PNG goes to frame-requests/ in Storage. */
+export async function submitFrameRequest(
+  file: File,
+  meta: {
+    submitterName: string
+    submitterContact: string
+    suggestedName: string
+    suggestedCategory: string
+    suggestedFrame: FrameItem['frame']
+    slots: number
+    note: string
+  },
+): Promise<void> {
+  const ext = file.name.split('.').pop()?.toLowerCase() ?? 'png'
+  const filename = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
+  const sRef = storageRef(storage, `frame-requests/${filename}`)
+  await uploadBytes(sRef, file, { contentType: file.type || 'image/png' })
+  const storageUrl = await getDownloadURL(sRef)
+
+  await addDoc(collection(db, REQUESTS_COLLECTION), {
+    filename,
+    storageUrl,
+    submitterName: meta.submitterName,
+    submitterContact: meta.submitterContact,
+    suggestedName: meta.suggestedName,
+    suggestedCategory: meta.suggestedCategory,
+    suggestedFrame: meta.suggestedFrame,
+    slots: meta.slots,
+    note: meta.note,
+    status: 'pending' as FrameRequestStatus,
+    submittedAt: new Date().toISOString(),
+  })
+}
+
+/** Admin: fetch all requests (default: pending only). */
+export async function fetchFrameRequests(status: FrameRequestStatus | 'all' = 'pending'): Promise<FrameRequest[]> {
+  const snap = await getDocs(collection(db, REQUESTS_COLLECTION))
+  const all = snap.docs.map(d => ({ ...(d.data() as Omit<FrameRequest, 'firestoreId'>), firestoreId: d.id }))
+  const filtered = status === 'all' ? all : all.filter(r => r.status === status)
+  return filtered.sort((a, b) => b.submittedAt.localeCompare(a.submittedAt))
+}
+
+/** Admin: approve — copies the request into the frames collection & updates status. */
+export async function approveFrameRequest(request: FrameRequest): Promise<void> {
+  const frameDoc: Omit<FrameItem, 'firestoreId'> = {
+    id: Date.now(),
+    filename: request.filename,
+    name: request.suggestedName,
+    frame: request.suggestedFrame,
+    categoryId: deriveCategoryId(request.suggestedCategory),
+    categoryName: request.suggestedCategory,
+    slots: request.slots,
+    storageUrl: request.storageUrl,
+  }
+  await Promise.all([
+    addDoc(collection(db, FRAMES_COLLECTION), frameDoc),
+    updateDoc(doc(db, REQUESTS_COLLECTION, request.firestoreId), { status: 'approved' }),
+  ])
+}
+
+/** Admin: reject — just updates status, keeps Storage file for reference. */
+export async function rejectFrameRequest(firestoreId: string): Promise<void> {
+  await updateDoc(doc(db, REQUESTS_COLLECTION, firestoreId), { status: 'rejected' })
 }
 

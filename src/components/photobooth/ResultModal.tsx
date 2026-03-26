@@ -212,7 +212,7 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
             )}
 
             {!recapStripUrl && !buildingStrip && !hasClips && (
-              <p className="text-[#444] text-xs text-center mt-4">
+              <p className="text-white text-xs text-center mt-4">
                 Nhấn <span className="text-white font-medium">Upload &amp; Lấy QR</span> để lưu lên đám mây.<br />
                 Hoặc <span className="text-white font-medium">Tải về</span> ngay không cần upload.
               </p>

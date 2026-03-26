@@ -63,7 +63,7 @@ export default function PhotoSlot({ index, slot, onUpload, onRemove }: PhotoSlot
         <path d="M33 22 L43 36 L50 28 L62 44 H24 Z" fill="white" opacity="0.2" />
         <circle cx="52" cy="24" r="5" fill="white" opacity="0.3" />
       </svg>
-      <span className="text-[#444] text-xs flex items-center gap-1">
+      <span className="text-white text-xs flex items-center gap-1">
         <UploadOutlined /> Upload
       </span>
       <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />

@@ -3,6 +3,7 @@ import { Modal, Input, Spin, Empty } from 'antd'
 import { fetchFrames, fetchCategories, frameImageUrl } from '@/lib/frameService'
 import type { FrameItem, FrameCategory } from '@/lib/frameService'
 import type { LayoutConfig } from '@/types/photobooth'
+import ContributeFrameModal from './ContributeFrameModal'
 
 interface FrameModalProps {
   open: boolean
@@ -29,6 +30,7 @@ export default function FrameModal({
   const [activeCategoryId, setActiveCategoryId] = useState<number | null>(null)
   const [slotFilter, setSlotFilter] = useState<number>(currentLayout.slots)
   const [preview, setPreview] = useState<FrameItem | null>(null)
+  const [contributeOpen, setContributeOpen] = useState(false)
 
   // Sync slotFilter when modal opens (layout may have changed outside)
   useEffect(() => {
@@ -104,12 +106,20 @@ export default function FrameModal({
             >
               Bỏ Khung
             </button>
-            <button
-              onClick={onClose}
-              className="text-xs px-3 py-1.5 rounded-md border border-[#2a2a2a] text-[#666] hover:text-[#aaa] hover:border-[#444] transition"
-            >
-              Huỷ
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setContributeOpen(true)}
+                className="text-xs px-3 py-1.5 rounded-md border border-[#2a2a2a] text-[#666] hover:text-[#aaa] hover:border-[#444] transition"
+              >
+                + Đóng góp khung
+              </button>
+              <button
+                onClick={onClose}
+                className="text-xs px-3 py-1.5 rounded-md border border-[#2a2a2a] text-[#666] hover:text-[#aaa] hover:border-[#444] transition"
+              >
+                Huỷ
+              </button>
+            </div>
           </div>
         }
         width={680}
@@ -118,7 +128,7 @@ export default function FrameModal({
         {/* Slot count filter pills */}
         {availableSlots.length > 1 && (
           <div className="px-4 pt-3 pb-2 flex items-center gap-2 flex-wrap">
-            <span className="text-[10px] text-[#444] font-semibold uppercase tracking-[0.15em] shrink-0">Số Ảnh:</span>
+            <span className="text-[10px] text-white font-semibold uppercase tracking-[0.15em] shrink-0">Số Ảnh:</span>
             {availableSlots.map(n => (
               <button
                 key={n}
@@ -213,6 +223,7 @@ export default function FrameModal({
                   </button>
                 )
               })}
+
             </div>
           )}
         </div>
@@ -253,6 +264,7 @@ export default function FrameModal({
           </div>
         )}
       </Modal>
+      <ContributeFrameModal open={contributeOpen} onClose={() => setContributeOpen(false)} />
     </>
   )
 }

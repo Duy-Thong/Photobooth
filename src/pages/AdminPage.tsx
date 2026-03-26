@@ -6,12 +6,17 @@ import {
   fetchCustomFrames as fetchCustomFramesService,
   uploadFrame as uploadFrameService,
   deleteCustomFrame as deleteCustomFrameService,
+  updateFrame as updateFrameService,
+  fetchFrameRequests as fetchFrameRequestsService,
+  approveFrameRequest as approveFrameRequestService,
+  rejectFrameRequest as rejectFrameRequestService,
   frameImageUrl,
   type FrameItem,
+  type FrameRequest,
 } from '@/lib/frameService'
 import { detectFrameSlots } from '@/lib/imageProcessing'
 import { Button, Input, Modal, Select, Spin, Empty, Tooltip } from 'antd'
-import { DeleteOutlined, ReloadOutlined, LogoutOutlined, PlayCircleOutlined, DeleteFilled, ClockCircleOutlined, UploadOutlined, PictureOutlined } from '@ant-design/icons'
+import { DeleteOutlined, ReloadOutlined, LogoutOutlined, PlayCircleOutlined, DeleteFilled, ClockCircleOutlined, UploadOutlined, PictureOutlined, EditOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons'
 
 interface MediaItem {
   name: string
@@ -40,7 +45,7 @@ export default function AdminPage() {
   const [deletingPath, setDeletingPath] = useState<string | null>(null)
   const [bulkDeleting, setBulkDeleting] = useState(false)
   const [previewItem, setPreviewItem] = useState<MediaItem | null>(null)
-  const [tab, setTab] = useState<'photos' | 'videos' | 'frames'>('photos')
+  const [tab, setTab] = useState<'photos' | 'videos' | 'frames' | 'requests'>('photos')
 
   // ── Frames tab state ────────────────────────────────────────────────────────
   const [customFrames, setCustomFrames] = useState<FrameItem[]>([])
@@ -81,6 +86,104 @@ export default function AdminPage() {
   const [uploadFrameType, setUploadFrameType] = useState<FrameItem['frame']>('square')
   const [uploading, setUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // ── Edit frame state ─────────────────────────────────────────────────────────
+  const [editingFrame, setEditingFrame] = useState<FrameItem | null>(null)
+  const [editName, setEditName] = useState('')
+  const [editCategory, setEditCategory] = useState('')
+  const [editSlots, setEditSlots] = useState(4)
+  const [editFrameType, setEditFrameType] = useState<FrameItem['frame']>('square')
+  const [editSaving, setEditSaving] = useState(false)
+
+  const openEditFrame = (frame: FrameItem) => {
+    setEditingFrame(frame)
+    setEditName(frame.name)
+    setEditCategory(frame.categoryName)
+    setEditSlots(frame.slots)
+    setEditFrameType(frame.frame)
+  }
+
+  const handleSaveEdit = async () => {
+    if (!editingFrame?.firestoreId) return
+    setEditSaving(true)
+    try {
+      await updateFrameService(editingFrame.firestoreId, {
+        name: editName.trim(),
+        categoryName: editCategory.trim(),
+        slots: editSlots,
+        frame: editFrameType,
+      })
+      setCustomFrames(prev => prev.map(f =>
+        f.firestoreId === editingFrame.firestoreId
+          ? { ...f, name: editName.trim(), categoryName: editCategory.trim(), slots: editSlots, frame: editFrameType }
+          : f
+      ))
+      setEditingFrame(null)
+    } catch {
+      Modal.error({ title: 'Lưu thất bại', centered: true })
+    } finally {
+      setEditSaving(false)
+    }
+  }
+
+  // ── Requests tab state ───────────────────────────────────────────────────────
+  const [requests, setRequests] = useState<FrameRequest[]>([])
+  const [requestsLoading, setRequestsLoading] = useState(false)
+  const [requestStatusFilter, setRequestStatusFilter] = useState<'pending' | 'approved' | 'rejected' | 'all'>('pending')
+  const [processingId, setProcessingId] = useState<string | null>(null)
+  const [previewRequest, setPreviewRequest] = useState<FrameRequest | null>(null)
+
+  const loadRequests = useCallback(async (status: typeof requestStatusFilter = requestStatusFilter) => {
+    setRequestsLoading(true)
+    try {
+      const data = await fetchFrameRequestsService(status)
+      setRequests(data)
+    } finally {
+      setRequestsLoading(false)
+    }
+  }, [requestStatusFilter])
+
+  useEffect(() => { if (tab === 'requests') loadRequests() }, [tab, loadRequests])
+
+  const handleApproveRequest = async (req: FrameRequest) => {
+    setProcessingId(req.firestoreId)
+    try {
+      await approveFrameRequestService(req)
+      setRequests(prev => prev.filter(r => r.firestoreId !== req.firestoreId))
+      // Also refresh frames list to show the newly approved frame
+      loadCustomFrames()
+    } catch {
+      Modal.error({ title: 'Duyệt thất bại', centered: true })
+    } finally {
+      setProcessingId(null)
+    }
+  }
+
+  const handleRejectRequest = (req: FrameRequest) => {
+    Modal.confirm({
+      title: 'Từ chối đề xuất này?',
+      content: `"${req.suggestedName}" từ ${req.submitterContact}`,
+      okText: 'Từ chối',
+      okButtonProps: { danger: true },
+      cancelText: 'Hủy',
+      centered: true,
+      styles: {
+        body: { background: '#1a1a1a', color: '#e5e5e5' },
+        header: { background: '#1a1a1a' },
+        footer: { background: '#1a1a1a' },
+        mask: { backdropFilter: 'blur(4px)' },
+      },
+      onOk: async () => {
+        setProcessingId(req.firestoreId)
+        try {
+          await rejectFrameRequestService(req.firestoreId)
+          setRequests(prev => prev.filter(r => r.firestoreId !== req.firestoreId))
+        } finally {
+          setProcessingId(null)
+        }
+      },
+    })
+  }
 
   const fetchAll = useCallback(async () => {
     setLoading(true)
@@ -350,7 +453,7 @@ export default function AdminPage() {
 
       {/* Tabs */}
       <div className="flex border-b border-[#1f1f1f] px-6">
-        {(['photos', 'videos', 'frames'] as const).map(t => (
+        {(['photos', 'videos', 'frames', 'requests'] as const).map(t => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -360,7 +463,10 @@ export default function AdminPage() {
                 : 'border-transparent text-[#555] hover:text-[#aaa]'
             }`}
           >
-            {t === 'photos' ? `Ảnh (${photos.length})` : t === 'videos' ? `Video (${videos.length})` : `Khung (${customFrames.length})`}
+            {t === 'photos' ? `Ảnh (${photos.length})`
+              : t === 'videos' ? `Video (${videos.length})`
+              : t === 'frames' ? `Khung (${customFrames.length})`
+              : `Đề Xuất${requests.length > 0 && requestStatusFilter === 'pending' ? ` (${requests.length})` : ''}`}
           </button>
         ))}
       </div>
@@ -401,7 +507,7 @@ export default function AdminPage() {
           {/* Slot filter pills */}
           {frameSlotOptions.length > 1 && (
             <div className="flex items-center gap-2 flex-wrap mb-3">
-              <span className="text-[10px] text-[#444] font-semibold uppercase tracking-[0.15em] shrink-0">Số slot:</span>
+              <span className="text-[10px] text-white font-semibold uppercase tracking-[0.15em] shrink-0">Số slot:</span>
               {[null, ...frameSlotOptions].map(n => (
                 <button
                   key={n ?? 'all'}
@@ -421,7 +527,7 @@ export default function AdminPage() {
           {/* Category filter pills */}
           {frameCategoryOptions.length > 1 && (
             <div className="flex items-center gap-2 flex-wrap mb-4">
-              <span className="text-[10px] text-[#444] font-semibold uppercase tracking-[0.15em] shrink-0">Danh mục:</span>
+              <span className="text-[10px] text-white font-semibold uppercase tracking-[0.15em] shrink-0">Danh mục:</span>
               {[null, ...frameCategoryOptions].map(cat => (
                 <button
                   key={cat ?? 'all'}
@@ -466,6 +572,14 @@ export default function AdminPage() {
                     <p className="text-[#555] text-[10px] truncate">{frame.categoryName}</p>
                     <p className="text-[#3a3a3a] text-[10px]">{frame.slots} slot · {frame.frame}</p>
                   </div>
+                  <Tooltip title="Chỉnh sửa">
+                    <button
+                      onClick={() => openEditFrame(frame)}
+                      className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/70 hover:bg-blue-600 text-white rounded-lg p-1.5"
+                    >
+                      <EditOutlined />
+                    </button>
+                  </Tooltip>
                   <Tooltip title="Xóa khung">
                     <button
                       onClick={() => handleDeleteFrame(frame)}
@@ -475,6 +589,82 @@ export default function AdminPage() {
                       {deletingFrameId === frame.firestoreId ? <Spin size="small" /> : <DeleteOutlined />}
                     </button>
                   </Tooltip>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : tab === 'requests' ? (
+        <div className="flex-1 p-6">
+          {/* Status filter */}
+          <div className="flex items-center gap-2 mb-5 flex-wrap">
+            {(['pending', 'approved', 'rejected', 'all'] as const).map(s => (
+              <button
+                key={s}
+                onClick={() => { setRequestStatusFilter(s); loadRequests(s) }}
+                className={`text-[11px] px-3 py-1 rounded-md border transition-all duration-150 ${
+                  requestStatusFilter === s
+                    ? 'bg-white text-black border-white font-semibold'
+                    : 'border-[#252525] text-[#5a5a5a] hover:border-[#3a3a3a] hover:text-[#bbb]'
+                }`}
+              >
+                {s === 'pending' ? 'Chờ duyệt' : s === 'approved' ? 'Đã duyệt' : s === 'rejected' ? 'Từ chối' : 'Tất cả'}
+              </button>
+            ))}
+            <Button size="small" icon={<ReloadOutlined />} onClick={() => loadRequests()} loading={requestsLoading}
+              style={{ background: '#1e1e1e', border: '1px solid #2a2a2a', color: '#888', marginLeft: 4 }}>
+              Tải lại
+            </Button>
+          </div>
+
+          {requestsLoading ? (
+            <div className="flex justify-center items-center h-64"><Spin size="large" /></div>
+          ) : requests.length === 0 ? (
+            <Empty description={<span className="text-[#555]">Không có đề xuất nào</span>} className="mt-20" />
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              {requests.map(req => (
+                <div key={req.firestoreId} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl overflow-hidden hover:border-[#363636] transition-colors">
+                  {/* Preview */}
+                  <div
+                    className="bg-[#111] flex items-center justify-center aspect-3/4 cursor-pointer"
+                    onClick={() => setPreviewRequest(req)}
+                  >
+                    <img src={req.storageUrl} alt={req.suggestedName} className="w-full h-full object-contain" loading="lazy" />
+                  </div>
+                  {/* Info */}
+                  <div className="p-2 flex flex-col gap-0.5">
+                    <p className="text-white text-xs font-medium truncate">{req.suggestedName}</p>
+                    <p className="text-[#555] text-[10px] truncate">{req.suggestedCategory}</p>
+                    <p className="text-[#3a3a3a] text-[10px]">{req.slots} slot · {req.suggestedFrame}</p>
+                    <p className="text-[#3a3a3a] text-[10px] truncate mt-0.5">{req.submitterContact}</p>
+                    <p className="text-[#2a2a2a] text-[10px]">{new Date(req.submittedAt).toLocaleDateString('vi-VN')}</p>
+                  </div>
+                  {/* Actions */}
+                  {req.status === 'pending' && (
+                    <div className="flex border-t border-[#1f1f1f]">
+                      <button
+                        onClick={() => handleApproveRequest(req)}
+                        disabled={processingId === req.firestoreId}
+                        className="flex-1 flex items-center justify-center gap-1 py-1.5 text-[11px] text-green-400 hover:bg-green-900/30 transition-colors"
+                      >
+                        {processingId === req.firestoreId ? <Spin size="small" /> : <><CheckOutlined /> Duyệt</>}
+                      </button>
+                      <div className="w-px bg-[#1f1f1f]" />
+                      <button
+                        onClick={() => handleRejectRequest(req)}
+                        disabled={processingId === req.firestoreId}
+                        className="flex-1 flex items-center justify-center gap-1 py-1.5 text-[11px] text-red-400 hover:bg-red-900/30 transition-colors"
+                      >
+                        <CloseOutlined /> Từ chối
+                      </button>
+                    </div>
+                  )}
+                  {req.status !== 'pending' && (
+                    <div className={`text-center py-1.5 text-[10px] ${req.status === 'approved' ? 'text-green-500' : 'text-red-500'}`}>
+                      {req.status === 'approved' ? '✓ Đã duyệt' : '✗ Từ chối'}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -520,7 +710,7 @@ export default function AdminPage() {
                 {/* Info */}
                 <div className="p-2">
                   <p className="text-[#666] text-[10px] truncate">{formatDate(item.timeCreated)}</p>
-                  <p className="text-[#444] text-[10px]">{formatBytes(item.size)}</p>
+                  <p className="text-white text-[10px]">{formatBytes(item.size)}</p>
                 </div>
 
                 {/* Delete btn */}
@@ -708,6 +898,118 @@ export default function AdminPage() {
             </button>
           </div>
         </div>
+      </Modal>
+
+      {/* Edit frame modal */}
+      <Modal
+        open={!!editingFrame}
+        onCancel={() => setEditingFrame(null)}
+        title={<span className="text-[#aaa] text-sm font-medium">Chỉnh Sửa Khung</span>}
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button onClick={() => setEditingFrame(null)} style={{ background: '#1e1e1e', border: '1px solid #2a2a2a', color: '#888' }}>
+              Hủy
+            </Button>
+            <Button
+              type="primary"
+              onClick={handleSaveEdit}
+              loading={editSaving}
+              disabled={!editName.trim() || !editCategory.trim()}
+            >
+              Lưu
+            </Button>
+          </div>
+        }
+        centered
+        width={420}
+        styles={{
+          body: { background: '#1a1a1a', color: '#e5e5e5' },
+          header: { background: '#1a1a1a' },
+          footer: { background: '#1a1a1a' },
+          mask: { backdropFilter: 'blur(4px)' },
+        }}
+      >
+        <div className="flex gap-4 py-2">
+          {editingFrame && (
+            <img
+              src={frameImageUrl(editingFrame.filename, editingFrame.storageUrl)}
+              alt={editingFrame.name}
+              className="w-20 object-contain rounded-md bg-[#111] shrink-0"
+            />
+          )}
+          <div className="flex flex-col gap-3 flex-1">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[#888] text-xs">Tên Khung</label>
+              <Input value={editName} onChange={e => setEditName(e.target.value)}
+                style={{ background: '#111', borderColor: '#2a2a2a', color: '#e5e5e5' }} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[#888] text-xs">Danh Mục</label>
+              <Input value={editCategory} onChange={e => setEditCategory(e.target.value)}
+                list="edit-categories"
+                style={{ background: '#111', borderColor: '#2a2a2a', color: '#e5e5e5' }} />
+              <datalist id="edit-categories">
+                <option value="Frame Basic" />
+                <option value="Frame Cartoon" />
+                <option value="Frame Amazing ⭐️" />
+                <option value="Frame IDOL Hoạt Họa" />
+              </datalist>
+            </div>
+            <div className="flex gap-3">
+              <div className="flex flex-col gap-1.5 flex-1">
+                <label className="text-[#888] text-xs">Số Slot</label>
+                <Select value={editSlots} onChange={v => { setEditSlots(v); setEditFrameType(v === 6 ? 'bigrectangle' : v === 4 ? 'square' : 'grid') }}
+                  options={[1,2,3,4,5,6,8,9].map(n => ({ value: n, label: `${n} slot` }))} />
+              </div>
+              <div className="flex flex-col gap-1.5 flex-1">
+                <label className="text-[#888] text-xs">Loại</label>
+                <Select value={editFrameType} onChange={setEditFrameType}
+                  options={[
+                    { value: 'square', label: 'square' },
+                    { value: 'bigrectangle', label: 'bigrectangle' },
+                    { value: 'grid', label: 'grid' },
+                  ]} />
+              </div>
+            </div>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Request preview modal */}
+      <Modal
+        open={!!previewRequest}
+        onCancel={() => setPreviewRequest(null)}
+        title={<span className="text-[#aaa] text-sm font-normal">{previewRequest?.suggestedName}</span>}
+        footer={
+          previewRequest?.status === 'pending' ? (
+            <div className="flex justify-end gap-2">
+              <Button danger onClick={() => { handleRejectRequest(previewRequest!); setPreviewRequest(null) }}
+                icon={<CloseOutlined />}>Từ chối</Button>
+              <Button type="primary" onClick={() => { handleApproveRequest(previewRequest!); setPreviewRequest(null) }}
+                icon={<CheckOutlined />}>Duyệt</Button>
+            </div>
+          ) : null
+        }
+        centered
+        width={360}
+        styles={{
+          body: { background: '#111', padding: 0 },
+          header: { background: '#111', borderBottom: '1px solid #1f1f1f' },
+          footer: { background: '#111' },
+        }}
+      >
+        {previewRequest && (
+          <>
+            <img src={previewRequest.storageUrl} alt={previewRequest.suggestedName} className="w-full" />
+            <div className="p-3 flex flex-col gap-1">
+              <p className="text-[#888] text-xs">Danh mục: <span className="text-white">{previewRequest.suggestedCategory}</span></p>
+              <p className="text-[#888] text-xs">Slot: <span className="text-white">{previewRequest.slots}</span> · {previewRequest.suggestedFrame}</p>
+              <p className="text-[#888] text-xs">Từ: <span className="text-white">{previewRequest.submitterName || 'Ẩn danh'}</span> · {previewRequest.submitterContact}</p>
+              {previewRequest.note && <p className="text-[#888] text-xs">Ghi chú: <span className="text-[#aaa]">{previewRequest.note}</span></p>}
+              <p className="text-white text-[10px]">{new Date(previewRequest.submittedAt).toLocaleString('vi-VN')}</p>
+            </div>
+          </>
+        )}
       </Modal>
     </div>
   )

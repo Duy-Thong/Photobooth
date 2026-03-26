@@ -12,6 +12,7 @@ import CaptureControls from '@/components/photobooth/CaptureControls'
 import FilterPanel from '@/components/photobooth/FilterPanel'
 import FrameModal from '@/components/photobooth/FrameModal'
 import ResultModal from '@/components/photobooth/ResultModal'
+import ContributeFrameModal from '@/components/photobooth/ContributeFrameModal'
 
 export default function HomePage() {
   const { videoRef, isMirrored, isReady, error, toggleMirror, captureFrame, selectDevice, retryCamera, devices, activeDeviceId } = useCamera()
@@ -36,6 +37,7 @@ export default function HomePage() {
   const [buildingStrip, setBuildingStrip] = useState(false)
   const [frameModalOpen, setFrameModalOpen] = useState(false)
   const [resultModalOpen, setResultModalOpen] = useState(false)
+  const [contributeOpen, setContributeOpen] = useState(false)
   const [messageApi, contextHolder] = message.useMessage()
 
   const abortRef = useRef(false)
@@ -190,6 +192,7 @@ export default function HomePage() {
   return (
     <>
       {contextHolder}
+      <ContributeFrameModal open={contributeOpen} onClose={() => setContributeOpen(false)} />
       <FrameModal
         open={frameModalOpen}
         currentLayout={layout}
@@ -287,6 +290,7 @@ export default function HomePage() {
                 usePhotoboothStore.getState().setFrameUrl(null)
                 setFinalImageUrl(null)
               }}
+              onContributeFrame={() => setContributeOpen(true)}
             />
           </div>
         </div>
