@@ -1,34 +1,64 @@
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { storage } from './firebase'
 import { stampQrOnImage } from './imageProcessing'
+import { generateSessionId, createSession } from './sessionService'
 
 /** Stable public URL for a Storage path (no token required when rules allow read). */
 function stableStorageUrl(bucket: string, storagePath: string): string {
   return `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodeURIComponent(storagePath)}?alt=media`
 }
 
+/** App origin — works in both dev and production. */
+function appOrigin(): string {
+  return window.location.origin
+}
+
 /**
- * Upload a photo strip with QR code embedded in one pass:
- * 1. Generate filename/path deterministically BEFORE upload
- * 2. Compute the stable public URL from bucket + path
- * 3. Stamp QR (pointing to that URL) onto the image
- * 4. Upload the QR-stamped image at exactly that path
- * Returns the stable public URL (same as what the QR encodes).
+ * Upload a full capture session (strip image + optional strip video) to Firebase Storage,
+ * save a Firestore session document, and embed a QR code pointing to the session page.
+ *
+ * Returns { sessionId, stampedBlobUrl } where:
+ * - sessionId: for routing to /session/:id
+ * - stampedBlobUrl: local blob with QR stamped for immediate download/preview
  */
-export async function uploadPhotoWithQr(blobUrl: string): Promise<{ publicUrl: string; stampedBlobUrl: string }> {
+export async function uploadSession(
+  imageBlobUrl: string,
+  videoUrl?: string | null,
+  videoMimeType?: string,
+): Promise<{ sessionId: string; stampedBlobUrl: string }> {
   const bucket = import.meta.env.VITE_FIREBASE_STORAGE_BUCKET as string
-  const filename = `${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`
-  const storagePath = `photobooth/${filename}`
-  const publicUrl = stableStorageUrl(bucket, storagePath)
+  const sessionId = generateSessionId()
+  const sessionPageUrl = `${appOrigin()}/session/${sessionId}`
 
-  // Stamp QR before upload — QR encodes publicUrl which we already know
-  const stampedBlobUrl = await stampQrOnImage(blobUrl, publicUrl)
+  // Paths use sessionId so image + video are co-located
+  const imagePath = `sessions/${sessionId}/strip.jpg`
+  const imageStorageUrl = stableStorageUrl(bucket, imagePath)
 
-  const res = await fetch(stampedBlobUrl)
-  const blob = await res.blob()
-  const storageRef = ref(storage, storagePath)
-  await uploadBytes(storageRef, blob, { contentType: 'image/jpeg' })
-  return { publicUrl, stampedBlobUrl }
+  // Stamp QR (pointing to session page) onto image BEFORE upload
+  const stampedBlobUrl = await stampQrOnImage(imageBlobUrl, sessionPageUrl)
+
+  // Upload image + video in parallel
+  const imageBlob = await fetch(stampedBlobUrl).then(r => r.blob())
+  const uploadTasks: Promise<unknown>[] = [
+    uploadBytes(ref(storage, imagePath), imageBlob, { contentType: 'image/jpeg' }),
+  ]
+
+  let videoStorageUrl: string | null = null
+  if (videoUrl) {
+    const baseMime = (videoMimeType ?? 'video/webm').split(';')[0].trim()
+    const ext = baseMime === 'video/mp4' ? 'mp4' : 'webm'
+    const videoPath = `sessions/${sessionId}/strip.${ext}`
+    videoStorageUrl = stableStorageUrl(bucket, videoPath)
+    const videoBlob = await fetch(videoUrl).then(r => r.blob())
+    uploadTasks.push(uploadBytes(ref(storage, videoPath), videoBlob, { contentType: baseMime }))
+  }
+
+  await Promise.all(uploadTasks)
+
+  // Save session metadata to Firestore
+  await createSession({ id: sessionId, imageUrl: imageStorageUrl, videoUrl: videoStorageUrl })
+
+  return { sessionId, stampedBlobUrl }
 }
 
 /**

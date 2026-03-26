@@ -3,6 +3,7 @@ import { MainLayout } from '@/components/layout'
 import HomePage from '@/pages/HomePage'
 import AdminLoginPage from '@/pages/AdminLoginPage'
 import AdminPage from '@/pages/AdminPage'
+import SessionPage from '@/pages/SessionPage'
 import ProtectedRoute from '@/components/admin/ProtectedRoute'
 
 export const router = createBrowserRouter([
@@ -15,6 +16,10 @@ export const router = createBrowserRouter([
         element: <HomePage />,
       },
     ],
+  },
+  {
+    path: '/session/:id',
+    element: <SessionPage />,
   },
   {
     path: '/admin/login',

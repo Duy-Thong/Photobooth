@@ -1,0 +1,104 @@
+import { useEffect, useState } from 'react'
+import { useParams } from 'react-router-dom'
+import { Spin } from 'antd'
+import { fetchSession, type SessionData } from '@/lib/sessionService'
+
+export default function SessionPage() {
+  const { id } = useParams<{ id: string }>()
+  const [session, setSession] = useState<SessionData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(false)
+
+  useEffect(() => {
+    if (!id) return
+    fetchSession(id)
+      .then(s => { setSession(s); if (!s) setError(true) })
+      .catch(() => setError(true))
+      .finally(() => setLoading(false))
+  }, [id])
+
+  if (loading) {
+    return (
+      <div className="min-h-dvh bg-[#0a0a0a] flex items-center justify-center">
+        <Spin size="large" />
+      </div>
+    )
+  }
+
+  if (error || !session) {
+    return (
+      <div className="min-h-dvh bg-[#0a0a0a] flex flex-col items-center justify-center gap-3 text-center px-6">
+        <p className="text-4xl">📷</p>
+        <p className="text-white font-semibold text-lg">Không tìm thấy ảnh</p>
+        <p className="text-[#555] text-sm">Link này không tồn tại hoặc đã bị xoá.</p>
+        <a href="/" className="mt-4 text-xs text-[#444] hover:text-[#888] underline transition-colors">
+          Về trang chủ
+        </a>
+      </div>
+    )
+  }
+
+  const date = new Date(session.createdAt).toLocaleString('vi-VN', {
+    dateStyle: 'short', timeStyle: 'short',
+  })
+
+  return (
+    <div className="min-h-dvh bg-[#0a0a0a] flex flex-col items-center py-10 px-4 gap-8">
+      {/* Header */}
+      <div className="flex flex-col items-center gap-1">
+        <a href="/" className="text-white font-bold text-xl tracking-tight" style={{ letterSpacing: '-0.04em' }}>
+          Sổ Media
+        </a>
+        <p className="text-[#444] text-[10px] uppercase tracking-[0.2em]">Photobooth</p>
+        <p className="text-[#333] text-xs mt-2">{date}</p>
+      </div>
+
+      {/* Strip image */}
+      <div className="w-full max-w-xs">
+        <img
+          src={session.imageUrl}
+          alt="Photo strip"
+          className="w-full rounded-2xl shadow-2xl border border-[#1a1a1a]"
+          crossOrigin="anonymous"
+        />
+      </div>
+
+      {/* Download button */}
+      <a
+        href={session.imageUrl}
+        download={`somedia-${session.id}.jpg`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="w-full max-w-xs flex items-center justify-center gap-2 py-3 rounded-xl bg-white text-black font-semibold text-sm hover:bg-[#eee] transition-colors"
+      >
+        ↓ Tải ảnh về
+      </a>
+
+      {/* Strip video */}
+      {session.videoUrl && (
+        <div className="w-full max-w-xs flex flex-col gap-3">
+          <p className="text-[#555] text-[10px] uppercase tracking-[0.2em] text-center">Strip Video</p>
+          <video
+            src={session.videoUrl}
+            controls
+            autoPlay
+            loop
+            playsInline
+            className="w-full rounded-xl border border-[#1a1a1a] bg-black"
+          />
+          <a
+            href={session.videoUrl}
+            download={`somedia-${session.id}.webm`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-center text-xs text-[#444] hover:text-[#888] underline transition-colors"
+          >
+            Tải video về
+          </a>
+        </div>
+      )}
+
+      <p className="text-[#2a2a2a] text-[10px] pb-6">somedia · photobooth</p>
+    </div>
+  )
+}

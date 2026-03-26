@@ -1,0 +1,37 @@
+import { collection, doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore'
+import { db } from './firebase'
+
+export interface SessionData {
+  id: string
+  imageUrl: string        // Firebase Storage URL for strip image (with QR)
+  videoUrl: string | null // Firebase Storage URL for strip video
+  createdAt: string       // ISO string
+}
+
+const SESSIONS_COLLECTION = 'sessions'
+
+/** Create a new session document in Firestore. */
+export async function createSession(data: Omit<SessionData, 'createdAt'>): Promise<void> {
+  await setDoc(doc(collection(db, SESSIONS_COLLECTION), data.id), {
+    ...data,
+    createdAt: serverTimestamp(),
+  })
+}
+
+/** Fetch a session by ID. Returns null if not found. */
+export async function fetchSession(id: string): Promise<SessionData | null> {
+  const snap = await getDoc(doc(db, SESSIONS_COLLECTION, id))
+  if (!snap.exists()) return null
+  const d = snap.data()
+  return {
+    id: snap.id,
+    imageUrl: d.imageUrl,
+    videoUrl: d.videoUrl ?? null,
+    createdAt: d.createdAt?.toDate?.()?.toISOString() ?? new Date().toISOString(),
+  }
+}
+
+/** Generate a short unique session ID. */
+export function generateSessionId(): string {
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
+}

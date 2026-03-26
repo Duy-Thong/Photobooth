@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Modal, QRCode, Spin, Button } from 'antd'
 import { DownloadOutlined, ReloadOutlined, PictureOutlined, LoadingOutlined } from '@ant-design/icons'
-import { uploadPhotoWithQr, uploadVideoToFirebase } from '@/lib/uploadService'
+import { uploadSession } from '@/lib/uploadService'
 import { downloadImage } from '@/lib/imageProcessing'
 
 type Phase = 'confirm' | 'uploading' | 'done' | 'error'
@@ -28,7 +28,7 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
   const hasClips = !!recapClips && recapClips.length > 0
 
   const [phase, setPhase] = useState<Phase>('uploading')
-  const [firebaseUrl, setFirebaseUrl] = useState<string | null>(null)
+  const [sessionId, setSessionId] = useState<string | null>(null)
   const [recapStripFirebaseUrl, setRecapStripFirebaseUrl] = useState<string | null>(null)
   const [finalWithQr, setFinalWithQr] = useState<string | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
@@ -41,7 +41,7 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
     if (!open || !imageBlobUrl) return
     // Reset and wait for user confirmation before uploading
     setPhase('confirm')
-    setFirebaseUrl(null)
+    setSessionId(null)
     setRecapStripFirebaseUrl(null)
     setFinalWithQr(null)
     setErrorMsg(null)
@@ -56,15 +56,22 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
 
     async function run() {
       try {
-        // Upload photo with QR already embedded + strip video in parallel
-        const [photoResult, stripVideoUrl] = await Promise.all([
-          uploadPhotoWithQr(imageBlobUrl!),
-          recapStripUrl ? uploadVideoToFirebase(recapStripUrl, recapMimeType ?? undefined) : Promise.resolve(null),
-        ])
+        const result = await uploadSession(
+          imageBlobUrl!,
+          recapStripUrl ?? null,
+          recapMimeType ?? undefined,
+        )
         if (cancelled) return
-        setFirebaseUrl(photoResult.publicUrl)
-        setFinalWithQr(photoResult.stampedBlobUrl)
-        if (stripVideoUrl) setRecapStripFirebaseUrl(stripVideoUrl)
+        setSessionId(result.sessionId)
+        setFinalWithQr(result.stampedBlobUrl)
+        // recapStripFirebaseUrl is now inside the session, derive it
+        const bucket = import.meta.env.VITE_FIREBASE_STORAGE_BUCKET as string
+        if (recapStripUrl) {
+          const ext = (recapMimeType ?? 'video/webm').startsWith('video/mp4') ? 'mp4' : 'webm'
+          setRecapStripFirebaseUrl(
+            `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodeURIComponent(`sessions/${result.sessionId}/strip.${ext}`)}?alt=media`
+          )
+        }
         setPhase('done')
       } catch (err) {
         if (!cancelled) {
@@ -263,7 +270,7 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
       )}
 
       {/* ── DONE ─────────────────────────────────────────────────────────────── */}
-      {phase === 'done' && finalWithQr && firebaseUrl && (
+      {phase === 'done' && finalWithQr && sessionId && (
         <div className="flex gap-6 items-start">
           {/* Left — photo preview with QR stamped */}
           <div className="shrink-0 w-70 flex justify-center">
@@ -278,7 +285,7 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
           <div className="flex-1 flex flex-col items-center gap-4">
             <p className="text-[#666] text-[10px] uppercase tracking-widest self-start">Quét để xem &amp; chia sẻ</p>
             <div className="p-3 rounded-2xl">
-              <QRCode value={firebaseUrl} size={200} bordered={false} errorLevel="H" icon="/clublogo.png" iconSize={44} />
+              <QRCode value={`${window.location.origin}/session/${sessionId}`} size={200} bordered={false} errorLevel="H" icon="/clublogo.png" iconSize={44} />
             </div>
 
             {/* Video recap */}
