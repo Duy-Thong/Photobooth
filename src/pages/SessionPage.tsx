@@ -71,7 +71,7 @@ export default function SessionPage() {
         rel="noopener noreferrer"
         className="w-full max-w-xs flex items-center justify-center gap-2 py-3 rounded-xl bg-white text-black font-semibold text-sm hover:bg-[#eee] transition-colors"
       >
-        ↓ Tải ảnh về
+        ↓ Tải ảnh
       </a>
 
       {/* Strip video */}
@@ -91,9 +91,9 @@ export default function SessionPage() {
             download={`somedia-${session.id}.webm`}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-center text-xs text-[#444] hover:text-[#888] underline transition-colors"
+            className="w-full max-w-xs flex items-center justify-center gap-2 py-3 rounded-xl bg-white text-black font-semibold text-sm hover:bg-[#eee] transition-colors"
           >
-            Tải video về
+            Tải video
           </a>
         </div>
       )}
