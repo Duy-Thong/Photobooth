@@ -350,7 +350,7 @@ export default function HomePage() {
             </div>
 
             {/* Right: photo strip — width depends on layout cols, self-start so it doesn't grow to camera height */}
-            <div className={`shrink-0 w-full md:self-start ${layout.cols === 2 ? 'md:w-64 lg:w-72' : 'md:w-44 lg:w-48'}`}>
+            <div className={`shrink-0 w-full md:self-start ${layout.cols === 2 ? 'md:w-80 lg:w-96' : 'md:w-56 lg:w-64'}`}>
               <PhotoStrip
                 layout={layout}
                 slots={capturedSlots}

@@ -44,21 +44,21 @@ function MiniSlot({
             src={slot.dataUrl}
             alt={`slot ${index + 1}`}
             onClick={() => inputRef.current?.click()}
-            className="w-8 h-8 object-cover rounded-md cursor-pointer opacity-70 hover:opacity-100 transition"
+            className="w-10 h-10 object-cover rounded-lg cursor-pointer opacity-70 hover:opacity-100 transition shadow-sm"
           />
           <button
             onClick={() => onRemove(index)}
-            className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-[#ff4d4f] text-white rounded-full flex items-center justify-center shadow-lg hover:bg-[#ff7875] hover:scale-110 active:scale-95 transition-all z-10"
+            className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-[#ff4d4f] text-white rounded-full flex items-center justify-center shadow-lg hover:bg-[#ff7875] hover:scale-110 active:scale-95 transition-all z-10"
           >
-            <CloseOutlined style={{ fontSize: 8, strokeWidth: 2 }} />
+            <CloseOutlined style={{ fontSize: 9, strokeWidth: 2.5 }} />
           </button>
         </>
       ) : (
         <div
           onClick={() => inputRef.current?.click()}
-          className="w-8 h-8 rounded-md border border-dashed border-[#1e1e1e] bg-[#0a0a0a] flex items-center justify-center cursor-pointer hover:border-[#333] transition"
+          className="w-10 h-10 rounded-lg border border-dashed border-[#1e1e1e] bg-[#0a0a0a] flex items-center justify-center cursor-pointer hover:border-[#383838] transition"
         >
-          <span className="text-[#2a2a2a] text-sm leading-none select-none">+</span>
+          <span className="text-[#333] text-lg leading-none select-none">+</span>
         </div>
       )}
       <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
@@ -139,26 +139,26 @@ export default function PhotoStrip({
 
       {/* ── Status + actions ── */}
       <div className="flex flex-col gap-1.5">
-        <div className="flex items-center justify-between px-0.5">
-          <span className="text-[#2e2e2e] text-[9px] font-semibold uppercase tracking-[0.15em]">Slots</span>
-          <span className="text-[#3a3a3a] text-[11px] font-medium tabular-nums">{filled}/{layout.slots}</span>
+        <div className="flex items-center justify-between px-1">
+          <span className="text-white text-[10px] font-bold uppercase tracking-[0.12em] opacity-40">Ảnh đã chụp</span>
+          <span className="text-white text-[13px] font-bold tabular-nums opacity-60">{filled} / {layout.slots}</span>
         </div>
 
         {allFilled && !finalImageUrl && (
           <button
             onClick={onBuildStrip}
-            className="w-full py-2 rounded-lg bg-white text-black text-xs font-bold tracking-wide hover:bg-[#e8e8e8] active:scale-[0.98] transition-all duration-150"
+            className="w-full py-3 rounded-xl bg-white text-black text-[13px] font-bold tracking-wide hover:bg-[#e8e8e8] active:scale-[0.97] transition-all duration-150 shadow-lg"
           >
-            ✦ Tạo Ảnh
+            ✦ Tạo Ảnh Strip
           </button>
         )}
 
         {finalImageUrl && (
           <button
             onClick={onDownload}
-            className="w-full py-2 rounded-lg bg-white text-black text-xs font-bold tracking-wide hover:bg-[#e8e8e8] active:scale-[0.98] transition-all duration-150 flex items-center justify-center gap-1.5"
+            className="w-full py-3 rounded-xl bg-white text-black text-[13px] font-bold tracking-wide hover:bg-[#e8e8e8] active:scale-[0.97] transition-all duration-150 flex items-center justify-center gap-2 shadow-lg"
           >
-            <DownloadOutlined /> Tải Về
+            <DownloadOutlined style={{ fontSize: 16 }} /> Tải Về Máy
           </button>
         )}
       </div>

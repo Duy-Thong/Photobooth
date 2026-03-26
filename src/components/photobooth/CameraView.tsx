@@ -24,7 +24,7 @@ function CamBtn({ onClick, title, children }: { onClick: () => void; title: stri
     <button
       onClick={onClick}
       title={title}
-      className="w-8 h-8 rounded-lg bg-black/50 backdrop-blur-sm flex items-center justify-center text-white/60 hover:text-white hover:bg-black/70 transition-all duration-150 border border-white/5"
+      className="w-10 h-10 rounded-xl bg-black/60 backdrop-blur-md flex items-center justify-center text-white/70 hover:text-white hover:bg-black/80 transition-all duration-150 border border-white/10 shadow-lg"
     >
       {children}
     </button>
@@ -66,8 +66,8 @@ export default function CameraView({
 
       {!isReady && !error && (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
-          <div className="w-5 h-5 border-2 border-[#222] border-t-[#555] rounded-full animate-spin" />
-          <span className="text-[10px] tracking-[0.2em] uppercase text-[#3a3a3a]">Khởi động camera...</span>
+          <div className="w-6 h-6 border-2 border-white/5 border-t-white/40 rounded-full animate-spin" />
+          <span className="text-[11px] tracking-[0.15em] font-bold uppercase text-white/30">Khởi động camera...</span>
         </div>
       )}
 
@@ -76,7 +76,7 @@ export default function CameraView({
           <p className="text-[#555] text-sm leading-relaxed">{error}</p>
           <button
             onClick={onRetry}
-            className="px-4 py-1.5 bg-white text-black text-xs font-semibold rounded-lg hover:bg-[#e8e8e8] active:scale-95 transition"
+            className="px-6 py-2.5 bg-white text-black text-[13px] font-bold rounded-xl hover:bg-[#e8e8e8] active:scale-95 transition shadow-xl"
           >
             Thử lại
           </button>
@@ -86,7 +86,7 @@ export default function CameraView({
       {/* Corner controls */}
       <div className="absolute top-2.5 left-2.5 right-2.5 flex justify-between items-start">
         <CamBtn onClick={onToggleMirror} title="Lật ngang">
-          <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+          <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
             <path d="M15 21h2v-2h-2v2zm4-12h2V7h-2v2zm0 8h2v-2h-2v2zm0-4h2v-2h-2v2zm-4 8h2v-2h-2v2zM5 3H3v18h2V3zm4 18h2v-2H9v2zm8-16V3l-4 4 4 4V7h2V5h-2zm-8 0h2V3H9v2z" />
           </svg>
         </CamBtn>
@@ -96,11 +96,11 @@ export default function CameraView({
           <select
             value={activeDeviceId ?? ''}
             onChange={e => onSelectDevice(e.target.value)}
-            className="h-8 max-w-40 px-2 rounded-lg bg-black/50 backdrop-blur-sm text-white/80 text-[11px] border border-white/8 hover:bg-black/70 transition cursor-pointer outline-none"
+            className="h-10 max-w-48 px-3 rounded-xl bg-black/60 backdrop-blur-md text-white/90 text-xs font-bold border border-white/10 hover:bg-black/80 transition cursor-pointer outline-none shadow-lg"
           >
             {devices.map((d, i) => (
               <option key={d.deviceId} value={d.deviceId} className="bg-[#1a1a1a] text-white">
-                {d.label.length > 24 ? d.label.slice(0, 22) + '…' : d.label || `Camera ${i + 1}`}
+                {d.label.length > 28 ? d.label.slice(0, 26) + '…' : d.label || `Camera ${i + 1}`}
               </option>
             ))}
           </select>
@@ -126,7 +126,7 @@ export default function CameraView({
 
       {/* Progress pill */}
       <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2">
-        <span className="bg-black/55 backdrop-blur-sm text-white/80 text-[10px] font-medium px-3 py-0.5 rounded-full tracking-wider border border-white/8">
+        <span className="bg-black/70 backdrop-blur-md text-white text-[11px] font-bold px-4 py-1.5 rounded-full tracking-wider border border-white/10 shadow-lg">
           {capturedCount} / {totalSlots}
         </span>
       </div>
