@@ -27,14 +27,14 @@ export default function FrameModal({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
-  const [activeCategoryId, setActiveCategoryId] = useState<number | null>(null)
-  const [slotFilter, setSlotFilter] = useState<number>(currentLayout.slots)
+  const [activeCategoryName, setActiveCategoryName] = useState<string | null>(null)
+  const [slotFilter, setSlotFilter] = useState<number>(currentLayout.slots || 0)
   const [preview, setPreview] = useState<FrameItem | null>(null)
   const [contributeOpen, setContributeOpen] = useState(false)
 
   // Sync slotFilter when modal opens (layout may have changed outside)
   useEffect(() => {
-    if (open) setSlotFilter(currentLayout.slots)
+    if (open) setSlotFilter(currentLayout.slots || 0)
   }, [open, currentLayout.slots])
 
   // Load data when modal opens — wait for Firebase, no static preload
@@ -53,23 +53,23 @@ export default function FrameModal({
     let list = slotFilter > 0
       ? frames.filter(f => f.slots === slotFilter)
       : frames
-    if (activeCategoryId !== null) {
-      list = list.filter((f) => f.categoryId === activeCategoryId)
+    if (activeCategoryName !== null) {
+      list = list.filter((f) => f.categoryName === activeCategoryName)
     }
     if (search.trim()) {
       const q = search.toLowerCase()
       list = list.filter((f) => f.name.toLowerCase().includes(q))
     }
     return list
-  }, [frames, slotFilter, activeCategoryId, search])
+  }, [frames, slotFilter, activeCategoryName, search])
 
   // Categories available for current slot filter
   const availableCategories = useMemo(() => {
     const base = slotFilter > 0
       ? frames.filter(f => f.slots === slotFilter)
       : frames
-    const ids = new Set(base.map(f => f.categoryId))
-    return categories.filter(c => ids.has(c.id))
+    const names = new Set(base.map(f => f.categoryName))
+    return categories.filter(c => names.has(c.name))
   }, [frames, categories, slotFilter])
 
   // Distinct slot counts in ALL frames
@@ -123,25 +123,22 @@ export default function FrameModal({
         width={680}
         centered
       >
-        {/* Slot count filter pills */}
-        {availableSlots.length > 1 && (
-          <div className="px-4 pt-3 pb-2 flex items-center gap-2 flex-wrap">
-            <span className="text-[10px] text-white font-semibold uppercase tracking-[0.15em] shrink-0">Số Ảnh:</span>
-            {availableSlots.map(n => (
-              <button
-                key={n}
-                onClick={() => { setSlotFilter(n); setActiveCategoryId(null) }}
-                className={`text-[11px] px-2.5 py-0.5 rounded-md border transition-all duration-150 ${
-                  slotFilter === n
-                    ? 'bg-white text-black border-white font-semibold'
-                    : 'border-[#252525] text-[#5a5a5a] hover:border-[#3a3a3a] hover:text-[#bbb]'
-                }`}
-              >
-                {n}
-              </button>
-            ))}
-          </div>
-        )}
+        <div className="px-4 pt-3 pb-2 flex items-center gap-2 flex-wrap">
+          <span className="text-[10px] text-white font-semibold uppercase tracking-[0.15em] shrink-0">Số Ảnh:</span>
+          {[0, ...availableSlots].map(n => (
+            <button
+              key={n}
+              onClick={() => { setSlotFilter(n); setActiveCategoryName(null) }}
+              className={`text-[11px] px-2.5 py-0.5 rounded-md border transition-all duration-150 ${
+                slotFilter === n
+                  ? 'bg-white text-black border-white font-semibold'
+                  : 'border-[#252525] text-[#5a5a5a] hover:border-[#3a3a3a] hover:text-[#bbb]'
+              }`}
+            >
+              {n === 0 ? 'Tất cả' : n}
+            </button>
+          ))}
+        </div>
 
         {/* Search */}
         <div className="px-4 pt-1 pb-3">
@@ -159,11 +156,11 @@ export default function FrameModal({
             { id: null, name: 'Tất cả' },
             ...availableCategories
           ].map((cat) => {
-            const active = cat.id === activeCategoryId
+            const active = cat.name === activeCategoryName || (cat.id === null && activeCategoryName === null)
             return (
               <button
                 key={cat.id ?? 'all'}
-                onClick={() => setActiveCategoryId(cat.id)}
+                onClick={() => setActiveCategoryName(cat.name === 'Tất cả' ? null : cat.name)}
                 className={`text-[11px] px-3 py-1 rounded-md border transition-all duration-150 ${
                   active
                     ? 'bg-white text-black border-white font-semibold'
