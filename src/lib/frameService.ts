@@ -2,6 +2,7 @@ import { collection, getDocs, addDoc, deleteDoc, doc, query, orderBy, updateDoc 
 import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
 import { db, storage } from './firebase'
 import { STATIC_FRAMES } from './frames-static'
+import type { SlotRect } from '@/types/photobooth'
 
 export interface FrameItem {
   id: number
@@ -17,6 +18,8 @@ export interface FrameItem {
   storageUrl?: string
   /** Firestore document ID — only present for admin-uploaded frames */
   firestoreId?: string
+  /** Pre-calculated slot coordinates to eliminate on-the-fly detection delay */
+  slots_data?: SlotRect[]
 }
 
 export interface FrameCategory {

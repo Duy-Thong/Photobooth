@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { type FilterType, type EffectType, type LayoutConfig, type CapturedSlot, LAYOUTS } from '@/types/photobooth'
+import type { FrameItem } from '@/lib/frameService'
 
 interface PhotoboothState {
   // Layout
@@ -30,8 +31,8 @@ interface PhotoboothState {
   setFinalImageUrl: (url: string | null) => void
 
   // Frame overlay
-  frameUrl: string | null
-  setFrameUrl: (url: string | null) => void
+  selectedFrame: FrameItem | null
+  setSelectedFrame: (frame: FrameItem | null) => void
 }
 
 export const usePhotoboothStore = create<PhotoboothState>((set, get) => ({
@@ -75,6 +76,6 @@ export const usePhotoboothStore = create<PhotoboothState>((set, get) => ({
   finalImageUrl: null,
   setFinalImageUrl: (finalImageUrl) => set({ finalImageUrl }),
 
-  frameUrl: null,
-  setFrameUrl: (frameUrl) => set({ frameUrl }),
+  selectedFrame: null,
+  setSelectedFrame: (selectedFrame) => set({ selectedFrame }),
 }))

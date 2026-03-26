@@ -23,7 +23,7 @@ export default function HomePage() {
     capturedSlots, addPhoto, replaceSlot, resetPhotos,
     isCapturing, setIsCapturing,
     finalImageUrl, setFinalImageUrl,
-    frameUrl,
+    selectedFrame, setSelectedFrame,
   } = usePhotoboothStore()
 
   const { startRecording, stopRecording, cancelRecording, getVideoMimeType } = useVideoRecap(videoRef, isMirrored)
@@ -45,10 +45,11 @@ export default function HomePage() {
 
   // Build the combined strip video once we have all clips + a frame
   useEffect(() => {
-    if (!finalImageUrl || recapClips.length === 0 || !frameUrl) return
+    if (!finalImageUrl || recapClips.length === 0 || !selectedFrame) return
     setRecapStripUrl(null)
     setBuildingStrip(true)
-    buildStripVideo(recapClips, frameUrl, 24)
+    const fUrl = selectedFrame.storageUrl ?? `/frames/${selectedFrame.filename}`
+    buildStripVideo(recapClips, fUrl, selectedFrame.slots_data, 24)
       .then(url => setRecapStripUrl(url))
       .catch(() => {})
       .finally(() => setBuildingStrip(false))
@@ -60,13 +61,15 @@ export default function HomePage() {
   // If a frame is already chosen, skip the modal and build directly.
   useEffect(() => {
     if (capturedCount !== layout.slots || finalImageUrl || isCapturing) return
-    if (frameUrl) {
+    if (selectedFrame) {
       // Frame already selected — build with it immediately
       const timer = setTimeout(async () => {
         try {
-          const { capturedSlots: cs, layout: l, activeEffects: fx } = usePhotoboothStore.getState()
+          const { capturedSlots: cs, layout: l, activeEffects: fx, selectedFrame: f } = usePhotoboothStore.getState()
+          if (!f) return
           if (videoRecap) setBuildingStrip(true)
-          const url = await buildStripImage(cs, l, fx, frameUrl)
+          const fUrl = f.storageUrl ?? `/frames/${f.filename}`
+          const url = await buildStripImage(cs, l, fx, fUrl, f.slots_data)
           setFinalImageUrl(url)
           setResultModalOpen(true)
         } catch { /* noop */ }
@@ -76,7 +79,7 @@ export default function HomePage() {
       const timer = setTimeout(() => setFrameModalOpen(true), 350)
       return () => clearTimeout(timer)
     }
-  }, [capturedCount, layout.slots, finalImageUrl, isCapturing, frameUrl])
+  }, [capturedCount, layout.slots, finalImageUrl, isCapturing, selectedFrame])
 
   // ---------- Single shot with countdown ----------
   // If videoRecap is on: start recording when countdown begins, stop when photo is taken.
@@ -148,8 +151,8 @@ export default function HomePage() {
     resetPhotos()
     setFinalImageUrl(null)
     setCountdownValue(null)
-    usePhotoboothStore.getState().setFrameUrl(null)
-  }, [resetPhotos, setFinalImageUrl, setIsCapturing, cancelRecording])
+    setSelectedFrame(null)
+  }, [resetPhotos, setFinalImageUrl, setIsCapturing, cancelRecording, setSelectedFrame])
 
   // ---------- Build final strip ----------
   const handleBuildStrip = useCallback(async () => {
@@ -159,13 +162,14 @@ export default function HomePage() {
     }
     try {
       if (videoRecap) setBuildingStrip(true)
-      const url = await buildStripImage(capturedSlots, layout, activeEffects, frameUrl)
+      const fUrl = selectedFrame ? (selectedFrame.storageUrl ?? `/frames/${selectedFrame.filename}`) : null
+      const url = await buildStripImage(capturedSlots, layout, activeEffects, fUrl, selectedFrame?.slots_data)
       setFinalImageUrl(url)
       setResultModalOpen(true)
     } catch {
       messageApi.error('Tạo ảnh thất bại, thử lại nhé!')
     }
-  }, [capturedSlots, layout, activeEffects, frameUrl, setFinalImageUrl, messageApi])
+  }, [capturedSlots, layout, activeEffects, selectedFrame, setFinalImageUrl, messageApi])
 
   // ---------- Download / Show Result ----------
   const handleDownload = useCallback(() => {
@@ -198,11 +202,13 @@ export default function HomePage() {
       <FrameModal
         open={frameModalOpen}
         currentLayout={layout}
-        selectedFrameUrl={frameUrl}
+        selectedFrame={selectedFrame}
         onSelect={async (url, frameItem) => {
-          // Detect how many transparent slots the frame PNG actually has
-          let detectedSlots = 0
-          try { detectedSlots = (await detectFrameSlots(url)).length } catch { /* noop */ }
+          // Use pre-calculated slots if available, otherwise detect
+          let detectedSlots = frameItem.slots_data ? frameItem.slots_data.length : 0
+          if (detectedSlots === 0) {
+            try { detectedSlots = (await detectFrameSlots(url)).length } catch { /* noop */ }
+          }
 
           // Find best matching layout
           const store = usePhotoboothStore.getState()
@@ -231,10 +237,10 @@ export default function HomePage() {
             }
           }
 
-          store.setFrameUrl(url)
+          setSelectedFrame(frameItem)
           setFrameModalOpen(false)
           setFinalImageUrl(null)
-
+          
           // If all slots are already filled after layout (possibly changed), auto-build
           const refreshed = usePhotoboothStore.getState()
           if (refreshed.capturedSlots.every(s => s !== null)) {
@@ -242,7 +248,7 @@ export default function HomePage() {
               try {
                 const { capturedSlots: cs, activeEffects: fx } = usePhotoboothStore.getState()
                 if (videoRecap) setBuildingStrip(true)
-                const result = await buildStripImage(cs, targetLayout, fx, url)
+                const result = await buildStripImage(cs, targetLayout, fx, url, frameItem.slots_data)
                 setFinalImageUrl(result)
                 setResultModalOpen(true)
               } catch { /* ignore */ }
@@ -250,7 +256,7 @@ export default function HomePage() {
           }
         }}
         onClear={() => {
-          usePhotoboothStore.getState().setFrameUrl(null)
+          setSelectedFrame(null)
           setFinalImageUrl(null)
         }}
         onClose={() => setFrameModalOpen(false)}
@@ -286,12 +292,13 @@ export default function HomePage() {
           <div className="max-w-5xl mx-auto">
             <TopControls
               countdown={countdown}
-              frameUrl={frameUrl}
+              videoRecap={videoRecap}
+              selectedFrame={selectedFrame}
               soundEnabled={soundEnabled}
               onCountdownChange={setCountdown}
               onChooseFrame={() => setFrameModalOpen(true)}
               onClearFrame={() => {
-                usePhotoboothStore.getState().setFrameUrl(null)
+                setSelectedFrame(null)
                 setFinalImageUrl(null)
               }}
               onContributeFrame={() => setContributeOpen(true)}
@@ -324,6 +331,7 @@ export default function HomePage() {
               <CaptureControls
                 isReady={isReady}
                 isCapturing={isCapturing}
+                countdown={countdown}
                 capturedCount={capturedCount}
                 totalSlots={layout.slots}
                 videoRecap={videoRecap}
@@ -347,7 +355,7 @@ export default function HomePage() {
                 layout={layout}
                 slots={capturedSlots}
                 finalImageUrl={finalImageUrl}
-                frameUrl={frameUrl}
+                selectedFrame={selectedFrame}
                 activeEffects={activeEffects}
                 onUploadSlot={handleUploadSlot}
                 onRemoveSlot={handleRemoveSlot}

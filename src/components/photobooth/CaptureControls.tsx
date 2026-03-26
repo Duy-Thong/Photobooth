@@ -5,6 +5,7 @@ import { UploadOutlined } from '@ant-design/icons'
 interface CaptureControlsProps {
   isReady: boolean
   isCapturing: boolean
+  countdown: number
   capturedCount: number
   totalSlots: number
   videoRecap: boolean
@@ -18,6 +19,7 @@ interface CaptureControlsProps {
 export default function CaptureControls({
   isReady,
   isCapturing,
+  countdown,
   capturedCount,
   totalSlots,
   videoRecap,
@@ -54,15 +56,18 @@ export default function CaptureControls({
       <div className="flex items-center justify-between sm:justify-center gap-2 sm:gap-6 mt-1">
         
         {/* Toggle Video Recap */}
-        <label className="flex flex-col items-center gap-1.5 cursor-pointer select-none">
+        <label
+          className={`flex flex-col items-center gap-1.5 select-none ${countdown === 0 ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
+          title={countdown === 0 ? "Không hỗ trợ quay video khi chụp 0s" : "Quay video"}
+        >
           <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full flex items-center justify-center border transition-all duration-150
-            ${videoRecap
+            ${videoRecap && countdown > 0
               ? 'bg-[#1a1a1a] border-[#4da6ff] shadow-[0_0_12px_rgba(77,166,255,0.15)]'
               : 'bg-[#1a1a1a] border-[#2a2a2a] hover:border-[#444]'
             }`}>
-            <Switch size="small" checked={videoRecap} onChange={onToggleVideoRecap} style={{ background: videoRecap ? '#4da6ff' : undefined }} />
+            <Switch size="small" disabled={countdown === 0} checked={videoRecap} onChange={onToggleVideoRecap} style={{ background: videoRecap && countdown > 0 ? '#4da6ff' : undefined }} />
           </div>
-          <span className={`text-[8px] sm:text-[9px] font-semibold uppercase tracking-[0.05em] sm:tracking-[0.12em] whitespace-nowrap ${videoRecap ? 'text-[#4da6ff]' : 'text-[#555]'}`}>
+          <span className={`text-[8px] sm:text-[9px] font-semibold uppercase tracking-[0.05em] sm:tracking-[0.12em] whitespace-nowrap ${videoRecap && countdown > 0 ? 'text-[#4da6ff]' : 'text-[#555]'}`}>
             Video
           </span>
         </label>

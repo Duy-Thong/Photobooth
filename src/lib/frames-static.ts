@@ -9,7 +9,39 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 13,
     "categoryName": "Frame Amazing ⭐️",
-    "slots": 4
+    "slots": 5,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 56,
+        "w": 772,
+        "h": 580
+      },
+      {
+        "x": 56,
+        "y": 672,
+        "w": 772,
+        "h": 580
+      },
+      {
+        "x": 56,
+        "y": 1288,
+        "w": 772,
+        "h": 576
+      },
+      {
+        "x": 56,
+        "y": 1904,
+        "w": 772,
+        "h": 572
+      },
+      {
+        "x": 652,
+        "y": 2248,
+        "w": 176,
+        "h": 132
+      }
+    ]
   },
   {
     "id": 68,
@@ -18,7 +50,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 13,
     "categoryName": "Frame Amazing ⭐️",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 64,
+        "w": 772,
+        "h": 564
+      },
+      {
+        "x": 56,
+        "y": 672,
+        "w": 772,
+        "h": 576
+      },
+      {
+        "x": 56,
+        "y": 1292,
+        "w": 772,
+        "h": 572
+      },
+      {
+        "x": 56,
+        "y": 1904,
+        "w": 772,
+        "h": 568
+      }
+    ]
   },
   {
     "id": 69,
@@ -27,7 +85,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 10,
     "categoryName": "Frame Cartoon",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 64,
+        "w": 772,
+        "h": 564
+      },
+      {
+        "x": 60,
+        "y": 676,
+        "w": 768,
+        "h": 568
+      },
+      {
+        "x": 60,
+        "y": 1292,
+        "w": 768,
+        "h": 568
+      },
+      {
+        "x": 60,
+        "y": 1908,
+        "w": 768,
+        "h": 568
+      }
+    ]
   },
   {
     "id": 70,
@@ -36,7 +120,45 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "bigrectangle",
     "categoryId": 10,
     "categoryName": "Frame Cartoon",
-    "slots": 6
+    "slots": 6,
+    "slots_data": [
+      {
+        "x": 28,
+        "y": 28,
+        "w": 520,
+        "h": 388
+      },
+      {
+        "x": 572,
+        "y": 28,
+        "w": 524,
+        "h": 388
+      },
+      {
+        "x": 572,
+        "y": 440,
+        "w": 524,
+        "h": 392
+      },
+      {
+        "x": 28,
+        "y": 444,
+        "w": 520,
+        "h": 388
+      },
+      {
+        "x": 572,
+        "y": 848,
+        "w": 524,
+        "h": 392
+      },
+      {
+        "x": 28,
+        "y": 856,
+        "w": 520,
+        "h": 392
+      }
+    ]
   },
   {
     "id": 74,
@@ -45,7 +167,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 13,
     "categoryName": "Frame Amazing ⭐️",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 64,
+        "w": 772,
+        "h": 564
+      },
+      {
+        "x": 60,
+        "y": 676,
+        "w": 768,
+        "h": 568
+      },
+      {
+        "x": 60,
+        "y": 1292,
+        "w": 768,
+        "h": 568
+      },
+      {
+        "x": 60,
+        "y": 1908,
+        "w": 768,
+        "h": 560
+      }
+    ]
   },
   {
     "id": 75,
@@ -54,7 +202,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 13,
     "categoryName": "Frame Amazing ⭐️",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 56,
+        "w": 768,
+        "h": 584
+      },
+      {
+        "x": 56,
+        "y": 672,
+        "w": 772,
+        "h": 580
+      },
+      {
+        "x": 56,
+        "y": 1288,
+        "w": 768,
+        "h": 580
+      },
+      {
+        "x": 56,
+        "y": 1904,
+        "w": 772,
+        "h": 572
+      }
+    ]
   },
   {
     "id": 76,
@@ -63,7 +237,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 13,
     "categoryName": "Frame Amazing ⭐️",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 52,
+        "w": 768,
+        "h": 560
+      },
+      {
+        "x": 56,
+        "y": 668,
+        "w": 768,
+        "h": 560
+      },
+      {
+        "x": 56,
+        "y": 1284,
+        "w": 768,
+        "h": 560
+      },
+      {
+        "x": 56,
+        "y": 1908,
+        "w": 768,
+        "h": 560
+      }
+    ]
   },
   {
     "id": 77,
@@ -72,7 +272,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 13,
     "categoryName": "Frame Amazing ⭐️",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 64,
+        "w": 772,
+        "h": 564
+      },
+      {
+        "x": 60,
+        "y": 676,
+        "w": 768,
+        "h": 568
+      },
+      {
+        "x": 60,
+        "y": 1288,
+        "w": 768,
+        "h": 564
+      },
+      {
+        "x": 56,
+        "y": 1908,
+        "w": 772,
+        "h": 568
+      }
+    ]
   },
   {
     "id": 78,
@@ -81,7 +307,45 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "bigrectangle",
     "categoryId": 13,
     "categoryName": "Frame Amazing ⭐️",
-    "slots": 6
+    "slots": 6,
+    "slots_data": [
+      {
+        "x": 28,
+        "y": 28,
+        "w": 520,
+        "h": 388
+      },
+      {
+        "x": 572,
+        "y": 28,
+        "w": 524,
+        "h": 388
+      },
+      {
+        "x": 572,
+        "y": 440,
+        "w": 524,
+        "h": 392
+      },
+      {
+        "x": 28,
+        "y": 444,
+        "w": 520,
+        "h": 388
+      },
+      {
+        "x": 28,
+        "y": 856,
+        "w": 520,
+        "h": 392
+      },
+      {
+        "x": 572,
+        "y": 856,
+        "w": 524,
+        "h": 392
+      }
+    ]
   },
   {
     "id": 80,
@@ -90,7 +354,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 10,
     "categoryName": "Frame Cartoon",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 64,
+        "y": 72,
+        "w": 756,
+        "h": 548
+      },
+      {
+        "x": 64,
+        "y": 684,
+        "w": 756,
+        "h": 552
+      },
+      {
+        "x": 64,
+        "y": 1296,
+        "w": 756,
+        "h": 548
+      },
+      {
+        "x": 64,
+        "y": 1916,
+        "w": 756,
+        "h": 552
+      }
+    ]
   },
   {
     "id": 81,
@@ -99,7 +389,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 10,
     "categoryName": "Frame Cartoon",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 64,
+        "y": 72,
+        "w": 756,
+        "h": 548
+      },
+      {
+        "x": 64,
+        "y": 684,
+        "w": 756,
+        "h": 552
+      },
+      {
+        "x": 64,
+        "y": 1296,
+        "w": 756,
+        "h": 548
+      },
+      {
+        "x": 64,
+        "y": 1916,
+        "w": 756,
+        "h": 552
+      }
+    ]
   },
   {
     "id": 84,
@@ -108,7 +424,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 13,
     "categoryName": "Frame Amazing ⭐️",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 64,
+        "w": 772,
+        "h": 564
+      },
+      {
+        "x": 60,
+        "y": 676,
+        "w": 768,
+        "h": 568
+      },
+      {
+        "x": 60,
+        "y": 1288,
+        "w": 768,
+        "h": 564
+      },
+      {
+        "x": 56,
+        "y": 1908,
+        "w": 772,
+        "h": 568
+      }
+    ]
   },
   {
     "id": 85,
@@ -117,7 +459,45 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "bigrectangle",
     "categoryId": 13,
     "categoryName": "Frame Amazing ⭐️",
-    "slots": 6
+    "slots": 6,
+    "slots_data": [
+      {
+        "x": 572,
+        "y": 28,
+        "w": 524,
+        "h": 388
+      },
+      {
+        "x": 28,
+        "y": 32,
+        "w": 520,
+        "h": 388
+      },
+      {
+        "x": 572,
+        "y": 440,
+        "w": 520,
+        "h": 388
+      },
+      {
+        "x": 28,
+        "y": 444,
+        "w": 520,
+        "h": 388
+      },
+      {
+        "x": 28,
+        "y": 856,
+        "w": 520,
+        "h": 392
+      },
+      {
+        "x": 572,
+        "y": 856,
+        "w": 524,
+        "h": 392
+      }
+    ]
   },
   {
     "id": 87,
@@ -126,7 +506,45 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "bigrectangle",
     "categoryId": 10,
     "categoryName": "Frame Cartoon",
-    "slots": 6
+    "slots": 6,
+    "slots_data": [
+      {
+        "x": 32,
+        "y": 32,
+        "w": 512,
+        "h": 384
+      },
+      {
+        "x": 576,
+        "y": 32,
+        "w": 516,
+        "h": 384
+      },
+      {
+        "x": 576,
+        "y": 444,
+        "w": 516,
+        "h": 384
+      },
+      {
+        "x": 32,
+        "y": 448,
+        "w": 512,
+        "h": 380
+      },
+      {
+        "x": 32,
+        "y": 860,
+        "w": 512,
+        "h": 384
+      },
+      {
+        "x": 576,
+        "y": 860,
+        "w": 516,
+        "h": 384
+      }
+    ]
   },
   {
     "id": 88,
@@ -135,7 +553,45 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "bigrectangle",
     "categoryId": 10,
     "categoryName": "Frame Cartoon",
-    "slots": 6
+    "slots": 6,
+    "slots_data": [
+      {
+        "x": 32,
+        "y": 32,
+        "w": 512,
+        "h": 384
+      },
+      {
+        "x": 576,
+        "y": 32,
+        "w": 516,
+        "h": 384
+      },
+      {
+        "x": 576,
+        "y": 444,
+        "w": 516,
+        "h": 384
+      },
+      {
+        "x": 32,
+        "y": 448,
+        "w": 512,
+        "h": 380
+      },
+      {
+        "x": 32,
+        "y": 860,
+        "w": 512,
+        "h": 384
+      },
+      {
+        "x": 576,
+        "y": 860,
+        "w": 516,
+        "h": 384
+      }
+    ]
   },
   {
     "id": 91,
@@ -144,7 +600,45 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "bigrectangle",
     "categoryId": 13,
     "categoryName": "Frame Amazing ⭐️",
-    "slots": 6
+    "slots": 6,
+    "slots_data": [
+      {
+        "x": 28,
+        "y": 28,
+        "w": 520,
+        "h": 392
+      },
+      {
+        "x": 572,
+        "y": 28,
+        "w": 524,
+        "h": 392
+      },
+      {
+        "x": 28,
+        "y": 444,
+        "w": 520,
+        "h": 388
+      },
+      {
+        "x": 572,
+        "y": 444,
+        "w": 524,
+        "h": 388
+      },
+      {
+        "x": 28,
+        "y": 856,
+        "w": 520,
+        "h": 388
+      },
+      {
+        "x": 572,
+        "y": 856,
+        "w": 524,
+        "h": 388
+      }
+    ]
   },
   {
     "id": 95,
@@ -153,7 +647,45 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "bigrectangle",
     "categoryId": 13,
     "categoryName": "Frame Amazing ⭐️",
-    "slots": 6
+    "slots": 6,
+    "slots_data": [
+      {
+        "x": 28,
+        "y": 88,
+        "w": 520,
+        "h": 332
+      },
+      {
+        "x": 572,
+        "y": 88,
+        "w": 524,
+        "h": 332
+      },
+      {
+        "x": 28,
+        "y": 440,
+        "w": 520,
+        "h": 392
+      },
+      {
+        "x": 572,
+        "y": 444,
+        "w": 524,
+        "h": 388
+      },
+      {
+        "x": 28,
+        "y": 856,
+        "w": 520,
+        "h": 388
+      },
+      {
+        "x": 572,
+        "y": 856,
+        "w": 524,
+        "h": 388
+      }
+    ]
   },
   {
     "id": 105,
@@ -162,7 +694,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 10,
     "categoryName": "Frame Cartoon",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 56,
+        "w": 772,
+        "h": 580
+      },
+      {
+        "x": 56,
+        "y": 672,
+        "w": 772,
+        "h": 592
+      },
+      {
+        "x": 80,
+        "y": 1304,
+        "w": 748,
+        "h": 560
+      },
+      {
+        "x": 56,
+        "y": 1904,
+        "w": 772,
+        "h": 572
+      }
+    ]
   },
   {
     "id": 107,
@@ -171,7 +729,45 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "bigrectangle",
     "categoryId": 10,
     "categoryName": "Frame Cartoon",
-    "slots": 6
+    "slots": 6,
+    "slots_data": [
+      {
+        "x": 28,
+        "y": 28,
+        "w": 520,
+        "h": 392
+      },
+      {
+        "x": 572,
+        "y": 28,
+        "w": 524,
+        "h": 392
+      },
+      {
+        "x": 28,
+        "y": 444,
+        "w": 520,
+        "h": 388
+      },
+      {
+        "x": 572,
+        "y": 444,
+        "w": 524,
+        "h": 388
+      },
+      {
+        "x": 28,
+        "y": 856,
+        "w": 520,
+        "h": 388
+      },
+      {
+        "x": 572,
+        "y": 856,
+        "w": 524,
+        "h": 388
+      }
+    ]
   },
   {
     "id": 108,
@@ -180,7 +776,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 10,
     "categoryName": "Frame Cartoon",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 56,
+        "w": 772,
+        "h": 580
+      },
+      {
+        "x": 56,
+        "y": 680,
+        "w": 772,
+        "h": 572
+      },
+      {
+        "x": 56,
+        "y": 1296,
+        "w": 772,
+        "h": 564
+      },
+      {
+        "x": 56,
+        "y": 1904,
+        "w": 772,
+        "h": 572
+      }
+    ]
   },
   {
     "id": 118,
@@ -189,7 +811,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 13,
     "categoryName": "Frame Amazing ⭐️",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 64,
+        "y": 76,
+        "w": 756,
+        "h": 548
+      },
+      {
+        "x": 64,
+        "y": 684,
+        "w": 756,
+        "h": 552
+      },
+      {
+        "x": 68,
+        "y": 1296,
+        "w": 756,
+        "h": 548
+      },
+      {
+        "x": 64,
+        "y": 1908,
+        "w": 756,
+        "h": 552
+      }
+    ]
   },
   {
     "id": 123,
@@ -198,7 +846,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 16,
     "categoryName": "Frame IDOL Hoạt Họa",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 64,
+        "y": 76,
+        "w": 756,
+        "h": 548
+      },
+      {
+        "x": 64,
+        "y": 684,
+        "w": 756,
+        "h": 552
+      },
+      {
+        "x": 68,
+        "y": 1296,
+        "w": 756,
+        "h": 548
+      },
+      {
+        "x": 64,
+        "y": 1908,
+        "w": 756,
+        "h": 548
+      }
+    ]
   },
   {
     "id": 129,
@@ -207,7 +881,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 11,
     "categoryName": "Frame Basic",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 64,
+        "y": 72,
+        "w": 756,
+        "h": 552
+      },
+      {
+        "x": 64,
+        "y": 684,
+        "w": 756,
+        "h": 552
+      },
+      {
+        "x": 68,
+        "y": 1296,
+        "w": 756,
+        "h": 552
+      },
+      {
+        "x": 64,
+        "y": 1908,
+        "w": 756,
+        "h": 552
+      }
+    ]
   },
   {
     "id": 133,
@@ -216,7 +916,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 11,
     "categoryName": "Frame Basic",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 68,
+        "w": 772,
+        "h": 564
+      },
+      {
+        "x": 60,
+        "y": 676,
+        "w": 768,
+        "h": 568
+      },
+      {
+        "x": 64,
+        "y": 1288,
+        "w": 768,
+        "h": 564
+      },
+      {
+        "x": 60,
+        "y": 1900,
+        "w": 768,
+        "h": 564
+      }
+    ]
   },
   {
     "id": 138,
@@ -225,7 +951,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 10,
     "categoryName": "Frame Cartoon",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 68,
+        "w": 772,
+        "h": 564
+      },
+      {
+        "x": 60,
+        "y": 676,
+        "w": 768,
+        "h": 568
+      },
+      {
+        "x": 64,
+        "y": 1288,
+        "w": 768,
+        "h": 564
+      },
+      {
+        "x": 60,
+        "y": 1900,
+        "w": 768,
+        "h": 564
+      }
+    ]
   },
   {
     "id": 150,
@@ -234,7 +986,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 16,
     "categoryName": "Frame IDOL Hoạt Họa",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 64,
+        "y": 76,
+        "w": 756,
+        "h": 548
+      },
+      {
+        "x": 68,
+        "y": 688,
+        "w": 752,
+        "h": 548
+      },
+      {
+        "x": 72,
+        "y": 1300,
+        "w": 752,
+        "h": 544
+      },
+      {
+        "x": 68,
+        "y": 1908,
+        "w": 752,
+        "h": 548
+      }
+    ]
   },
   {
     "id": 152,
@@ -243,7 +1021,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 10,
     "categoryName": "Frame Cartoon",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 64,
+        "y": 76,
+        "w": 756,
+        "h": 548
+      },
+      {
+        "x": 64,
+        "y": 684,
+        "w": 756,
+        "h": 552
+      },
+      {
+        "x": 68,
+        "y": 1296,
+        "w": 752,
+        "h": 548
+      },
+      {
+        "x": 64,
+        "y": 1908,
+        "w": 756,
+        "h": 548
+      }
+    ]
   },
   {
     "id": 155,
@@ -252,7 +1056,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 10,
     "categoryName": "Frame Cartoon",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 64,
+        "y": 96,
+        "w": 756,
+        "h": 548
+      },
+      {
+        "x": 64,
+        "y": 684,
+        "w": 756,
+        "h": 552
+      },
+      {
+        "x": 64,
+        "y": 1296,
+        "w": 756,
+        "h": 548
+      },
+      {
+        "x": 64,
+        "y": 1908,
+        "w": 756,
+        "h": 548
+      }
+    ]
   },
   {
     "id": 167,
@@ -261,7 +1091,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 13,
     "categoryName": "Frame Amazing ⭐️",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 64,
+        "w": 772,
+        "h": 564
+      },
+      {
+        "x": 60,
+        "y": 676,
+        "w": 768,
+        "h": 568
+      },
+      {
+        "x": 60,
+        "y": 1288,
+        "w": 768,
+        "h": 564
+      },
+      {
+        "x": 56,
+        "y": 1908,
+        "w": 772,
+        "h": 568
+      }
+    ]
   },
   {
     "id": 170,
@@ -270,7 +1126,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 10,
     "categoryName": "Frame Cartoon",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 64,
+        "y": 72,
+        "w": 756,
+        "h": 548
+      },
+      {
+        "x": 64,
+        "y": 692,
+        "w": 756,
+        "h": 548
+      },
+      {
+        "x": 64,
+        "y": 1308,
+        "w": 756,
+        "h": 548
+      },
+      {
+        "x": 64,
+        "y": 1932,
+        "w": 756,
+        "h": 548
+      }
+    ]
   },
   {
     "id": 175,
@@ -279,7 +1161,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 11,
     "categoryName": "Frame Basic",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 64,
+        "w": 772,
+        "h": 564
+      },
+      {
+        "x": 60,
+        "y": 676,
+        "w": 768,
+        "h": 568
+      },
+      {
+        "x": 56,
+        "y": 1292,
+        "w": 772,
+        "h": 564
+      },
+      {
+        "x": 56,
+        "y": 1908,
+        "w": 772,
+        "h": 568
+      }
+    ]
   },
   {
     "id": 176,
@@ -288,7 +1196,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 11,
     "categoryName": "Frame Basic",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 64,
+        "w": 772,
+        "h": 564
+      },
+      {
+        "x": 60,
+        "y": 676,
+        "w": 768,
+        "h": 568
+      },
+      {
+        "x": 60,
+        "y": 1288,
+        "w": 768,
+        "h": 564
+      },
+      {
+        "x": 56,
+        "y": 1908,
+        "w": 772,
+        "h": 568
+      }
+    ]
   },
   {
     "id": 184,
@@ -297,7 +1231,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 13,
     "categoryName": "Frame Amazing ⭐️",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 68,
+        "w": 772,
+        "h": 564
+      },
+      {
+        "x": 60,
+        "y": 680,
+        "w": 768,
+        "h": 564
+      },
+      {
+        "x": 60,
+        "y": 1288,
+        "w": 768,
+        "h": 564
+      },
+      {
+        "x": 56,
+        "y": 1912,
+        "w": 772,
+        "h": 560
+      }
+    ]
   },
   {
     "id": 185,
@@ -306,7 +1266,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 13,
     "categoryName": "Frame Amazing ⭐️",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 64,
+        "y": 76,
+        "w": 752,
+        "h": 548
+      },
+      {
+        "x": 64,
+        "y": 684,
+        "w": 756,
+        "h": 552
+      },
+      {
+        "x": 68,
+        "y": 1296,
+        "w": 756,
+        "h": 548
+      },
+      {
+        "x": 64,
+        "y": 1908,
+        "w": 756,
+        "h": 548
+      }
+    ]
   },
   {
     "id": 192,
@@ -315,7 +1301,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 13,
     "categoryName": "Frame Amazing ⭐️",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 164,
+        "w": 772,
+        "h": 464
+      },
+      {
+        "x": 60,
+        "y": 676,
+        "w": 768,
+        "h": 568
+      },
+      {
+        "x": 60,
+        "y": 1288,
+        "w": 768,
+        "h": 564
+      },
+      {
+        "x": 56,
+        "y": 1908,
+        "w": 772,
+        "h": 568
+      }
+    ]
   },
   {
     "id": 195,
@@ -324,7 +1336,39 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 10,
     "categoryName": "Frame Cartoon",
-    "slots": 4
+    "slots": 5,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 64,
+        "w": 772,
+        "h": 564
+      },
+      {
+        "x": 60,
+        "y": 676,
+        "w": 768,
+        "h": 568
+      },
+      {
+        "x": 236,
+        "y": 676,
+        "w": 304,
+        "h": 124
+      },
+      {
+        "x": 60,
+        "y": 1288,
+        "w": 768,
+        "h": 564
+      },
+      {
+        "x": 56,
+        "y": 1908,
+        "w": 772,
+        "h": 568
+      }
+    ]
   },
   {
     "id": 197,
@@ -333,7 +1377,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 10,
     "categoryName": "Frame Cartoon",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 64,
+        "w": 772,
+        "h": 564
+      },
+      {
+        "x": 60,
+        "y": 676,
+        "w": 768,
+        "h": 568
+      },
+      {
+        "x": 60,
+        "y": 1288,
+        "w": 768,
+        "h": 564
+      },
+      {
+        "x": 56,
+        "y": 1908,
+        "w": 772,
+        "h": 568
+      }
+    ]
   },
   {
     "id": 206,
@@ -342,7 +1412,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 13,
     "categoryName": "Frame Amazing ⭐️",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 68,
+        "y": 72,
+        "w": 748,
+        "h": 548
+      },
+      {
+        "x": 64,
+        "y": 684,
+        "w": 756,
+        "h": 548
+      },
+      {
+        "x": 64,
+        "y": 1296,
+        "w": 756,
+        "h": 548
+      },
+      {
+        "x": 64,
+        "y": 1908,
+        "w": 756,
+        "h": 548
+      }
+    ]
   },
   {
     "id": 223,
@@ -351,7 +1447,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 13,
     "categoryName": "Frame Amazing ⭐️",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 64,
+        "w": 772,
+        "h": 564
+      },
+      {
+        "x": 56,
+        "y": 672,
+        "w": 772,
+        "h": 576
+      },
+      {
+        "x": 56,
+        "y": 1292,
+        "w": 772,
+        "h": 572
+      },
+      {
+        "x": 56,
+        "y": 1904,
+        "w": 772,
+        "h": 568
+      }
+    ]
   },
   {
     "id": 224,
@@ -360,7 +1482,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 11,
     "categoryName": "Frame Basic",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 64,
+        "y": 64,
+        "w": 764,
+        "h": 556
+      },
+      {
+        "x": 60,
+        "y": 680,
+        "w": 764,
+        "h": 560
+      },
+      {
+        "x": 60,
+        "y": 1292,
+        "w": 764,
+        "h": 556
+      },
+      {
+        "x": 60,
+        "y": 1912,
+        "w": 764,
+        "h": 560
+      }
+    ]
   },
   {
     "id": 231,
@@ -369,7 +1517,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 10,
     "categoryName": "Frame Cartoon",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 68,
+        "w": 772,
+        "h": 564
+      },
+      {
+        "x": 60,
+        "y": 680,
+        "w": 768,
+        "h": 564
+      },
+      {
+        "x": 60,
+        "y": 1296,
+        "w": 768,
+        "h": 564
+      },
+      {
+        "x": 60,
+        "y": 1912,
+        "w": 768,
+        "h": 560
+      }
+    ]
   },
   {
     "id": 237,
@@ -378,7 +1552,27 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 13,
     "categoryName": "Frame Amazing ⭐️",
-    "slots": 3
+    "slots": 3,
+    "slots_data": [
+      {
+        "x": 68,
+        "y": 60,
+        "w": 748,
+        "h": 536
+      },
+      {
+        "x": 68,
+        "y": 684,
+        "w": 748,
+        "h": 532
+      },
+      {
+        "x": 68,
+        "y": 1304,
+        "w": 748,
+        "h": 536
+      }
+    ]
   },
   {
     "id": 248,
@@ -387,7 +1581,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 13,
     "categoryName": "Frame Amazing ⭐️",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 64,
+        "y": 72,
+        "w": 756,
+        "h": 548
+      },
+      {
+        "x": 64,
+        "y": 684,
+        "w": 756,
+        "h": 552
+      },
+      {
+        "x": 64,
+        "y": 1296,
+        "w": 756,
+        "h": 548
+      },
+      {
+        "x": 64,
+        "y": 1916,
+        "w": 756,
+        "h": 552
+      }
+    ]
   },
   {
     "id": 252,
@@ -396,7 +1616,39 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 19,
     "categoryName": "Frame Chụp Cùng Idol",
-    "slots": 4
+    "slots": 5,
+    "slots_data": [
+      {
+        "x": 60,
+        "y": 64,
+        "w": 764,
+        "h": 556
+      },
+      {
+        "x": 60,
+        "y": 680,
+        "w": 764,
+        "h": 560
+      },
+      {
+        "x": 736,
+        "y": 1000,
+        "w": 88,
+        "h": 240
+      },
+      {
+        "x": 60,
+        "y": 1292,
+        "w": 764,
+        "h": 556
+      },
+      {
+        "x": 60,
+        "y": 1912,
+        "w": 764,
+        "h": 560
+      }
+    ]
   },
   {
     "id": 264,
@@ -405,7 +1657,63 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 15,
     "categoryName": "Frame Đại Học",
-    "slots": 4
+    "slots": 9,
+    "slots_data": [
+      {
+        "x": 176,
+        "y": 140,
+        "w": 2404,
+        "h": 1768
+      },
+      {
+        "x": 176,
+        "y": 2084,
+        "w": 2328,
+        "h": 1764
+      },
+      {
+        "x": 976,
+        "y": 2084,
+        "w": 832,
+        "h": 552
+      },
+      {
+        "x": 1788,
+        "y": 2724,
+        "w": 792,
+        "h": 1124
+      },
+      {
+        "x": 176,
+        "y": 2800,
+        "w": 1052,
+        "h": 1048
+      },
+      {
+        "x": 176,
+        "y": 4024,
+        "w": 2404,
+        "h": 1764
+      },
+      {
+        "x": 172,
+        "y": 5964,
+        "w": 576,
+        "h": 1764
+      },
+      {
+        "x": 324,
+        "y": 5964,
+        "w": 2168,
+        "h": 1764
+      },
+      {
+        "x": 2056,
+        "y": 7140,
+        "w": 524,
+        "h": 588
+      }
+    ]
   },
   {
     "id": 265,
@@ -414,7 +1722,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 16,
     "categoryName": "Frame IDOL Hoạt Họa",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 60,
+        "y": 72,
+        "w": 764,
+        "h": 552
+      },
+      {
+        "x": 64,
+        "y": 684,
+        "w": 756,
+        "h": 548
+      },
+      {
+        "x": 72,
+        "y": 1304,
+        "w": 740,
+        "h": 536
+      },
+      {
+        "x": 72,
+        "y": 1916,
+        "w": 756,
+        "h": 524
+      }
+    ]
   },
   {
     "id": 269,
@@ -423,7 +1757,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 16,
     "categoryName": "Frame IDOL Hoạt Họa",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 56,
+        "w": 772,
+        "h": 580
+      },
+      {
+        "x": 56,
+        "y": 672,
+        "w": 772,
+        "h": 576
+      },
+      {
+        "x": 56,
+        "y": 1288,
+        "w": 772,
+        "h": 576
+      },
+      {
+        "x": 56,
+        "y": 1904,
+        "w": 772,
+        "h": 572
+      }
+    ]
   },
   {
     "id": 270,
@@ -432,7 +1792,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 16,
     "categoryName": "Frame IDOL Hoạt Họa",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 120,
+        "y": 136,
+        "w": 1636,
+        "h": 1160
+      },
+      {
+        "x": 120,
+        "y": 1436,
+        "w": 1632,
+        "h": 1180
+      },
+      {
+        "x": 120,
+        "y": 2740,
+        "w": 1636,
+        "h": 1196
+      },
+      {
+        "x": 120,
+        "y": 4056,
+        "w": 1632,
+        "h": 1184
+      }
+    ]
   },
   {
     "id": 276,
@@ -441,7 +1827,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 19,
     "categoryName": "Frame Chụp Cùng Idol",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 64,
+        "w": 768,
+        "h": 564
+      },
+      {
+        "x": 60,
+        "y": 676,
+        "w": 768,
+        "h": 564
+      },
+      {
+        "x": 60,
+        "y": 1292,
+        "w": 768,
+        "h": 564
+      },
+      {
+        "x": 56,
+        "y": 1908,
+        "w": 768,
+        "h": 568
+      }
+    ]
   },
   {
     "id": 278,
@@ -450,7 +1862,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 16,
     "categoryName": "Frame IDOL Hoạt Họa",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 60,
+        "y": 52,
+        "w": 764,
+        "h": 556
+      },
+      {
+        "x": 60,
+        "y": 672,
+        "w": 764,
+        "h": 556
+      },
+      {
+        "x": 60,
+        "y": 1292,
+        "w": 764,
+        "h": 556
+      },
+      {
+        "x": 60,
+        "y": 1912,
+        "w": 760,
+        "h": 556
+      }
+    ]
   },
   {
     "id": 297,
@@ -459,7 +1897,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "grid",
     "categoryId": 13,
     "categoryName": "Frame Amazing ⭐️",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 44,
+        "y": 44,
+        "w": 512,
+        "h": 688
+      },
+      {
+        "x": 588,
+        "y": 44,
+        "w": 512,
+        "h": 688
+      },
+      {
+        "x": 44,
+        "y": 768,
+        "w": 512,
+        "h": 680
+      },
+      {
+        "x": 588,
+        "y": 768,
+        "w": 508,
+        "h": 680
+      }
+    ]
   },
   {
     "id": 298,
@@ -468,7 +1932,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "grid",
     "categoryId": 13,
     "categoryName": "Frame Amazing ⭐️",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 44,
+        "y": 44,
+        "w": 512,
+        "h": 688
+      },
+      {
+        "x": 588,
+        "y": 44,
+        "w": 508,
+        "h": 688
+      },
+      {
+        "x": 44,
+        "y": 764,
+        "w": 512,
+        "h": 684
+      },
+      {
+        "x": 588,
+        "y": 764,
+        "w": 508,
+        "h": 684
+      }
+    ]
   },
   {
     "id": 311,
@@ -477,7 +1967,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 13,
     "categoryName": "Frame Amazing ⭐️",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 64,
+        "y": 72,
+        "w": 756,
+        "h": 552
+      },
+      {
+        "x": 64,
+        "y": 684,
+        "w": 756,
+        "h": 552
+      },
+      {
+        "x": 64,
+        "y": 1296,
+        "w": 756,
+        "h": 552
+      },
+      {
+        "x": 64,
+        "y": 1908,
+        "w": 756,
+        "h": 552
+      }
+    ]
   },
   {
     "id": 312,
@@ -486,7 +2002,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 13,
     "categoryName": "Frame Amazing ⭐️",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 96,
+        "w": 772,
+        "h": 532
+      },
+      {
+        "x": 56,
+        "y": 676,
+        "w": 772,
+        "h": 568
+      },
+      {
+        "x": 56,
+        "y": 1292,
+        "w": 772,
+        "h": 564
+      },
+      {
+        "x": 56,
+        "y": 1904,
+        "w": 772,
+        "h": 564
+      }
+    ]
   },
   {
     "id": 314,
@@ -495,7 +2037,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 13,
     "categoryName": "Frame Amazing ⭐️",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 68,
+        "y": 152,
+        "w": 748,
+        "h": 448
+      },
+      {
+        "x": 84,
+        "y": 728,
+        "w": 720,
+        "h": 468
+      },
+      {
+        "x": 68,
+        "y": 1368,
+        "w": 748,
+        "h": 476
+      },
+      {
+        "x": 60,
+        "y": 1912,
+        "w": 764,
+        "h": 460
+      }
+    ]
   },
   {
     "id": 316,
@@ -504,7 +2072,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 10,
     "categoryName": "Frame Cartoon",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 64,
+        "y": 72,
+        "w": 756,
+        "h": 548
+      },
+      {
+        "x": 64,
+        "y": 684,
+        "w": 756,
+        "h": 548
+      },
+      {
+        "x": 64,
+        "y": 1296,
+        "w": 756,
+        "h": 548
+      },
+      {
+        "x": 64,
+        "y": 1916,
+        "w": 756,
+        "h": 548
+      }
+    ]
   },
   {
     "id": 317,
@@ -513,7 +2107,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "grid",
     "categoryId": 13,
     "categoryName": "Frame Amazing ⭐️",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 592,
+        "y": 48,
+        "w": 504,
+        "h": 608
+      },
+      {
+        "x": 52,
+        "y": 120,
+        "w": 496,
+        "h": 604
+      },
+      {
+        "x": 64,
+        "y": 840,
+        "w": 468,
+        "h": 592
+      },
+      {
+        "x": 592,
+        "y": 848,
+        "w": 500,
+        "h": 592
+      }
+    ]
   },
   {
     "id": 319,
@@ -522,7 +2142,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 13,
     "categoryName": "Frame Amazing ⭐️",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 112,
+        "y": 156,
+        "w": 540,
+        "h": 408
+      },
+      {
+        "x": 56,
+        "y": 660,
+        "w": 772,
+        "h": 564
+      },
+      {
+        "x": 96,
+        "y": 1292,
+        "w": 692,
+        "h": 572
+      },
+      {
+        "x": 56,
+        "y": 1904,
+        "w": 772,
+        "h": 564
+      }
+    ]
   },
   {
     "id": 320,
@@ -531,7 +2177,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 16,
     "categoryName": "Frame IDOL Hoạt Họa",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 176,
+        "y": 212,
+        "w": 2392,
+        "h": 1744
+      },
+      {
+        "x": 68,
+        "y": 2072,
+        "w": 2560,
+        "h": 1888
+      },
+      {
+        "x": 176,
+        "y": 4044,
+        "w": 2392,
+        "h": 1744
+      },
+      {
+        "x": 92,
+        "y": 5908,
+        "w": 2560,
+        "h": 1876
+      }
+    ]
   },
   {
     "id": 325,
@@ -540,7 +2212,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "grid",
     "categoryId": 13,
     "categoryName": "Frame Amazing ⭐️",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 588,
+        "y": 44,
+        "w": 508,
+        "h": 688
+      },
+      {
+        "x": 44,
+        "y": 48,
+        "w": 512,
+        "h": 688
+      },
+      {
+        "x": 44,
+        "y": 764,
+        "w": 512,
+        "h": 684
+      },
+      {
+        "x": 588,
+        "y": 764,
+        "w": 508,
+        "h": 684
+      }
+    ]
   },
   {
     "id": 327,
@@ -549,7 +2247,27 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 13,
     "categoryName": "Frame Amazing ⭐️",
-    "slots": 3
+    "slots": 3,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 64,
+        "w": 772,
+        "h": 564
+      },
+      {
+        "x": 56,
+        "y": 676,
+        "w": 772,
+        "h": 568
+      },
+      {
+        "x": 60,
+        "y": 1292,
+        "w": 768,
+        "h": 564
+      }
+    ]
   },
   {
     "id": 333,
@@ -558,7 +2276,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 10,
     "categoryName": "Frame Cartoon",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 64,
+        "y": 76,
+        "w": 756,
+        "h": 548
+      },
+      {
+        "x": 64,
+        "y": 684,
+        "w": 756,
+        "h": 552
+      },
+      {
+        "x": 68,
+        "y": 1296,
+        "w": 756,
+        "h": 548
+      },
+      {
+        "x": 64,
+        "y": 1908,
+        "w": 756,
+        "h": 548
+      }
+    ]
   },
   {
     "id": 334,
@@ -567,7 +2311,27 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 13,
     "categoryName": "Frame Amazing ⭐️",
-    "slots": 3
+    "slots": 3,
+    "slots_data": [
+      {
+        "x": 124,
+        "y": 692,
+        "w": 628,
+        "h": 496
+      },
+      {
+        "x": 60,
+        "y": 1292,
+        "w": 768,
+        "h": 564
+      },
+      {
+        "x": 56,
+        "y": 1904,
+        "w": 772,
+        "h": 564
+      }
+    ]
   },
   {
     "id": 335,
@@ -576,7 +2340,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "grid",
     "categoryId": 11,
     "categoryName": "Frame Basic",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 44,
+        "y": 44,
+        "w": 512,
+        "h": 688
+      },
+      {
+        "x": 588,
+        "y": 44,
+        "w": 508,
+        "h": 688
+      },
+      {
+        "x": 44,
+        "y": 764,
+        "w": 512,
+        "h": 684
+      },
+      {
+        "x": 588,
+        "y": 764,
+        "w": 508,
+        "h": 684
+      }
+    ]
   },
   {
     "id": 336,
@@ -585,7 +2375,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "grid",
     "categoryId": 11,
     "categoryName": "Frame Basic",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 44,
+        "y": 44,
+        "w": 512,
+        "h": 688
+      },
+      {
+        "x": 588,
+        "y": 44,
+        "w": 508,
+        "h": 688
+      },
+      {
+        "x": 44,
+        "y": 764,
+        "w": 512,
+        "h": 684
+      },
+      {
+        "x": 588,
+        "y": 764,
+        "w": 508,
+        "h": 684
+      }
+    ]
   },
   {
     "id": 337,
@@ -594,7 +2410,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "grid",
     "categoryId": 11,
     "categoryName": "Frame Basic",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 44,
+        "y": 44,
+        "w": 512,
+        "h": 688
+      },
+      {
+        "x": 588,
+        "y": 44,
+        "w": 508,
+        "h": 688
+      },
+      {
+        "x": 44,
+        "y": 764,
+        "w": 512,
+        "h": 684
+      },
+      {
+        "x": 588,
+        "y": 764,
+        "w": 508,
+        "h": 684
+      }
+    ]
   },
   {
     "id": 338,
@@ -603,7 +2445,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "grid",
     "categoryId": 11,
     "categoryName": "Frame Basic",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 44,
+        "y": 44,
+        "w": 512,
+        "h": 688
+      },
+      {
+        "x": 588,
+        "y": 44,
+        "w": 512,
+        "h": 688
+      },
+      {
+        "x": 44,
+        "y": 764,
+        "w": 512,
+        "h": 684
+      },
+      {
+        "x": 588,
+        "y": 764,
+        "w": 512,
+        "h": 684
+      }
+    ]
   },
   {
     "id": 339,
@@ -612,7 +2480,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "grid",
     "categoryId": 11,
     "categoryName": "Frame Basic",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 44,
+        "y": 44,
+        "w": 512,
+        "h": 688
+      },
+      {
+        "x": 588,
+        "y": 44,
+        "w": 512,
+        "h": 688
+      },
+      {
+        "x": 44,
+        "y": 764,
+        "w": 512,
+        "h": 684
+      },
+      {
+        "x": 588,
+        "y": 764,
+        "w": 512,
+        "h": 684
+      }
+    ]
   },
   {
     "id": 340,
@@ -621,7 +2515,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 11,
     "categoryName": "Frame Basic",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 64,
+        "w": 772,
+        "h": 564
+      },
+      {
+        "x": 56,
+        "y": 676,
+        "w": 772,
+        "h": 568
+      },
+      {
+        "x": 60,
+        "y": 1292,
+        "w": 768,
+        "h": 564
+      },
+      {
+        "x": 56,
+        "y": 1904,
+        "w": 772,
+        "h": 564
+      }
+    ]
   },
   {
     "id": 341,
@@ -630,7 +2550,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 11,
     "categoryName": "Frame Basic",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 64,
+        "w": 772,
+        "h": 564
+      },
+      {
+        "x": 56,
+        "y": 676,
+        "w": 772,
+        "h": 568
+      },
+      {
+        "x": 60,
+        "y": 1292,
+        "w": 768,
+        "h": 564
+      },
+      {
+        "x": 56,
+        "y": 1904,
+        "w": 772,
+        "h": 564
+      }
+    ]
   },
   {
     "id": 342,
@@ -639,7 +2585,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 11,
     "categoryName": "Frame Basic",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 64,
+        "w": 772,
+        "h": 564
+      },
+      {
+        "x": 56,
+        "y": 676,
+        "w": 772,
+        "h": 568
+      },
+      {
+        "x": 60,
+        "y": 1292,
+        "w": 768,
+        "h": 564
+      },
+      {
+        "x": 56,
+        "y": 1904,
+        "w": 772,
+        "h": 564
+      }
+    ]
   },
   {
     "id": 343,
@@ -648,7 +2620,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 11,
     "categoryName": "Frame Basic",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 64,
+        "w": 772,
+        "h": 564
+      },
+      {
+        "x": 56,
+        "y": 676,
+        "w": 772,
+        "h": 568
+      },
+      {
+        "x": 60,
+        "y": 1292,
+        "w": 768,
+        "h": 564
+      },
+      {
+        "x": 56,
+        "y": 1904,
+        "w": 772,
+        "h": 564
+      }
+    ]
   },
   {
     "id": 345,
@@ -657,7 +2655,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 11,
     "categoryName": "Frame Basic",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 64,
+        "w": 772,
+        "h": 564
+      },
+      {
+        "x": 56,
+        "y": 676,
+        "w": 772,
+        "h": 568
+      },
+      {
+        "x": 60,
+        "y": 1292,
+        "w": 768,
+        "h": 564
+      },
+      {
+        "x": 56,
+        "y": 1904,
+        "w": 772,
+        "h": 564
+      }
+    ]
   },
   {
     "id": 346,
@@ -666,7 +2690,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 11,
     "categoryName": "Frame Basic",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 64,
+        "w": 772,
+        "h": 568
+      },
+      {
+        "x": 56,
+        "y": 676,
+        "w": 772,
+        "h": 568
+      },
+      {
+        "x": 60,
+        "y": 1292,
+        "w": 768,
+        "h": 564
+      },
+      {
+        "x": 56,
+        "y": 1904,
+        "w": 772,
+        "h": 564
+      }
+    ]
   },
   {
     "id": 347,
@@ -675,7 +2725,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "grid",
     "categoryId": 11,
     "categoryName": "Frame Basic",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 44,
+        "y": 44,
+        "w": 512,
+        "h": 688
+      },
+      {
+        "x": 588,
+        "y": 44,
+        "w": 508,
+        "h": 688
+      },
+      {
+        "x": 44,
+        "y": 764,
+        "w": 512,
+        "h": 684
+      },
+      {
+        "x": 588,
+        "y": 764,
+        "w": 508,
+        "h": 684
+      }
+    ]
   },
   {
     "id": 348,
@@ -684,7 +2760,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "grid",
     "categoryId": 11,
     "categoryName": "Frame Basic",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 44,
+        "y": 44,
+        "w": 512,
+        "h": 688
+      },
+      {
+        "x": 588,
+        "y": 44,
+        "w": 512,
+        "h": 688
+      },
+      {
+        "x": 44,
+        "y": 764,
+        "w": 512,
+        "h": 684
+      },
+      {
+        "x": 588,
+        "y": 764,
+        "w": 512,
+        "h": 684
+      }
+    ]
   },
   {
     "id": 349,
@@ -693,7 +2795,45 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "bigrectangle",
     "categoryId": 11,
     "categoryName": "Frame Basic",
-    "slots": 6
+    "slots": 6,
+    "slots_data": [
+      {
+        "x": 28,
+        "y": 28,
+        "w": 520,
+        "h": 392
+      },
+      {
+        "x": 572,
+        "y": 28,
+        "w": 524,
+        "h": 392
+      },
+      {
+        "x": 28,
+        "y": 444,
+        "w": 520,
+        "h": 388
+      },
+      {
+        "x": 572,
+        "y": 444,
+        "w": 524,
+        "h": 388
+      },
+      {
+        "x": 28,
+        "y": 856,
+        "w": 520,
+        "h": 392
+      },
+      {
+        "x": 572,
+        "y": 856,
+        "w": 524,
+        "h": 392
+      }
+    ]
   },
   {
     "id": 350,
@@ -702,7 +2842,45 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "bigrectangle",
     "categoryId": 11,
     "categoryName": "Frame Basic",
-    "slots": 6
+    "slots": 6,
+    "slots_data": [
+      {
+        "x": 28,
+        "y": 28,
+        "w": 520,
+        "h": 388
+      },
+      {
+        "x": 572,
+        "y": 28,
+        "w": 524,
+        "h": 388
+      },
+      {
+        "x": 28,
+        "y": 444,
+        "w": 520,
+        "h": 388
+      },
+      {
+        "x": 572,
+        "y": 444,
+        "w": 524,
+        "h": 388
+      },
+      {
+        "x": 28,
+        "y": 856,
+        "w": 520,
+        "h": 392
+      },
+      {
+        "x": 572,
+        "y": 856,
+        "w": 524,
+        "h": 392
+      }
+    ]
   },
   {
     "id": 351,
@@ -711,7 +2889,45 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "bigrectangle",
     "categoryId": 11,
     "categoryName": "Frame Basic",
-    "slots": 6
+    "slots": 6,
+    "slots_data": [
+      {
+        "x": 28,
+        "y": 28,
+        "w": 520,
+        "h": 388
+      },
+      {
+        "x": 572,
+        "y": 28,
+        "w": 524,
+        "h": 388
+      },
+      {
+        "x": 28,
+        "y": 444,
+        "w": 520,
+        "h": 388
+      },
+      {
+        "x": 572,
+        "y": 444,
+        "w": 524,
+        "h": 388
+      },
+      {
+        "x": 28,
+        "y": 856,
+        "w": 520,
+        "h": 392
+      },
+      {
+        "x": 572,
+        "y": 856,
+        "w": 524,
+        "h": 392
+      }
+    ]
   },
   {
     "id": 352,
@@ -720,7 +2936,45 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "bigrectangle",
     "categoryId": 11,
     "categoryName": "Frame Basic",
-    "slots": 6
+    "slots": 6,
+    "slots_data": [
+      {
+        "x": 28,
+        "y": 28,
+        "w": 520,
+        "h": 388
+      },
+      {
+        "x": 572,
+        "y": 28,
+        "w": 524,
+        "h": 388
+      },
+      {
+        "x": 28,
+        "y": 444,
+        "w": 520,
+        "h": 388
+      },
+      {
+        "x": 572,
+        "y": 444,
+        "w": 524,
+        "h": 388
+      },
+      {
+        "x": 28,
+        "y": 856,
+        "w": 520,
+        "h": 392
+      },
+      {
+        "x": 572,
+        "y": 856,
+        "w": 524,
+        "h": 392
+      }
+    ]
   },
   {
     "id": 353,
@@ -729,7 +2983,45 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "bigrectangle",
     "categoryId": 11,
     "categoryName": "Frame Basic",
-    "slots": 6
+    "slots": 6,
+    "slots_data": [
+      {
+        "x": 28,
+        "y": 28,
+        "w": 520,
+        "h": 392
+      },
+      {
+        "x": 572,
+        "y": 28,
+        "w": 524,
+        "h": 392
+      },
+      {
+        "x": 28,
+        "y": 444,
+        "w": 520,
+        "h": 388
+      },
+      {
+        "x": 572,
+        "y": 444,
+        "w": 524,
+        "h": 388
+      },
+      {
+        "x": 28,
+        "y": 856,
+        "w": 520,
+        "h": 392
+      },
+      {
+        "x": 572,
+        "y": 856,
+        "w": 524,
+        "h": 392
+      }
+    ]
   },
   {
     "id": 354,
@@ -738,7 +3030,45 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "bigrectangle",
     "categoryId": 11,
     "categoryName": "Frame Basic",
-    "slots": 6
+    "slots": 6,
+    "slots_data": [
+      {
+        "x": 28,
+        "y": 28,
+        "w": 520,
+        "h": 392
+      },
+      {
+        "x": 572,
+        "y": 28,
+        "w": 524,
+        "h": 392
+      },
+      {
+        "x": 28,
+        "y": 444,
+        "w": 520,
+        "h": 388
+      },
+      {
+        "x": 572,
+        "y": 444,
+        "w": 524,
+        "h": 388
+      },
+      {
+        "x": 28,
+        "y": 856,
+        "w": 520,
+        "h": 392
+      },
+      {
+        "x": 572,
+        "y": 856,
+        "w": 524,
+        "h": 392
+      }
+    ]
   },
   {
     "id": 358,
@@ -747,7 +3077,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 13,
     "categoryName": "Frame Amazing ⭐️",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 68,
+        "y": 76,
+        "w": 748,
+        "h": 544
+      },
+      {
+        "x": 68,
+        "y": 688,
+        "w": 748,
+        "h": 544
+      },
+      {
+        "x": 68,
+        "y": 1300,
+        "w": 752,
+        "h": 544
+      },
+      {
+        "x": 68,
+        "y": 1912,
+        "w": 752,
+        "h": 544
+      }
+    ]
   },
   {
     "id": 364,
@@ -756,7 +3112,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 19,
     "categoryName": "Frame Chụp Cùng Idol",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 64,
+        "w": 772,
+        "h": 564
+      },
+      {
+        "x": 56,
+        "y": 676,
+        "w": 772,
+        "h": 568
+      },
+      {
+        "x": 60,
+        "y": 1292,
+        "w": 768,
+        "h": 564
+      },
+      {
+        "x": 56,
+        "y": 1904,
+        "w": 772,
+        "h": 564
+      }
+    ]
   },
   {
     "id": 365,
@@ -765,7 +3147,45 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 19,
     "categoryName": "Frame Chụp Cùng Idol",
-    "slots": 6
+    "slots": 6,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 68,
+        "w": 772,
+        "h": 560
+      },
+      {
+        "x": 56,
+        "y": 680,
+        "w": 772,
+        "h": 564
+      },
+      {
+        "x": 376,
+        "y": 1000,
+        "w": 128,
+        "h": 184
+      },
+      {
+        "x": 60,
+        "y": 1292,
+        "w": 768,
+        "h": 564
+      },
+      {
+        "x": 56,
+        "y": 1904,
+        "w": 772,
+        "h": 564
+      },
+      {
+        "x": 332,
+        "y": 2308,
+        "w": 120,
+        "h": 160
+      }
+    ]
   },
   {
     "id": 375,
@@ -774,7 +3194,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 19,
     "categoryName": "Frame Chụp Cùng Idol",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 64,
+        "w": 772,
+        "h": 564
+      },
+      {
+        "x": 56,
+        "y": 676,
+        "w": 772,
+        "h": 568
+      },
+      {
+        "x": 60,
+        "y": 1292,
+        "w": 768,
+        "h": 564
+      },
+      {
+        "x": 56,
+        "y": 1904,
+        "w": 772,
+        "h": 564
+      }
+    ]
   },
   {
     "id": 377,
@@ -783,7 +3229,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 19,
     "categoryName": "Frame Chụp Cùng Idol",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 64,
+        "w": 772,
+        "h": 564
+      },
+      {
+        "x": 56,
+        "y": 676,
+        "w": 772,
+        "h": 568
+      },
+      {
+        "x": 60,
+        "y": 1292,
+        "w": 768,
+        "h": 564
+      },
+      {
+        "x": 56,
+        "y": 1904,
+        "w": 772,
+        "h": 564
+      }
+    ]
   },
   {
     "id": 379,
@@ -792,7 +3264,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 13,
     "categoryName": "Frame Amazing ⭐️",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 64,
+        "w": 772,
+        "h": 568
+      },
+      {
+        "x": 56,
+        "y": 676,
+        "w": 772,
+        "h": 568
+      },
+      {
+        "x": 60,
+        "y": 1292,
+        "w": 768,
+        "h": 564
+      },
+      {
+        "x": 56,
+        "y": 1904,
+        "w": 772,
+        "h": 564
+      }
+    ]
   },
   {
     "id": 385,
@@ -801,7 +3299,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 13,
     "categoryName": "Frame Amazing ⭐️",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 64,
+        "w": 772,
+        "h": 568
+      },
+      {
+        "x": 56,
+        "y": 676,
+        "w": 772,
+        "h": 568
+      },
+      {
+        "x": 60,
+        "y": 1292,
+        "w": 768,
+        "h": 564
+      },
+      {
+        "x": 56,
+        "y": 1904,
+        "w": 772,
+        "h": 564
+      }
+    ]
   },
   {
     "id": 386,
@@ -810,7 +3334,27 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 15,
     "categoryName": "Frame Đại Học",
-    "slots": 3
+    "slots": 3,
+    "slots_data": [
+      {
+        "x": 60,
+        "y": 680,
+        "w": 764,
+        "h": 560
+      },
+      {
+        "x": 64,
+        "y": 1296,
+        "w": 760,
+        "h": 556
+      },
+      {
+        "x": 60,
+        "y": 1908,
+        "w": 764,
+        "h": 556
+      }
+    ]
   },
   {
     "id": 387,
@@ -819,7 +3363,27 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 15,
     "categoryName": "Frame Đại Học",
-    "slots": 3
+    "slots": 3,
+    "slots_data": [
+      {
+        "x": 60,
+        "y": 680,
+        "w": 764,
+        "h": 560
+      },
+      {
+        "x": 64,
+        "y": 1296,
+        "w": 760,
+        "h": 556
+      },
+      {
+        "x": 60,
+        "y": 1908,
+        "w": 764,
+        "h": 556
+      }
+    ]
   },
   {
     "id": 388,
@@ -828,7 +3392,27 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 15,
     "categoryName": "Frame Đại Học",
-    "slots": 3
+    "slots": 3,
+    "slots_data": [
+      {
+        "x": 60,
+        "y": 680,
+        "w": 764,
+        "h": 560
+      },
+      {
+        "x": 64,
+        "y": 1296,
+        "w": 760,
+        "h": 556
+      },
+      {
+        "x": 60,
+        "y": 1908,
+        "w": 764,
+        "h": 556
+      }
+    ]
   },
   {
     "id": 389,
@@ -837,7 +3421,27 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 15,
     "categoryName": "Frame Đại Học",
-    "slots": 3
+    "slots": 3,
+    "slots_data": [
+      {
+        "x": 60,
+        "y": 680,
+        "w": 764,
+        "h": 560
+      },
+      {
+        "x": 64,
+        "y": 1296,
+        "w": 760,
+        "h": 556
+      },
+      {
+        "x": 60,
+        "y": 1908,
+        "w": 764,
+        "h": 556
+      }
+    ]
   },
   {
     "id": 390,
@@ -846,7 +3450,27 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 15,
     "categoryName": "Frame Đại Học",
-    "slots": 3
+    "slots": 3,
+    "slots_data": [
+      {
+        "x": 60,
+        "y": 680,
+        "w": 764,
+        "h": 560
+      },
+      {
+        "x": 64,
+        "y": 1296,
+        "w": 760,
+        "h": 556
+      },
+      {
+        "x": 60,
+        "y": 1908,
+        "w": 764,
+        "h": 556
+      }
+    ]
   },
   {
     "id": 413,
@@ -855,7 +3479,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 16,
     "categoryName": "Frame IDOL Hoạt Họa",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 172,
+        "y": 200,
+        "w": 2408,
+        "h": 1768
+      },
+      {
+        "x": 172,
+        "y": 2116,
+        "w": 2408,
+        "h": 1764
+      },
+      {
+        "x": 176,
+        "y": 4028,
+        "w": 2408,
+        "h": 1764
+      },
+      {
+        "x": 172,
+        "y": 5940,
+        "w": 2408,
+        "h": 1764
+      }
+    ]
   },
   {
     "id": 427,
@@ -864,7 +3514,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 16,
     "categoryName": "Frame IDOL Hoạt Họa",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 60,
+        "y": 144,
+        "w": 756,
+        "h": 492
+      },
+      {
+        "x": 60,
+        "y": 724,
+        "w": 752,
+        "h": 496
+      },
+      {
+        "x": 60,
+        "y": 1312,
+        "w": 756,
+        "h": 504
+      },
+      {
+        "x": 60,
+        "y": 1900,
+        "w": 756,
+        "h": 500
+      }
+    ]
   },
   {
     "id": 431,
@@ -873,7 +3549,27 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 15,
     "categoryName": "Frame Đại Học",
-    "slots": 3
+    "slots": 3,
+    "slots_data": [
+      {
+        "x": 60,
+        "y": 680,
+        "w": 764,
+        "h": 560
+      },
+      {
+        "x": 64,
+        "y": 1296,
+        "w": 760,
+        "h": 556
+      },
+      {
+        "x": 60,
+        "y": 1908,
+        "w": 764,
+        "h": 556
+      }
+    ]
   },
   {
     "id": 441,
@@ -882,7 +3578,27 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 16,
     "categoryName": "Frame IDOL Hoạt Họa",
-    "slots": 3
+    "slots": 3,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 64,
+        "w": 772,
+        "h": 568
+      },
+      {
+        "x": 56,
+        "y": 676,
+        "w": 772,
+        "h": 568
+      },
+      {
+        "x": 56,
+        "y": 1292,
+        "w": 772,
+        "h": 564
+      }
+    ]
   },
   {
     "id": 455,
@@ -891,7 +3607,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "grid",
     "categoryId": 13,
     "categoryName": "Frame Amazing ⭐️",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 44,
+        "y": 44,
+        "w": 512,
+        "h": 688
+      },
+      {
+        "x": 588,
+        "y": 44,
+        "w": 512,
+        "h": 688
+      },
+      {
+        "x": 44,
+        "y": 768,
+        "w": 512,
+        "h": 680
+      },
+      {
+        "x": 588,
+        "y": 768,
+        "w": 512,
+        "h": 680
+      }
+    ]
   },
   {
     "id": 461,
@@ -900,7 +3642,27 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 15,
     "categoryName": "Frame Đại Học",
-    "slots": 3
+    "slots": 3,
+    "slots_data": [
+      {
+        "x": 60,
+        "y": 680,
+        "w": 764,
+        "h": 560
+      },
+      {
+        "x": 64,
+        "y": 1296,
+        "w": 760,
+        "h": 556
+      },
+      {
+        "x": 60,
+        "y": 1908,
+        "w": 764,
+        "h": 556
+      }
+    ]
   },
   {
     "id": 462,
@@ -909,7 +3671,27 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 15,
     "categoryName": "Frame Đại Học",
-    "slots": 3
+    "slots": 3,
+    "slots_data": [
+      {
+        "x": 60,
+        "y": 680,
+        "w": 764,
+        "h": 560
+      },
+      {
+        "x": 64,
+        "y": 1296,
+        "w": 760,
+        "h": 556
+      },
+      {
+        "x": 60,
+        "y": 1908,
+        "w": 764,
+        "h": 556
+      }
+    ]
   },
   {
     "id": 465,
@@ -918,7 +3700,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 19,
     "categoryName": "Frame Chụp Cùng Idol",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 68,
+        "w": 772,
+        "h": 560
+      },
+      {
+        "x": 56,
+        "y": 680,
+        "w": 772,
+        "h": 564
+      },
+      {
+        "x": 60,
+        "y": 1292,
+        "w": 768,
+        "h": 564
+      },
+      {
+        "x": 56,
+        "y": 1904,
+        "w": 772,
+        "h": 564
+      }
+    ]
   },
   {
     "id": 470,
@@ -927,7 +3735,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 10,
     "categoryName": "Frame Cartoon",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 64,
+        "w": 772,
+        "h": 564
+      },
+      {
+        "x": 56,
+        "y": 676,
+        "w": 772,
+        "h": 568
+      },
+      {
+        "x": 60,
+        "y": 1292,
+        "w": 768,
+        "h": 564
+      },
+      {
+        "x": 56,
+        "y": 1904,
+        "w": 772,
+        "h": 564
+      }
+    ]
   },
   {
     "id": 471,
@@ -936,7 +3770,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 13,
     "categoryName": "Frame Amazing ⭐️",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 64,
+        "w": 772,
+        "h": 568
+      },
+      {
+        "x": 56,
+        "y": 676,
+        "w": 772,
+        "h": 568
+      },
+      {
+        "x": 60,
+        "y": 1292,
+        "w": 768,
+        "h": 564
+      },
+      {
+        "x": 56,
+        "y": 1904,
+        "w": 772,
+        "h": 564
+      }
+    ]
   },
   {
     "id": 472,
@@ -945,7 +3805,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 13,
     "categoryName": "Frame Amazing ⭐️",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 64,
+        "w": 772,
+        "h": 564
+      },
+      {
+        "x": 56,
+        "y": 676,
+        "w": 772,
+        "h": 568
+      },
+      {
+        "x": 56,
+        "y": 1292,
+        "w": 772,
+        "h": 564
+      },
+      {
+        "x": 56,
+        "y": 1904,
+        "w": 772,
+        "h": 564
+      }
+    ]
   },
   {
     "id": 473,
@@ -954,7 +3840,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "grid",
     "categoryId": 13,
     "categoryName": "Frame Amazing ⭐️",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 44,
+        "y": 44,
+        "w": 512,
+        "h": 688
+      },
+      {
+        "x": 588,
+        "y": 44,
+        "w": 512,
+        "h": 688
+      },
+      {
+        "x": 44,
+        "y": 764,
+        "w": 512,
+        "h": 684
+      },
+      {
+        "x": 588,
+        "y": 764,
+        "w": 512,
+        "h": 684
+      }
+    ]
   },
   {
     "id": 474,
@@ -963,7 +3875,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 16,
     "categoryName": "Frame IDOL Hoạt Họa",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 64,
+        "w": 772,
+        "h": 564
+      },
+      {
+        "x": 56,
+        "y": 676,
+        "w": 772,
+        "h": 568
+      },
+      {
+        "x": 60,
+        "y": 1292,
+        "w": 768,
+        "h": 564
+      },
+      {
+        "x": 56,
+        "y": 1904,
+        "w": 772,
+        "h": 564
+      }
+    ]
   },
   {
     "id": 478,
@@ -972,7 +3910,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 19,
     "categoryName": "Frame Chụp Cùng Idol",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 228,
+        "y": 68,
+        "w": 600,
+        "h": 560
+      },
+      {
+        "x": 56,
+        "y": 680,
+        "w": 772,
+        "h": 564
+      },
+      {
+        "x": 60,
+        "y": 1292,
+        "w": 768,
+        "h": 564
+      },
+      {
+        "x": 56,
+        "y": 1904,
+        "w": 772,
+        "h": 564
+      }
+    ]
   },
   {
     "id": 479,
@@ -981,7 +3945,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 19,
     "categoryName": "Frame Chụp Cùng Idol",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 68,
+        "w": 772,
+        "h": 560
+      },
+      {
+        "x": 56,
+        "y": 680,
+        "w": 772,
+        "h": 564
+      },
+      {
+        "x": 60,
+        "y": 1292,
+        "w": 768,
+        "h": 564
+      },
+      {
+        "x": 56,
+        "y": 1904,
+        "w": 772,
+        "h": 564
+      }
+    ]
   },
   {
     "id": 482,
@@ -990,7 +3980,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 11,
     "categoryName": "Frame Basic",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 64,
+        "w": 772,
+        "h": 564
+      },
+      {
+        "x": 60,
+        "y": 676,
+        "w": 768,
+        "h": 564
+      },
+      {
+        "x": 60,
+        "y": 1288,
+        "w": 768,
+        "h": 564
+      },
+      {
+        "x": 56,
+        "y": 1908,
+        "w": 772,
+        "h": 564
+      }
+    ]
   },
   {
     "id": 483,
@@ -999,7 +4015,27 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 13,
     "categoryName": "Frame Amazing ⭐️",
-    "slots": 3
+    "slots": 3,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 64,
+        "w": 772,
+        "h": 564
+      },
+      {
+        "x": 56,
+        "y": 676,
+        "w": 772,
+        "h": 568
+      },
+      {
+        "x": 56,
+        "y": 1292,
+        "w": 772,
+        "h": 564
+      }
+    ]
   },
   {
     "id": 484,
@@ -1008,7 +4044,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 10,
     "categoryName": "Frame Cartoon",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 68,
+        "w": 772,
+        "h": 560
+      },
+      {
+        "x": 56,
+        "y": 676,
+        "w": 772,
+        "h": 564
+      },
+      {
+        "x": 56,
+        "y": 1288,
+        "w": 772,
+        "h": 564
+      },
+      {
+        "x": 56,
+        "y": 1900,
+        "w": 772,
+        "h": 564
+      }
+    ]
   },
   {
     "id": 486,
@@ -1017,7 +4079,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 18,
     "categoryName": "Frame Sự Kiện",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 68,
+        "w": 768,
+        "h": 560
+      },
+      {
+        "x": 56,
+        "y": 680,
+        "w": 768,
+        "h": 560
+      },
+      {
+        "x": 64,
+        "y": 1292,
+        "w": 720,
+        "h": 560
+      },
+      {
+        "x": 56,
+        "y": 1904,
+        "w": 768,
+        "h": 560
+      }
+    ]
   },
   {
     "id": 491,
@@ -1026,7 +4114,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 13,
     "categoryName": "Frame Amazing ⭐️",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 64,
+        "w": 772,
+        "h": 564
+      },
+      {
+        "x": 56,
+        "y": 676,
+        "w": 772,
+        "h": 564
+      },
+      {
+        "x": 56,
+        "y": 1288,
+        "w": 772,
+        "h": 564
+      },
+      {
+        "x": 56,
+        "y": 1912,
+        "w": 772,
+        "h": 564
+      }
+    ]
   },
   {
     "id": 492,
@@ -1035,7 +4149,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 19,
     "categoryName": "Frame Chụp Cùng Idol",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 68,
+        "w": 772,
+        "h": 560
+      },
+      {
+        "x": 56,
+        "y": 680,
+        "w": 772,
+        "h": 564
+      },
+      {
+        "x": 60,
+        "y": 1292,
+        "w": 768,
+        "h": 564
+      },
+      {
+        "x": 56,
+        "y": 1904,
+        "w": 772,
+        "h": 564
+      }
+    ]
   },
   {
     "id": 493,
@@ -1044,7 +4184,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "grid",
     "categoryId": 13,
     "categoryName": "Frame Amazing ⭐️",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 100,
+        "y": 104,
+        "w": 400,
+        "h": 576
+      },
+      {
+        "x": 640,
+        "y": 104,
+        "w": 404,
+        "h": 576
+      },
+      {
+        "x": 100,
+        "y": 816,
+        "w": 400,
+        "h": 580
+      },
+      {
+        "x": 628,
+        "y": 816,
+        "w": 404,
+        "h": 580
+      }
+    ]
   },
   {
     "id": 495,
@@ -1053,7 +4219,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 13,
     "categoryName": "Frame Amazing ⭐️",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 64,
+        "w": 772,
+        "h": 564
+      },
+      {
+        "x": 60,
+        "y": 680,
+        "w": 768,
+        "h": 564
+      },
+      {
+        "x": 60,
+        "y": 1288,
+        "w": 768,
+        "h": 564
+      },
+      {
+        "x": 60,
+        "y": 1912,
+        "w": 768,
+        "h": 564
+      }
+    ]
   },
   {
     "id": 496,
@@ -1062,7 +4254,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 18,
     "categoryName": "Frame Sự Kiện",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 68,
+        "w": 768,
+        "h": 540
+      },
+      {
+        "x": 56,
+        "y": 680,
+        "w": 768,
+        "h": 560
+      },
+      {
+        "x": 60,
+        "y": 1292,
+        "w": 768,
+        "h": 560
+      },
+      {
+        "x": 56,
+        "y": 1904,
+        "w": 768,
+        "h": 560
+      }
+    ]
   },
   {
     "id": 500,
@@ -1071,7 +4289,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 18,
     "categoryName": "Frame Sự Kiện",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 68,
+        "w": 768,
+        "h": 560
+      },
+      {
+        "x": 56,
+        "y": 680,
+        "w": 768,
+        "h": 560
+      },
+      {
+        "x": 60,
+        "y": 1292,
+        "w": 768,
+        "h": 560
+      },
+      {
+        "x": 56,
+        "y": 1904,
+        "w": 768,
+        "h": 560
+      }
+    ]
   },
   {
     "id": 504,
@@ -1080,7 +4324,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "grid",
     "categoryId": 13,
     "categoryName": "Frame Amazing ⭐️",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 44,
+        "y": 44,
+        "w": 512,
+        "h": 688
+      },
+      {
+        "x": 588,
+        "y": 44,
+        "w": 508,
+        "h": 688
+      },
+      {
+        "x": 44,
+        "y": 764,
+        "w": 512,
+        "h": 688
+      },
+      {
+        "x": 588,
+        "y": 764,
+        "w": 508,
+        "h": 688
+      }
+    ]
   },
   {
     "id": 506,
@@ -1089,7 +4359,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 13,
     "categoryName": "Frame Amazing ⭐️",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 68,
+        "w": 772,
+        "h": 560
+      },
+      {
+        "x": 56,
+        "y": 680,
+        "w": 772,
+        "h": 564
+      },
+      {
+        "x": 60,
+        "y": 1292,
+        "w": 768,
+        "h": 564
+      },
+      {
+        "x": 56,
+        "y": 1904,
+        "w": 772,
+        "h": 564
+      }
+    ]
   },
   {
     "id": 507,
@@ -1098,7 +4394,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 13,
     "categoryName": "Frame Amazing ⭐️",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 64,
+        "w": 772,
+        "h": 564
+      },
+      {
+        "x": 60,
+        "y": 676,
+        "w": 768,
+        "h": 568
+      },
+      {
+        "x": 60,
+        "y": 1292,
+        "w": 768,
+        "h": 568
+      },
+      {
+        "x": 60,
+        "y": 1908,
+        "w": 768,
+        "h": 568
+      }
+    ]
   },
   {
     "id": 508,
@@ -1107,7 +4429,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 19,
     "categoryName": "Frame Chụp Cùng Idol",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 68,
+        "w": 772,
+        "h": 560
+      },
+      {
+        "x": 56,
+        "y": 680,
+        "w": 772,
+        "h": 564
+      },
+      {
+        "x": 60,
+        "y": 1292,
+        "w": 768,
+        "h": 564
+      },
+      {
+        "x": 56,
+        "y": 1904,
+        "w": 772,
+        "h": 564
+      }
+    ]
   },
   {
     "id": 509,
@@ -1116,7 +4464,45 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "bigrectangle",
     "categoryId": 13,
     "categoryName": "Frame Amazing ⭐️",
-    "slots": 6
+    "slots": 6,
+    "slots_data": [
+      {
+        "x": 28,
+        "y": 28,
+        "w": 520,
+        "h": 388
+      },
+      {
+        "x": 572,
+        "y": 28,
+        "w": 524,
+        "h": 388
+      },
+      {
+        "x": 572,
+        "y": 440,
+        "w": 524,
+        "h": 392
+      },
+      {
+        "x": 28,
+        "y": 444,
+        "w": 520,
+        "h": 388
+      },
+      {
+        "x": 572,
+        "y": 848,
+        "w": 524,
+        "h": 392
+      },
+      {
+        "x": 28,
+        "y": 856,
+        "w": 520,
+        "h": 392
+      }
+    ]
   },
   {
     "id": 510,
@@ -1125,7 +4511,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 13,
     "categoryName": "Frame Amazing ⭐️",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 68,
+        "y": 104,
+        "w": 744,
+        "h": 520
+      },
+      {
+        "x": 56,
+        "y": 676,
+        "w": 772,
+        "h": 564
+      },
+      {
+        "x": 72,
+        "y": 1304,
+        "w": 744,
+        "h": 536
+      },
+      {
+        "x": 56,
+        "y": 1900,
+        "w": 772,
+        "h": 564
+      }
+    ]
   },
   {
     "id": 511,
@@ -1134,7 +4546,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 16,
     "categoryName": "Frame IDOL Hoạt Họa",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 84,
+        "y": 124,
+        "w": 788,
+        "h": 568
+      },
+      {
+        "x": 92,
+        "y": 776,
+        "w": 776,
+        "h": 568
+      },
+      {
+        "x": 84,
+        "y": 1428,
+        "w": 784,
+        "h": 592
+      },
+      {
+        "x": 132,
+        "y": 2152,
+        "w": 728,
+        "h": 532
+      }
+    ]
   },
   {
     "id": 515,
@@ -1143,7 +4581,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 16,
     "categoryName": "Frame IDOL Hoạt Họa",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 52,
+        "y": 56,
+        "w": 496,
+        "h": 364
+      },
+      {
+        "x": 56,
+        "y": 472,
+        "w": 496,
+        "h": 356
+      },
+      {
+        "x": 56,
+        "y": 888,
+        "w": 496,
+        "h": 328
+      },
+      {
+        "x": 52,
+        "y": 1304,
+        "w": 496,
+        "h": 300
+      }
+    ]
   },
   {
     "id": 522,
@@ -1152,7 +4616,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 16,
     "categoryName": "Frame IDOL Hoạt Họa",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 152,
+        "y": 172,
+        "w": 1704,
+        "h": 1240
+      },
+      {
+        "x": 144,
+        "y": 1552,
+        "w": 1708,
+        "h": 1268
+      },
+      {
+        "x": 156,
+        "y": 2952,
+        "w": 1680,
+        "h": 1264
+      },
+      {
+        "x": 156,
+        "y": 4356,
+        "w": 1688,
+        "h": 1252
+      }
+    ]
   },
   {
     "id": 524,
@@ -1161,7 +4651,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 13,
     "categoryName": "Frame Amazing ⭐️",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 180,
+        "w": 604,
+        "h": 380
+      },
+      {
+        "x": 60,
+        "y": 756,
+        "w": 536,
+        "h": 432
+      },
+      {
+        "x": 52,
+        "y": 1412,
+        "w": 528,
+        "h": 404
+      },
+      {
+        "x": 112,
+        "y": 1988,
+        "w": 560,
+        "h": 424
+      }
+    ]
   },
   {
     "id": 525,
@@ -1170,7 +4686,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 18,
     "categoryName": "Frame Sự Kiện",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 60,
+        "y": 60,
+        "w": 560,
+        "h": 328
+      },
+      {
+        "x": 104,
+        "y": 512,
+        "w": 476,
+        "h": 444
+      },
+      {
+        "x": 64,
+        "y": 1012,
+        "w": 556,
+        "h": 384
+      },
+      {
+        "x": 64,
+        "y": 1488,
+        "w": 552,
+        "h": 356
+      }
+    ]
   },
   {
     "id": 526,
@@ -1179,7 +4721,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 16,
     "categoryName": "Frame IDOL Hoạt Họa",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 96,
+        "y": 108,
+        "w": 692,
+        "h": 532
+      },
+      {
+        "x": 76,
+        "y": 716,
+        "w": 624,
+        "h": 508
+      },
+      {
+        "x": 104,
+        "y": 1328,
+        "w": 688,
+        "h": 512
+      },
+      {
+        "x": 104,
+        "y": 1944,
+        "w": 672,
+        "h": 440
+      }
+    ]
   },
   {
     "id": 528,
@@ -1188,7 +4756,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 16,
     "categoryName": "Frame IDOL Hoạt Họa",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 224,
+        "y": 328,
+        "w": 1052,
+        "h": 556
+      },
+      {
+        "x": 168,
+        "y": 1160,
+        "w": 1156,
+        "h": 668
+      },
+      {
+        "x": 284,
+        "y": 2368,
+        "w": 944,
+        "h": 464
+      },
+      {
+        "x": 196,
+        "y": 3252,
+        "w": 1116,
+        "h": 560
+      }
+    ]
   },
   {
     "id": 529,
@@ -1197,7 +4791,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 16,
     "categoryName": "Frame IDOL Hoạt Họa",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 96,
+        "y": 108,
+        "w": 692,
+        "h": 532
+      },
+      {
+        "x": 76,
+        "y": 716,
+        "w": 624,
+        "h": 508
+      },
+      {
+        "x": 104,
+        "y": 1328,
+        "w": 688,
+        "h": 512
+      },
+      {
+        "x": 104,
+        "y": 1944,
+        "w": 672,
+        "h": 440
+      }
+    ]
   },
   {
     "id": 530,
@@ -1206,7 +4826,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 16,
     "categoryName": "Frame IDOL Hoạt Họa",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 56,
+        "y": 80,
+        "w": 596,
+        "h": 356
+      },
+      {
+        "x": 52,
+        "y": 476,
+        "w": 608,
+        "h": 356
+      },
+      {
+        "x": 56,
+        "y": 876,
+        "w": 584,
+        "h": 356
+      },
+      {
+        "x": 56,
+        "y": 1276,
+        "w": 600,
+        "h": 356
+      }
+    ]
   },
   {
     "id": 531,
@@ -1215,7 +4861,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 16,
     "categoryName": "Frame IDOL Hoạt Họa",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 32,
+        "y": 52,
+        "w": 388,
+        "h": 216
+      },
+      {
+        "x": 32,
+        "y": 304,
+        "w": 388,
+        "h": 216
+      },
+      {
+        "x": 32,
+        "y": 556,
+        "w": 388,
+        "h": 216
+      },
+      {
+        "x": 32,
+        "y": 812,
+        "w": 388,
+        "h": 212
+      }
+    ]
   },
   {
     "id": 532,
@@ -1224,7 +4896,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 16,
     "categoryName": "Frame IDOL Hoạt Họa",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 64,
+        "y": 292,
+        "w": 716,
+        "h": 468
+      },
+      {
+        "x": 60,
+        "y": 844,
+        "w": 716,
+        "h": 468
+      },
+      {
+        "x": 56,
+        "y": 1404,
+        "w": 724,
+        "h": 476
+      },
+      {
+        "x": 60,
+        "y": 2028,
+        "w": 716,
+        "h": 400
+      }
+    ]
   },
   {
     "id": 533,
@@ -1233,7 +4931,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "grid",
     "categoryId": 16,
     "categoryName": "Frame IDOL Hoạt Họa",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 176,
+        "y": 260,
+        "w": 604,
+        "h": 992
+      },
+      {
+        "x": 884,
+        "y": 260,
+        "w": 608,
+        "h": 1036
+      },
+      {
+        "x": 892,
+        "y": 1404,
+        "w": 600,
+        "h": 924
+      },
+      {
+        "x": 176,
+        "y": 1412,
+        "w": 604,
+        "h": 916
+      }
+    ]
   },
   {
     "id": 534,
@@ -1242,7 +4966,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 10,
     "categoryName": "Frame Cartoon",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 44,
+        "y": 72,
+        "w": 624,
+        "h": 376
+      },
+      {
+        "x": 44,
+        "y": 468,
+        "w": 624,
+        "h": 376
+      },
+      {
+        "x": 44,
+        "y": 868,
+        "w": 624,
+        "h": 372
+      },
+      {
+        "x": 44,
+        "y": 1264,
+        "w": 624,
+        "h": 376
+      }
+    ]
   },
   {
     "id": 535,
@@ -1251,7 +5001,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 16,
     "categoryName": "Frame IDOL Hoạt Họa",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 60,
+        "y": 76,
+        "w": 592,
+        "h": 348
+      },
+      {
+        "x": 64,
+        "y": 468,
+        "w": 588,
+        "h": 364
+      },
+      {
+        "x": 56,
+        "y": 868,
+        "w": 596,
+        "h": 364
+      },
+      {
+        "x": 44,
+        "y": 1268,
+        "w": 612,
+        "h": 376
+      }
+    ]
   },
   {
     "id": 536,
@@ -1260,7 +5036,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 16,
     "categoryName": "Frame IDOL Hoạt Họa",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 280,
+        "y": 384,
+        "w": 3224,
+        "h": 1992
+      },
+      {
+        "x": 248,
+        "y": 2564,
+        "w": 3276,
+        "h": 1896
+      },
+      {
+        "x": 316,
+        "y": 4676,
+        "w": 3188,
+        "h": 1916
+      },
+      {
+        "x": 276,
+        "y": 6788,
+        "w": 3224,
+        "h": 1876
+      }
+    ]
   },
   {
     "id": 537,
@@ -1269,7 +5071,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 13,
     "categoryName": "Frame Amazing ⭐️",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 48,
+        "y": 76,
+        "w": 612,
+        "h": 372
+      },
+      {
+        "x": 48,
+        "y": 476,
+        "w": 612,
+        "h": 364
+      },
+      {
+        "x": 48,
+        "y": 868,
+        "w": 612,
+        "h": 372
+      },
+      {
+        "x": 48,
+        "y": 1272,
+        "w": 612,
+        "h": 364
+      }
+    ]
   },
   {
     "id": 538,
@@ -1278,7 +5106,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 11,
     "categoryName": "Frame Basic",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 156,
+        "y": 104,
+        "w": 676,
+        "h": 588
+      },
+      {
+        "x": 148,
+        "y": 784,
+        "w": 676,
+        "h": 608
+      },
+      {
+        "x": 144,
+        "y": 1468,
+        "w": 672,
+        "h": 612
+      },
+      {
+        "x": 148,
+        "y": 2176,
+        "w": 676,
+        "h": 592
+      }
+    ]
   },
   {
     "id": 539,
@@ -1287,7 +5141,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 11,
     "categoryName": "Frame Basic",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 72,
+        "y": 84,
+        "w": 860,
+        "h": 644
+      },
+      {
+        "x": 72,
+        "y": 772,
+        "w": 860,
+        "h": 644
+      },
+      {
+        "x": 72,
+        "y": 1464,
+        "w": 860,
+        "h": 644
+      },
+      {
+        "x": 72,
+        "y": 2152,
+        "w": 860,
+        "h": 644
+      }
+    ]
   },
   {
     "id": 540,
@@ -1296,7 +5176,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 11,
     "categoryName": "Frame Basic",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 32,
+        "y": 32,
+        "w": 936,
+        "h": 704
+      },
+      {
+        "x": 32,
+        "y": 780,
+        "w": 936,
+        "h": 700
+      },
+      {
+        "x": 32,
+        "y": 1524,
+        "w": 936,
+        "h": 700
+      },
+      {
+        "x": 32,
+        "y": 2268,
+        "w": 936,
+        "h": 700
+      }
+    ]
   },
   {
     "id": 541,
@@ -1305,7 +5211,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 11,
     "categoryName": "Frame Basic",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 44,
+        "y": 72,
+        "w": 912,
+        "h": 680
+      },
+      {
+        "x": 48,
+        "y": 780,
+        "w": 908,
+        "h": 680
+      },
+      {
+        "x": 44,
+        "y": 1488,
+        "w": 912,
+        "h": 680
+      },
+      {
+        "x": 48,
+        "y": 2196,
+        "w": 908,
+        "h": 684
+      }
+    ]
   },
   {
     "id": 542,
@@ -1314,7 +5246,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "grid",
     "categoryId": 11,
     "categoryName": "Frame Basic",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 84,
+        "y": 84,
+        "w": 648,
+        "h": 864
+      },
+      {
+        "x": 772,
+        "y": 84,
+        "w": 648,
+        "h": 864
+      },
+      {
+        "x": 84,
+        "y": 988,
+        "w": 648,
+        "h": 864
+      },
+      {
+        "x": 824,
+        "y": 1072,
+        "w": 568,
+        "h": 708
+      }
+    ]
   },
   {
     "id": 543,
@@ -1323,7 +5281,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 20,
     "categoryName": "SYP",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 112,
+        "y": 128,
+        "w": 784,
+        "h": 528
+      },
+      {
+        "x": 108,
+        "y": 788,
+        "w": 788,
+        "h": 520
+      },
+      {
+        "x": 104,
+        "y": 1432,
+        "w": 792,
+        "h": 524
+      },
+      {
+        "x": 108,
+        "y": 2084,
+        "w": 788,
+        "h": 524
+      }
+    ]
   },
   {
     "id": 544,
@@ -1332,7 +5316,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 20,
     "categoryName": "SYP",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 120,
+        "y": 200,
+        "w": 768,
+        "h": 504
+      },
+      {
+        "x": 116,
+        "y": 760,
+        "w": 772,
+        "h": 504
+      },
+      {
+        "x": 124,
+        "y": 1404,
+        "w": 760,
+        "h": 504
+      },
+      {
+        "x": 120,
+        "y": 2020,
+        "w": 772,
+        "h": 500
+      }
+    ]
   },
   {
     "id": 545,
@@ -1341,7 +5351,33 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 20,
     "categoryName": "SYP",
-    "slots": 4
+    "slots": 4,
+    "slots_data": [
+      {
+        "x": 116,
+        "y": 92,
+        "w": 812,
+        "h": 576
+      },
+      {
+        "x": 124,
+        "y": 780,
+        "w": 764,
+        "h": 532
+      },
+      {
+        "x": 80,
+        "y": 1348,
+        "w": 852,
+        "h": 616
+      },
+      {
+        "x": 84,
+        "y": 2024,
+        "w": 844,
+        "h": 624
+      }
+    ]
   },
   {
     "id": 546,
@@ -1350,6 +5386,26 @@ export const STATIC_FRAMES: FrameItem[] = [
     "frame": "square",
     "categoryId": 20,
     "categoryName": "SYP",
-    "slots": 3
+    "slots": 3,
+    "slots_data": [
+      {
+        "x": 120,
+        "y": 452,
+        "w": 764,
+        "h": 548
+      },
+      {
+        "x": 120,
+        "y": 1072,
+        "w": 832,
+        "h": 644
+      },
+      {
+        "x": 140,
+        "y": 1840,
+        "w": 788,
+        "h": 564
+      }
+    ]
   }
 ]

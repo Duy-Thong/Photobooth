@@ -1,4 +1,4 @@
-import type { CapturedSlot, LayoutConfig, EffectType } from '@/types/photobooth'
+import type { CapturedSlot, LayoutConfig, EffectType, SlotRect } from '@/types/photobooth'
 import QRCode from 'qrcode'
 
 const STRIP_BG = '#fff'
@@ -93,8 +93,6 @@ function loadImage(src: string): Promise<HTMLImageElement> {
 }
 
 // ─── Transparency-mask slot detection ─────────────────────────────────────────
-
-export interface SlotRect { x: number; y: number; w: number; h: number }
 
 /**
  * Scan a frame PNG for connected transparent (alpha < 10) regions using a
@@ -209,12 +207,13 @@ export async function buildStripImage(
   layout: LayoutConfig,
   effects: EffectType[],
   frameUrl: string | null,
+  slots_data?: SlotRect[],
 ): Promise<string> {
 
   // ── Frame-based path ────────────────────────────────────────────────────────
   if (frameUrl) {
     const frameImg = await loadImage(frameUrl)
-    const frameSlots = detectSlotsFromImg(frameImg)
+    const frameSlots = slots_data || detectSlotsFromImg(frameImg)
 
     if (frameSlots.length > 0) {
       const fW = frameImg.naturalWidth  || frameImg.width
@@ -322,12 +321,13 @@ export async function buildStripImage(
 export async function buildStripVideo(
   clipUrls: string[],
   frameUrl: string,
+  slots_data?: SlotRect[],
   fps: 12 | 24 = 12,
 ): Promise<string | null> {
   if (!clipUrls.length) return null
 
   const frameImg = await loadImage(frameUrl)
-  const frameSlots = detectSlotsFromImg(frameImg)
+  const frameSlots = slots_data || detectSlotsFromImg(frameImg)
   if (!frameSlots.length) return null
 
   const fW = frameImg.naturalWidth  || frameImg.width

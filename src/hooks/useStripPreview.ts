@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
-import type { CapturedSlot, EffectType, LayoutConfig } from '@/types/photobooth'
-import { detectFrameSlots, applyEffects, type SlotRect } from '@/lib/imageProcessing'
+import { detectFrameSlots, applyEffects } from '@/lib/imageProcessing'
+import type { FrameItem } from '@/lib/frameService'
+import type { SlotRect, CapturedSlot, EffectType, LayoutConfig } from '@/types/photobooth'
 
 interface FrameCache {
   url: string
@@ -38,10 +39,11 @@ function coverFit(
  */
 export function useStripPreview(
   slots: (CapturedSlot | null)[],
-  frameUrl: string | null,
+  selectedFrame: FrameItem | null,
   layout: LayoutConfig,
   effects: EffectType[] = [],
 ) {
+  const frameUrl = selectedFrame ? (selectedFrame.storageUrl ?? `/frames/${selectedFrame.filename}`) : null;
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [rendering, setRendering] = useState(false)
   const frameCacheRef = useRef<FrameCache | null>(null)
@@ -55,19 +57,38 @@ export function useStripPreview(
     if (!frameUrl) {
       frameCacheRef.current = null
       setFrameCacheKey(null)
+      if (prevUrlRef.current) {
+        URL.revokeObjectURL(prevUrlRef.current)
+        prevUrlRef.current = null
+      }
+      setPreviewUrl(null)
       return
     }
     // Already cached
     if (frameCacheRef.current?.url === frameUrl) return
 
-    Promise.all([
-      loadImg(frameUrl),
-      detectFrameSlots(frameUrl),
-    ]).then(([img, detectedSlots]) => {
-      frameCacheRef.current = { url: frameUrl, img, slots: detectedSlots }
+    // Immediately clear old preview & show loading to avoid flashing old frame
+    if (prevUrlRef.current) {
+      URL.revokeObjectURL(prevUrlRef.current)
+      prevUrlRef.current = null
+    }
+    setPreviewUrl(null)
+    setRendering(true)
+
+    const handleLoaded = (img: HTMLImageElement, slots: SlotRect[]) => {
+      frameCacheRef.current = { url: frameUrl, img, slots }
       setFrameCacheKey(frameUrl)
-    }).catch(console.error)
-  }, [frameUrl])
+    }
+
+    if (selectedFrame?.slots_data) {
+      loadImg(frameUrl).then(img => handleLoaded(img, selectedFrame.slots_data!)).catch(console.error)
+    } else if (frameUrl) {
+      Promise.all([
+        loadImg(frameUrl),
+        detectFrameSlots(frameUrl),
+      ]).then(([img, detectedSlots]) => handleLoaded(img, detectedSlots)).catch(console.error)
+    }
+  }, [frameUrl, selectedFrame])
 
   // ── Render composite whenever slots or frame changes ─────────────────────────
   useEffect(() => {
@@ -110,7 +131,7 @@ export function useStripPreview(
         // Load all slot images in parallel first (safe), then draw sequentially
         // (canvas clip state is shared — concurrent save/clip/restore interleaves and corrupts clip regions)
         const frameImgMap = await Promise.all(
-          frameSlots.map(async (_, i) => {
+          frameSlots.map(async (_: SlotRect, i: number) => {
             const photo = photos[i]
             if (!photo) return null
             try { return await loadImg(photo.dataUrl) } catch { return null }

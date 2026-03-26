@@ -34,7 +34,7 @@ import { existsSync, readFileSync } from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { initializeApp } from 'firebase/app'
-import { getFirestore, collection, addDoc, getDocs, query, where } from 'firebase/firestore'
+import { getFirestore, collection, addDoc, getDocs, query, where, doc, updateDoc } from 'firebase/firestore'
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { initializeAuth, inMemoryPersistence, signInWithEmailAndPassword, signOut } from 'firebase/auth'
 
@@ -48,9 +48,12 @@ const DRY_RUN = flags.includes('--dry-run')
 const FORCE = flags.includes('--force')
 
 // ── Load .env ─────────────────────────────────────────────────────────────────
-const envPath = path.join(ROOT, '.env')
+let envPath = path.join(ROOT, '.env')
 if (!existsSync(envPath)) {
-    console.error('❌  .env file not found. Please create one with VITE_FIREBASE_* variables.')
+    envPath = path.join(ROOT, '.env.local')
+}
+if (!existsSync(envPath)) {
+    console.error('❌  .env or .env.local file not found. Please create one with VITE_FIREBASE_* variables.')
     process.exit(1)
 }
 
@@ -146,15 +149,31 @@ for (const frame of STATIC_FRAMES) {
             continue
         }
 
-        // Skip if already in Firestore (unless --force)
-        if (!FORCE) {
-            const existing = await getDocs(
-                query(collection(db, 'frames'), where('filename', '==', frame.filename)),
-            )
-            if (!existing.empty) {
+        // check if already in Firestore
+        const existing = await getDocs(
+            query(collection(db, 'frames'), where('filename', '==', frame.filename)),
+        )
+
+        let existingId = null
+        if (!existing.empty) {
+            const docSnap = existing.docs[0]
+            existingId = docSnap.id
+            const data = docSnap.data()
+
+            // If not forcing, check if we need to sync slots_data or skip
+            if (!FORCE) {
+                if (!data.slots_data || data.slots_data.length === 0) {
+                    console.log(`🆙  Syncing metadata for: ${frame.name} (${frame.filename})`)
+                    await updateDoc(doc(db, 'frames', docSnap.id), {
+                        slots_data: frame.slots_data,
+                        slots: frame.slots,
+                    })
+                    uploaded++
+                    continue // Continue to next frame after syncing
+                }
                 console.log(`⏭   Already exists: ${frame.name} (${frame.filename})`)
                 skipped++
-                continue
+                continue // Continue to next frame if already exists and no sync needed
             }
         }
 
@@ -164,8 +183,8 @@ for (const frame of STATIC_FRAMES) {
         await uploadBytes(storageFileRef, fileBuffer, { contentType: 'image/png' })
         const storageUrl = await getDownloadURL(storageFileRef)
 
-        // Write metadata to Firestore
-        await addDoc(collection(db, 'frames'), {
+        // Metadata to write
+        const meta = {
             id: frame.id,
             filename: frame.filename,
             name: frame.name,
@@ -173,8 +192,15 @@ for (const frame of STATIC_FRAMES) {
             categoryId: frame.categoryId,
             categoryName: frame.categoryName,
             slots: frame.slots,
+            slots_data: frame.slots_data,
             storageUrl,
-        })
+        }
+
+        if (existingId) {
+            await updateDoc(doc(db, 'frames', existingId), meta)
+        } else {
+            await addDoc(collection(db, 'frames'), meta)
+        }
 
         console.log(`✅  ${frame.name} (${frame.filename})`)
         uploaded++

@@ -29,7 +29,6 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
 
   const [phase, setPhase] = useState<Phase>('uploading')
   const [sessionId, setSessionId] = useState<string | null>(null)
-  const [recapStripFirebaseUrl, setRecapStripFirebaseUrl] = useState<string | null>(null)
   const [finalWithQr, setFinalWithQr] = useState<string | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [currentClipIdx, setCurrentClipIdx] = useState(0)
@@ -52,7 +51,6 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
     // Reset and start uploading immediately
     setPhase('uploading')
     setSessionId(null)
-    setRecapStripFirebaseUrl(null)
     setFinalWithQr(null)
     setErrorMsg(null)
     setCurrentClipIdx(0)
@@ -60,14 +58,22 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
   }, [open, imageBlobUrl])
 
   const lastUploadKeyRef = useRef(0)
+  const lastUploadedUrlRef = useRef<string | null>(null)
 
   // Upload flow — only starts when user explicitly triggers via uploadKey
   useEffect(() => {
     if (uploadKey === 0 || !imageBlobUrl) return
     if (buildingStrip) return
     if (lastUploadKeyRef.current === uploadKey) return
+    if (lastUploadedUrlRef.current === imageBlobUrl) {
+      // Already uploaded this exact same image blob!
+      // Just set phase to done and skip the upload so we don't create a new session
+      setPhase('done')
+      return
+    }
 
     lastUploadKeyRef.current = uploadKey
+    lastUploadedUrlRef.current = imageBlobUrl
 
     let cancelled = false
 
@@ -81,14 +87,6 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
         if (cancelled) return
         setSessionId(result.sessionId)
         setFinalWithQr(result.stampedBlobUrl)
-        // recapStripFirebaseUrl is now inside the session, derive it
-        const bucket = import.meta.env.VITE_FIREBASE_STORAGE_BUCKET as string
-        if (recapStripUrl) {
-          const ext = (recapMimeType ?? 'video/webm').startsWith('video/mp4') ? 'mp4' : 'webm'
-          setRecapStripFirebaseUrl(
-            `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodeURIComponent(`sessions/${result.sessionId}/strip.${ext}`)}?alt=media`
-          )
-        }
         setPhase('done')
       } catch (err) {
         if (!cancelled) {
@@ -166,39 +164,70 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
 
       {/* ── DONE ─────────────────────────────────────────────────────────────── */}
       {phase === 'done' && finalWithQr && sessionId && (
-        <div className="flex gap-6 items-start">
+        <div className="flex flex-col md:flex-row gap-6 items-center md:items-start">
           {/* Left — photo preview with QR stamped */}
-          <div className="shrink-0 w-70 flex justify-center">
-            <img
-              src={finalWithQr}
-              alt="Final photo"
-              className="w-full max-h-130 object-contain rounded-lg border border-[#2a2a2a]"
-            />
+          <div className="w-full max-w-xs md:max-w-none md:w-[280px] shrink-0 flex flex-col gap-4">
+            <div className="w-full flex justify-center">
+              <img
+                src={finalWithQr}
+                alt="Final photo"
+                className="w-full max-h-[60vh] md:max-h-[520px] object-contain rounded-lg border border-[#2a2a2a]"
+              />
+            </div>
+            
+            {/* Primary Action buttons */}
+            <div className="w-full flex flex-col gap-2">
+              <Button block icon={<DownloadOutlined />} onClick={handleDownload}
+                style={{ background: '#fff', color: '#000', border: 'none', fontWeight: 600, height: 40 }}>
+                Tải về
+              </Button>
+              <div className="flex gap-2">
+                <Button icon={<PictureOutlined />} onClick={onChangeFrame}
+                  style={{ ...btnBase, color: '#888', flex: 1 }}>
+                  Đổi khung
+                </Button>
+                <Button icon={<ReloadOutlined />} onClick={handleRetake}
+                  style={{ ...btnBase, color: '#888', flex: 1 }}>
+                  Chụp lại
+                </Button>
+              </div>
+            </div>
           </div>
 
           {/* Right — QR + actions */}
-          <div className="flex-1 flex flex-col items-center gap-4">
+          <div className="flex-1 w-full flex flex-col items-center gap-4">
             <p className="text-[#666] text-[10px] uppercase tracking-widest self-start">Quét để xem &amp; chia sẻ</p>
             <div className="p-2 rounded-2xl">
               <QRCode value={`${window.location.origin}/session/${sessionId}`} size={150} bordered={false} errorLevel="H" icon="/clublogo.png" iconSize={34} />
             </div>
-            {/* URL copy row */}
-            <div className="w-full flex items-center gap-1.5 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-2">
-              <span className="flex-1 text-[#888] text-xs truncate select-all">
+            {/* URL link row */}
+            <div className="w-full flex items-center gap-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-1.5 pl-3">
+              <span className="flex-1 text-[#888] text-[11px] truncate select-all">
                 {`${window.location.origin}/session/${sessionId}`}
               </span>
-              <button
-                onClick={handleCopyUrl}
-                className="shrink-0 text-[#666] hover:text-white transition-colors p-0.5"
-                title="Copy link"
-              >
-                {copied ? <CheckOutlined className="text-green-400" /> : <CopyOutlined />}
-              </button>
+              <div className="flex items-center gap-1 shrink-0">
+                <a
+                  href={`${window.location.origin}/session/${sessionId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-2.5 py-1 rounded bg-[#222] border border-[#333] text-[#aaa] hover:text-white hover:border-[#555] hover:bg-[#2a2a2a] text-[10px] font-semibold uppercase tracking-wider transition-all flex items-center gap-1.5"
+                  title="Mở link sang tab mới"
+                >
+                  Mở ↗
+                </a>
+                <button
+                  onClick={handleCopyUrl}
+                  className="px-2.5 py-1 rounded bg-[#222] border border-[#333] text-[#aaa] hover:text-white hover:border-[#555] hover:bg-[#2a2a2a] text-[10px] font-semibold uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer"
+                  title="Copy link"
+                >
+                  {copied ? <CheckOutlined className="text-green-400" /> : <CopyOutlined />} Copy
+                </button>
+              </div>
             </div>
 
             {/* Video recap */}
             {(recapStripUrl || buildingStrip || hasClips) && (
-              <div className="w-full flex flex-col gap-2">
+              <div className="w-full flex flex-col gap-3 mt-1">
                 {/* Strip video */}
                 {(recapStripUrl || buildingStrip) && (
                   <div className="flex flex-col gap-1.5">
@@ -216,17 +245,11 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
                           playsInline
                           className="w-full rounded-lg border border-[#2a2a2a] bg-black object-contain max-h-44"
                         />
-                        <div className="flex items-center justify-center gap-3">
+                        <div className="flex items-center justify-center gap-2 mt-0.5">
                           <a href={recapStripUrl} download={`somedia-strip-${Date.now()}.${recapExt}`}
-                            className="text-[#555] hover:text-white text-xs underline transition-colors">
-                            Tải về (local)
+                            className="px-3 py-1.5 rounded-md bg-[#1a1a1a] border border-[#333] text-[#aaa] hover:text-white hover:border-[#555] hover:bg-[#222] text-[10px] font-semibold uppercase tracking-wider transition-all flex items-center gap-1.5">
+                            <DownloadOutlined /> Tải về
                           </a>
-                          {recapStripFirebaseUrl && (
-                            <a href={recapStripFirebaseUrl} target="_blank" rel="noopener noreferrer"
-                              className="text-[#555] hover:text-white text-xs underline transition-colors">
-                              Link Firebase ↗
-                            </a>
-                          )}
                         </div>
                       </>
                     ) : (
@@ -239,7 +262,7 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
 
                 {/* Individual clips */}
                 {hasClips && (
-                  <div className="flex flex-col gap-1.5 mt-1">
+                  <div className="flex flex-col gap-1.5 mt-2">
                     <p className="text-[#666] text-[10px] uppercase tracking-widest">
                       Clip đơn ({currentClipIdx + 1}&nbsp;/&nbsp;{recapClips!.length})
                     </p>
@@ -253,7 +276,7 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
                       className="w-full rounded-lg border border-[#2a2a2a] bg-black object-contain max-h-28"
                     />
                     {recapClips!.length > 1 && (
-                      <div className="flex gap-1.5 justify-center">
+                      <div className="flex gap-1.5 justify-center my-1.5">
                         {recapClips!.map((_, i) => (
                           <button key={i} onClick={() => setCurrentClipIdx(i)}
                             className={`w-2 h-2 rounded-full transition-colors ${
@@ -263,35 +286,16 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
                         ))}
                       </div>
                     )}
-                    <div className="flex items-center justify-center gap-3">
+                    <div className="flex items-center justify-center gap-2 mt-0.5">
                       <a href={recapClips![currentClipIdx]} download={`somedia-clip-${currentClipIdx + 1}-${Date.now()}.${recapExt}`}
-                        className="text-[#555] hover:text-white text-xs underline transition-colors">
-                        Tải về (local)
+                        className="px-3 py-1.5 rounded-md bg-[#1a1a1a] border border-[#333] text-[#aaa] hover:text-white hover:border-[#555] hover:bg-[#222] text-[10px] font-semibold uppercase tracking-wider transition-all flex items-center gap-1.5">
+                        <DownloadOutlined /> Tải về
                       </a>
-
                     </div>
                   </div>
                 )}
               </div>
             )}
-
-            {/* Action buttons */}
-            <div className="w-full flex flex-col gap-2 mt-auto">
-              <Button block icon={<DownloadOutlined />} onClick={handleDownload}
-                style={{ background: '#fff', color: '#000', border: 'none', fontWeight: 600, height: 40 }}>
-                Tải về
-              </Button>
-              <div className="flex gap-2">
-                <Button icon={<PictureOutlined />} onClick={onChangeFrame}
-                  style={{ ...btnBase, color: '#888', flex: 1 }}>
-                  Đổi khung
-                </Button>
-                <Button icon={<ReloadOutlined />} onClick={handleRetake}
-                  style={{ ...btnBase, color: '#888', flex: 1 }}>
-                  Chụp lại
-                </Button>
-              </div>
-            </div>
           </div>
         </div>
       )}

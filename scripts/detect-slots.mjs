@@ -76,12 +76,19 @@ function detectSlotsFromPng(pngData) {
             if (py < sh - 1) { const n = idx + sw; if (trans[n] && !visited[n]) { visited[n] = 1; stack.push(n) } }
         }
 
-        if (area >= minArea) {
-            slots.push({ minX, maxX, minY, maxY })
-        }
+    if (area >= minArea) {
+      slots.push({
+        x: Math.round(minX / SCALE),
+        y: Math.round(minY / SCALE),
+        w: Math.round((maxX - minX + 1) / SCALE),
+        h: Math.round((maxY - minY + 1) / SCALE),
+      })
     }
+  }
 
-    return slots.length
+  // Sort top→bottom, then left→right
+  slots.sort((a, b) => a.y !== b.y ? a.y - b.y : a.x - b.x)
+  return slots
 }
 
 // ── Read existing STATIC_FRAMES from the generated .ts file ──────────────────
@@ -107,8 +114,9 @@ async function main() {
         try {
             const buf = readFileSync(pngPath)
             const png = PNG.sync.read(buf)
-            const count = detectSlotsFromPng(png)
-            frame.slots = count
+            const coords = detectSlotsFromPng(png)
+            frame.slots = coords.length
+            frame.slots_data = coords
             ok++
             if (ok % 20 === 0 || ok === frames.length) {
                 process.stdout.write(`\r   ${ok}/${frames.length} processed`)

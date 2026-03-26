@@ -8,7 +8,7 @@ import ContributeFrameModal from './ContributeFrameModal'
 interface FrameModalProps {
   open: boolean
   currentLayout: LayoutConfig
-  selectedFrameUrl: string | null
+  selectedFrame: FrameItem | null
   onSelect: (url: string, frame: FrameItem) => void
   onClear: () => void
   onClose: () => void
@@ -17,7 +17,7 @@ interface FrameModalProps {
 export default function FrameModal({
   open,
   currentLayout,
-  selectedFrameUrl,
+  selectedFrame,
   onSelect,
   onClear,
   onClose,
@@ -99,7 +99,7 @@ export default function FrameModal({
           <div className="flex justify-between items-center">
             <button
               onClick={() => { onClear(); onClose() }}
-              disabled={!selectedFrameUrl}
+              disabled={!selectedFrame}
               className="text-xs px-3 py-1.5 rounded-md border border-[#2a2a2a] text-[#666] hover:text-[#aaa] hover:border-[#444] disabled:opacity-30 disabled:cursor-not-allowed transition"
             >
               Bỏ Khung
@@ -191,7 +191,7 @@ export default function FrameModal({
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
               {filtered.map((frame) => {
                 const imgUrl = frameImageUrl(frame.filename, frame.storageUrl)
-                const isActive = selectedFrameUrl === imgUrl
+                const isActive = selectedFrame?.id === frame.id
                 return (
                   <button
                     key={frame.id}

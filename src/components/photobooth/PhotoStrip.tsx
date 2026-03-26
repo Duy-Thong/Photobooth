@@ -2,12 +2,13 @@ import { useRef } from 'react'
 import { DownloadOutlined, CloseOutlined } from '@ant-design/icons'
 import type { CapturedSlot, EffectType, LayoutConfig } from '@/types/photobooth'
 import { useStripPreview } from '@/hooks/useStripPreview'
+import type { FrameItem } from '@/lib/frameService'
 
 interface PhotoStripProps {
   layout: LayoutConfig
   slots: (CapturedSlot | null)[]
   finalImageUrl: string | null
-  frameUrl: string | null
+  selectedFrame: FrameItem | null
   activeEffects: EffectType[]
   onUploadSlot: (index: number, dataUrl: string) => void
   onRemoveSlot: (index: number) => void
@@ -47,10 +48,9 @@ function MiniSlot({
           />
           <button
             onClick={() => onRemove(index)}
-            className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-white text-black rounded-full hidden group-hover:flex items-center justify-center shadow pointer-events-auto"
-            style={{ fontSize: 7 }}
+            className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-[#ff4d4f] text-white rounded-full flex items-center justify-center shadow-lg hover:bg-[#ff7875] hover:scale-110 active:scale-95 transition-all z-10"
           >
-            <CloseOutlined style={{ fontSize: 7 }} />
+            <CloseOutlined style={{ fontSize: 8, strokeWidth: 2 }} />
           </button>
         </>
       ) : (
@@ -71,7 +71,7 @@ export default function PhotoStrip({
   layout,
   slots,
   finalImageUrl,
-  frameUrl,
+  selectedFrame,
   activeEffects,
   onUploadSlot,
   onRemoveSlot,
@@ -80,7 +80,7 @@ export default function PhotoStrip({
 }: PhotoStripProps) {
   const filled = slots.filter(Boolean).length
   const allFilled = filled === layout.slots
-  const { previewUrl, rendering } = useStripPreview(slots, frameUrl, layout, activeEffects)
+  const { previewUrl, rendering } = useStripPreview(slots, selectedFrame, layout, activeEffects)
 
   return (
     <div className="flex flex-col gap-2">

@@ -1,9 +1,11 @@
 import { CloseOutlined, SoundOutlined, MutedOutlined } from '@ant-design/icons'
 import { COUNTDOWN_OPTIONS } from '@/types/photobooth'
+import { frameImageUrl, type FrameItem } from '@/lib/frameService'
 
 interface TopControlsProps {
   countdown: number
-  frameUrl: string | null
+  videoRecap: boolean
+  selectedFrame: FrameItem | null
   soundEnabled: boolean
   onCountdownChange: (n: number) => void
   onChooseFrame: () => void
@@ -18,7 +20,8 @@ const PILL_OFF = `${PILL} border-[#252525] text-[#666] hover:border-[#3a3a3a] ho
 
 export default function TopControls({
   countdown,
-  frameUrl,
+  videoRecap,
+  selectedFrame,
   soundEnabled,
   onCountdownChange,
   onChooseFrame,
@@ -35,21 +38,25 @@ export default function TopControls({
           <button
             onClick={onChooseFrame}
             className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-[11px] font-medium transition-all duration-150 ${
-              frameUrl
+              selectedFrame
                 ? 'border-white/20 text-white bg-[#1a1a1a] hover:bg-[#222]'
                 : 'border-dashed border-[#252525] text-[#c9c9c9] hover:border-[#3a3a3a] hover:text-[#bbb]'
             }`}
           >
-            {frameUrl ? (
+            {selectedFrame ? (
               <>
-                <img src={frameUrl} alt="" className="w-3 h-4 object-contain shrink-0 opacity-80" />
+                <img 
+                  src={frameImageUrl(selectedFrame.filename, selectedFrame.storageUrl)} 
+                  alt="" 
+                  className="w-3 h-4 object-contain shrink-0 opacity-80" 
+                />
                 <span>Đổi khung</span>
               </>
             ) : (
               <span>🖼 Chọn khung</span>
             )}
           </button>
-          {frameUrl && (
+          {selectedFrame && (
             <button
               onClick={onClearFrame}
               title="Bỏ khung"
@@ -74,15 +81,20 @@ export default function TopControls({
       <div className="flex flex-col gap-1.5">
         <span className="text-white text-[9px] font-semibold uppercase tracking-[0.18em]">Đếm Ngược</span>
         <div className="flex gap-1">
-          {COUNTDOWN_OPTIONS.map(n => (
-            <button
-              key={n}
-              onClick={() => onCountdownChange(n)}
-              className={countdown === n ? PILL_ON : PILL_OFF}
-            >
-              {n}s
-            </button>
-          ))}
+          {COUNTDOWN_OPTIONS.map(n => {
+            const isDisabled = n === 0 && videoRecap
+            return (
+              <button
+                key={n}
+                onClick={() => onCountdownChange(n)}
+                disabled={isDisabled}
+                title={isDisabled ? "Vui lòng tắt Video Recap để dùng 0s" : `${n} giây`}
+                className={`${countdown === n ? PILL_ON : PILL_OFF} ${isDisabled ? 'opacity-30 cursor-not-allowed' : ''}`}
+              >
+                {n}s
+              </button>
+            )
+          })}
         </div>
       </div>
 

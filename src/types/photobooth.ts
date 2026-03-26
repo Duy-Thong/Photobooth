@@ -17,6 +17,13 @@ export type LayoutType = '1x4' | '2x2' | '1x3' | '2x3' | '1x2' | '1x1'
 
 export type CaptureMode = 'manual' | 'auto'
 
+export interface SlotRect {
+  x: number
+  y: number
+  w: number
+  h: number
+}
+
 export interface LayoutConfig {
   type: LayoutType
   label: string
@@ -39,7 +46,7 @@ export const LAYOUTS: LayoutConfig[] = [
   { type: '1x1', label: '1×1 Full',   slots: 1, cols: 1, rows: 1 },
 ]
 
-export const COUNTDOWN_OPTIONS = [3, 5, 10]
+export const COUNTDOWN_OPTIONS = [0, 3, 5, 10]
 
 export const FILTERS: { value: FilterType; label: string; css: string }[] = [
   { value: 'none',         label: 'Bình Thường',      css: 'none' },
