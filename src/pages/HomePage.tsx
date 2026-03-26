@@ -15,7 +15,7 @@ import ResultModal from '@/components/photobooth/ResultModal'
 import ContributeFrameModal from '@/components/photobooth/ContributeFrameModal'
 
 export default function HomePage() {
-  const { videoRef, isMirrored, isReady, error, toggleMirror, captureFrame, selectDevice, retryCamera, devices, activeDeviceId } = useCamera()
+  const { videoRef, isMirrored, isReady, error, toggleMirror, captureFrame, selectDevice, retryCamera, devices, activeDeviceId, soundEnabled, toggleSound } = useCamera()
 
   const {
     layout, countdown, setCountdown,
@@ -284,6 +284,7 @@ export default function HomePage() {
             <TopControls
               countdown={countdown}
               frameUrl={frameUrl}
+              soundEnabled={soundEnabled}
               onCountdownChange={setCountdown}
               onChooseFrame={() => setFrameModalOpen(true)}
               onClearFrame={() => {
@@ -291,6 +292,7 @@ export default function HomePage() {
                 setFinalImageUrl(null)
               }}
               onContributeFrame={() => setContributeOpen(true)}
+              onToggleSound={toggleSound}
             />
           </div>
         </div>

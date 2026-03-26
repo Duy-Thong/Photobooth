@@ -31,6 +31,10 @@ export function frameImageUrl(filename: string, storageUrl?: string): string {
   return storageUrl ?? `/frames/${filename}`
 }
 
+// In-memory cache — survives modal open/close within the same page session
+let _framesCache: FrameItem[] | null = null
+let _framesFetch: Promise<FrameItem[]> | null = null
+
 /** Load only admin-uploaded frames from Firestore. */
 export async function fetchCustomFrames(): Promise<FrameItem[]> {
   const snap = await getDocs(query(collection(db, FRAMES_COLLECTION), orderBy('name')))
@@ -44,16 +48,30 @@ export async function fetchCustomFrames(): Promise<FrameItem[]> {
  * Load all frames: static (built-in) + admin-uploaded (Firestore).
  * Firestore frames with the same filename override their static counterpart
  * so that migrated frames use Storage URLs instead of /frames/.
+ * Cached in memory — Firestore is only called once per page load.
  */
 export async function fetchFrames(): Promise<FrameItem[]> {
-  try {
-    const firestoreFrames = await fetchCustomFrames()
-    const firestoreFilenames = new Set(firestoreFrames.map(f => f.filename))
-    const staticOnly = STATIC_FRAMES.filter(f => !firestoreFilenames.has(f.filename))
-    return [...staticOnly, ...firestoreFrames]
-  } catch {
-    return STATIC_FRAMES
-  }
+  if (_framesCache) return _framesCache
+  if (_framesFetch) return _framesFetch
+  _framesFetch = (async () => {
+    try {
+      const firestoreFrames = await fetchCustomFrames()
+      const firestoreFilenames = new Set(firestoreFrames.map(f => f.filename))
+      const staticOnly = STATIC_FRAMES.filter(f => !firestoreFilenames.has(f.filename))
+      _framesCache = [...staticOnly, ...firestoreFrames]
+      return _framesCache
+    } catch {
+      _framesFetch = null
+      return STATIC_FRAMES
+    }
+  })()
+  return _framesFetch
+}
+
+/** Invalidate the cache (call after admin upload / delete / update). */
+export function invalidateFramesCache() {
+  _framesCache = null
+  _framesFetch = null
 }
 
 /** Deterministic numeric category ID derived from a category name string. */

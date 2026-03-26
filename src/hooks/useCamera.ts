@@ -1,5 +1,14 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 
+const shutterAudio = new Audio('/sound/shutter.mp3')
+let _soundEnabled = true
+
+function playShutterSound() {
+  if (!_soundEnabled) return
+  shutterAudio.currentTime = 0
+  shutterAudio.play().catch(() => { /* autoplay policy */ })
+}
+
 export interface CameraDevice {
   deviceId: string
   label: string
@@ -13,7 +22,9 @@ interface UseCameraReturn {
   error: string | null
   devices: CameraDevice[]
   activeDeviceId: string | null
+  soundEnabled: boolean
   toggleMirror: () => void
+  toggleSound: () => void
   captureFrame: (filterCss?: string) => string | null
   selectDevice: (deviceId: string) => void
   retryCamera: () => void
@@ -24,6 +35,7 @@ export function useCamera(): UseCameraReturn {
   const streamRef = useRef<MediaStream | null>(null)
   const [stream, setStream] = useState<MediaStream | null>(null)
   const [isMirrored, setIsMirrored] = useState(true)
+  const [soundEnabled, setSoundEnabled] = useState(true)
   const [isReady, setIsReady] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [devices, setDevices] = useState<CameraDevice[]>([])
@@ -94,6 +106,11 @@ export function useCamera(): UseCameraReturn {
 
   const toggleMirror = useCallback(() => setIsMirrored(m => !m), [])
 
+  const toggleSound = useCallback(() => {
+    _soundEnabled = !_soundEnabled
+    setSoundEnabled(_soundEnabled)
+  }, [])
+
   const selectDevice = useCallback((deviceId: string) => {
     startCamera(deviceId)
   }, [startCamera])
@@ -105,6 +122,8 @@ export function useCamera(): UseCameraReturn {
   const captureFrame = useCallback((filterCss?: string): string | null => {
     const video = videoRef.current
     if (!video || !isReady) return null
+
+    playShutterSound()
 
     const canvas = document.createElement('canvas')
     canvas.width = video.videoWidth
@@ -130,7 +149,9 @@ export function useCamera(): UseCameraReturn {
     error,
     devices,
     activeDeviceId,
+    soundEnabled,
     toggleMirror,
+    toggleSound,
     captureFrame,
     selectDevice,
     retryCamera,

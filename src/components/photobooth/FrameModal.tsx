@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { Modal, Input, Spin, Empty } from 'antd'
 import { fetchFrames, fetchCategories, frameImageUrl } from '@/lib/frameService'
 import type { FrameItem, FrameCategory } from '@/lib/frameService'
+import { STATIC_FRAMES } from '@/lib/frames-static'
 import type { LayoutConfig } from '@/types/photobooth'
 import ContributeFrameModal from './ContributeFrameModal'
 
@@ -38,18 +39,22 @@ export default function FrameModal({
   }, [open, currentLayout.slots])
 
   // Load data when modal opens
+  // Show static frames instantly, then replace with Firestore data in background
   useEffect(() => {
-    if (!open || frames.length > 0) return
-    setLoading(true)
+    if (!open) return
+    // Show static frames right away so user sees content immediately
+    if (frames.length === 0) {
+      setFrames(STATIC_FRAMES)
+    }
+    if (categories.length === 0) {
+      fetchCategories().then(c => setCategories(c)).catch(() => {})
+    }
+    // Background-fetch full Firestore data (cached after first load)
     setError(null)
-    Promise.all([fetchFrames(), fetchCategories()])
-      .then(([f, c]) => {
-        setFrames(f)
-        setCategories(c)
-      })
+    fetchFrames()
+      .then(f => setFrames(f))
       .catch(() => setError('Không tải được danh sách khung. Kiểm tra kết nối mạng.'))
-      .finally(() => setLoading(false))
-  }, [open, frames.length])
+  }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const filtered = useMemo(() => {
     let list = slotFilter > 0
