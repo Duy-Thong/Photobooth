@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ref, listAll, getDownloadURL, deleteObject, getMetadata } from 'firebase/storage'
 import { storage } from '@/lib/firebase'
+import { fetchSessions, deleteSession } from '@/lib/sessionService'
 import { useAdminAuth } from '@/hooks/useAdminAuth'
 import {
   fetchCustomFrames as fetchCustomFramesService,
@@ -25,6 +26,7 @@ interface MediaItem {
   timeCreated: string
   size: number
   type: 'photo' | 'video'
+  sessionId?: string
 }
 
 function formatBytes(bytes: number) {
@@ -188,6 +190,36 @@ export default function AdminPage() {
   const fetchAll = useCallback(async () => {
     setLoading(true)
     try {
+      // 1. Fetch from Firestore (fast)
+      const sessions = await fetchSessions()
+      const sessionPhotos: MediaItem[] = []
+      const sessionVideos: MediaItem[] = []
+      
+      for (const s of sessions) {
+        sessionPhotos.push({
+          name: `Session ${s.id.slice(0, 8)}`,
+          fullPath: `sessions/${s.id}/strip.jpg`,
+          url: s.imageUrl,
+          timeCreated: s.createdAt,
+          size: 0,
+          type: 'photo',
+          sessionId: s.id,
+        })
+        if (s.videoUrl) {
+          const ext = s.videoUrl.includes('.mp4') ? 'mp4' : 'webm'
+          sessionVideos.push({
+            name: `Session Recap ${s.id.slice(0, 8)}`,
+            fullPath: `sessions/${s.id}/strip.${ext}`,
+            url: s.videoUrl,
+            timeCreated: s.createdAt,
+            size: 0,
+            type: 'video',
+            sessionId: s.id,
+          })
+        }
+      }
+
+      // 2. Fetch legacy from Storage (slow)
       const [photoList, videoList] = await Promise.all([
         listAll(ref(storage, 'photobooth')),
         listAll(ref(storage, 'recap')),
@@ -209,12 +241,18 @@ export default function AdminPage() {
         )
         return (settled.filter(r => r.status === 'fulfilled') as PromiseFulfilledResult<MediaItem>[])
           .map(r => r.value)
-          .sort((a, b) => new Date(b.timeCreated).getTime() - new Date(a.timeCreated).getTime())
       }
 
-      const [p, v] = await Promise.all([toItems(photoList.items, 'photo'), toItems(videoList.items, 'video')])
-      setPhotos(p)
-      setVideos(v)
+      const [legacyP, legacyV] = await Promise.all([
+        toItems(photoList.items, 'photo'),
+        toItems(videoList.items, 'video')
+      ])
+
+      const allPhotos = [...sessionPhotos, ...legacyP].sort((a, b) => new Date(b.timeCreated).getTime() - new Date(a.timeCreated).getTime())
+      const allVideos = [...sessionVideos, ...legacyV].sort((a, b) => new Date(b.timeCreated).getTime() - new Date(a.timeCreated).getTime())
+
+      setPhotos(allPhotos)
+      setVideos(allVideos)
     } finally {
       setLoading(false)
     }
@@ -251,7 +289,10 @@ export default function AdminPage() {
       onOk: async () => {
         setDeletingPath(item.fullPath)
         try {
-          await deleteObject(ref(storage, item.fullPath))
+          await deleteObject(ref(storage, item.fullPath)).catch(() => {}) // Ignore if already deleted
+          if (item.sessionId) {
+            await deleteSession(item.sessionId).catch(() => {})
+          }
           if (item.type === 'photo') setPhotos(ps => ps.filter(p => p.fullPath !== item.fullPath))
           else setVideos(vs => vs.filter(v => v.fullPath !== item.fullPath))
         } finally {
@@ -280,7 +321,10 @@ export default function AdminPage() {
       onOk: async () => {
         setBulkDeleting(true)
         try {
-          await Promise.allSettled(list.map(item => deleteObject(ref(storage, item.fullPath))))
+          await Promise.allSettled(list.map(async item => {
+            await deleteObject(ref(storage, item.fullPath)).catch(() => {})
+            if (item.sessionId) await deleteSession(item.sessionId).catch(() => {})
+          }))
           if (tab === 'photos') setPhotos([])
           else setVideos([])
         } finally {
@@ -324,7 +368,10 @@ export default function AdminPage() {
       onOk: async () => {
         setBulkDeleting(true)
         try {
-          await Promise.allSettled(old.map(item => deleteObject(ref(storage, item.fullPath))))
+          await Promise.allSettled(old.map(async item => {
+            await deleteObject(ref(storage, item.fullPath)).catch(() => {})
+            if (item.sessionId) await deleteSession(item.sessionId).catch(() => {})
+          }))
           const oldPaths = new Set(old.map(i => i.fullPath))
           setPhotos(ps => ps.filter(p => !oldPaths.has(p.fullPath)))
           setVideos(vs => vs.filter(v => !oldPaths.has(v.fullPath)))
@@ -885,14 +932,22 @@ export default function AdminPage() {
         ) : null}
         <div className="p-3 flex justify-between items-center">
           <span className="text-[#555] text-xs">{previewItem ? formatDate(previewItem.timeCreated) : ''} · {previewItem ? formatBytes(previewItem.size) : ''}</span>
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
+            {previewItem?.sessionId && (
+              <a href={`/session/${previewItem.sessionId}`} target="_blank" rel="noopener noreferrer"
+                className="text-[#4da6ff] hover:text-white text-xs underline transition-colors"
+              >
+                Trang Session ↗
+              </a>
+            )}
             <a href={previewItem?.url} target="_blank" rel="noopener noreferrer"
-              className="text-[#555] hover:text-white text-xs underline transition-colors">
-              Mở link ↗
+              className="text-[#555] hover:text-white text-xs underline transition-colors border-l border-[#333] pl-2 ml-1"
+            >
+              File gốc ↗
             </a>
             <button
               onClick={() => { if (previewItem) handleDelete(previewItem); setPreviewItem(null) }}
-              className="text-red-500 hover:text-red-400 text-xs transition-colors"
+              className="text-red-500 hover:text-red-400 text-xs transition-colors border-l border-[#333] pl-2 ml-1"
             >
               Xóa
             </button>

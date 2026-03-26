@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { Modal, QRCode, Spin, Button, message } from 'antd'
 import { DownloadOutlined, ReloadOutlined, PictureOutlined, LoadingOutlined, CopyOutlined, CheckOutlined } from '@ant-design/icons'
 import { uploadSession } from '@/lib/uploadService'
@@ -59,9 +59,15 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
     setUploadKey(k => k + 1)
   }, [open, imageBlobUrl])
 
+  const lastUploadKeyRef = useRef(0)
+
   // Upload flow — only starts when user explicitly triggers via uploadKey
   useEffect(() => {
     if (uploadKey === 0 || !imageBlobUrl) return
+    if (buildingStrip) return
+    if (lastUploadKeyRef.current === uploadKey) return
+
+    lastUploadKeyRef.current = uploadKey
 
     let cancelled = false
 

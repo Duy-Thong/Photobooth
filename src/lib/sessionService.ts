@@ -35,3 +35,25 @@ export async function fetchSession(id: string): Promise<SessionData | null> {
 export function generateSessionId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
 }
+
+/** Fetch all sessions from Firestore, ordered by createdAt descending. */
+export async function fetchSessions(): Promise<SessionData[]> {
+  const { query, orderBy, getDocs } = await import('firebase/firestore')
+  const q = query(collection(db, SESSIONS_COLLECTION), orderBy('createdAt', 'desc'))
+  const snap = await getDocs(q)
+  return snap.docs.map(doc => {
+    const d = doc.data()
+    return {
+      id: doc.id,
+      imageUrl: d.imageUrl,
+      videoUrl: d.videoUrl ?? null,
+      createdAt: d.createdAt?.toDate?.()?.toISOString() ?? new Date().toISOString(),
+    }
+  })
+}
+
+/** Delete a session document from Firestore. */
+export async function deleteSession(id: string): Promise<void> {
+  const { deleteDoc } = await import('firebase/firestore')
+  await deleteDoc(doc(db, SESSIONS_COLLECTION, id))
+}

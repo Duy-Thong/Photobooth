@@ -65,6 +65,7 @@ export default function HomePage() {
       const timer = setTimeout(async () => {
         try {
           const { capturedSlots: cs, layout: l, activeEffects: fx } = usePhotoboothStore.getState()
+          if (videoRecap) setBuildingStrip(true)
           const url = await buildStripImage(cs, l, fx, frameUrl)
           setFinalImageUrl(url)
           setResultModalOpen(true)
@@ -157,6 +158,7 @@ export default function HomePage() {
       return
     }
     try {
+      if (videoRecap) setBuildingStrip(true)
       const url = await buildStripImage(capturedSlots, layout, activeEffects, frameUrl)
       setFinalImageUrl(url)
       setResultModalOpen(true)
@@ -239,6 +241,7 @@ export default function HomePage() {
             setTimeout(async () => {
               try {
                 const { capturedSlots: cs, activeEffects: fx } = usePhotoboothStore.getState()
+                if (videoRecap) setBuildingStrip(true)
                 const result = await buildStripImage(cs, targetLayout, fx, url)
                 setFinalImageUrl(result)
                 setResultModalOpen(true)
