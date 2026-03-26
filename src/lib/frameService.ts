@@ -37,7 +37,7 @@ let _framesFetch: Promise<FrameItem[]> | null = null
 
 /** Load only admin-uploaded frames from Firestore. */
 export async function fetchCustomFrames(): Promise<FrameItem[]> {
-  const snap = await getDocs(query(collection(db, FRAMES_COLLECTION), orderBy('name')))
+  const snap = await getDocs(query(collection(db, FRAMES_COLLECTION), orderBy('id')))
   return snap.docs.map(d => ({
     ...(d.data() as Omit<FrameItem, 'firestoreId'>),
     firestoreId: d.id,

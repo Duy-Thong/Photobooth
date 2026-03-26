@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Modal, QRCode, Spin, Button } from 'antd'
 import { DownloadOutlined, ReloadOutlined, PictureOutlined, LoadingOutlined } from '@ant-design/icons'
-import { uploadPhotoToFirebase, uploadVideoToFirebase } from '@/lib/uploadService'
-import { stampQrOnImage, downloadImage } from '@/lib/imageProcessing'
+import { uploadPhotoWithQr, uploadVideoToFirebase } from '@/lib/uploadService'
+import { downloadImage } from '@/lib/imageProcessing'
 
-type Phase = 'confirm' | 'uploading' | 'stamping' | 'done' | 'error'
+type Phase = 'confirm' | 'uploading' | 'done' | 'error'
 
 interface ResultModalProps {
   open: boolean
@@ -56,20 +56,15 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
 
     async function run() {
       try {
-        // Step 1: Upload photo + strip video in parallel (individual clips are NOT uploaded)
-        const [photoUrl, stripVideoUrl] = await Promise.all([
-          uploadPhotoToFirebase(imageBlobUrl!),
+        // Upload photo with QR already embedded + strip video in parallel
+        const [photoResult, stripVideoUrl] = await Promise.all([
+          uploadPhotoWithQr(imageBlobUrl!),
           recapStripUrl ? uploadVideoToFirebase(recapStripUrl, recapMimeType ?? undefined) : Promise.resolve(null),
         ])
         if (cancelled) return
-        setFirebaseUrl(photoUrl)
+        setFirebaseUrl(photoResult.publicUrl)
+        setFinalWithQr(photoResult.stampedBlobUrl)
         if (stripVideoUrl) setRecapStripFirebaseUrl(stripVideoUrl)
-
-        // Step 2: Stamp QR onto the image
-        setPhase('stamping')
-        const withQr = await stampQrOnImage(imageBlobUrl!, photoUrl)
-        if (cancelled) return
-        setFinalWithQr(withQr)
         setPhase('done')
       } catch (err) {
         if (!cancelled) {
@@ -112,7 +107,6 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
         <span className="text-white font-semibold tracking-tight">
           {phase === 'confirm' && 'Ảnh của bạn'}
           {phase === 'uploading' && 'Đang tải lên...'}
-          {phase === 'stamping' && 'Đang tạo QR...'}
           {phase === 'done' && 'Ảnh của bạn đã sẵn sàng'}
           {phase === 'error' && 'Có lỗi xảy ra'}
         </span>
@@ -129,16 +123,16 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
       {phase === 'confirm' && imageBlobUrl && (
         <div className="flex gap-5 items-start">
           {/* Left — photo preview */}
-          <div className="flex-shrink-0 w-[280px] flex justify-center">
+          <div className="shrink-0 w-70 flex justify-center">
             <img
               src={imageBlobUrl}
               alt="Preview"
-              className="w-full max-h-[480px] object-contain rounded-lg border border-[#2a2a2a]"
+              className="w-full max-h-120 object-contain rounded-lg border border-[#2a2a2a]"
             />
           </div>
 
           {/* Right — video recap + actions */}
-          <div className="flex-1 flex flex-col gap-3 justify-between min-h-[300px]">
+          <div className="flex-1 flex flex-col gap-3 justify-between min-h-75">
             {/* ── Strip video (combined, with frame) ── */}
             {(recapStripUrl || buildingStrip) && (
               <div className="flex flex-col gap-1.5">
@@ -246,12 +240,10 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
       )}
 
       {/* ── LOADING ──────────────────────────────────────────────────────────── */}
-      {(phase === 'uploading' || phase === 'stamping') && (
+      {phase === 'uploading' && (
         <div className="flex flex-col items-center gap-4 py-16">
           <Spin size="large" />
-          <p className="text-[#888] text-sm">
-            {phase === 'uploading' ? 'Đang upload ảnh lên Firebase...' : 'Đang ghép QR vào ảnh...'}
-          </p>
+          <p className="text-[#888] text-sm">Đang upload ảnh lên Firebase...</p>
         </div>
       )}
 
@@ -273,12 +265,12 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
       {/* ── DONE ─────────────────────────────────────────────────────────────── */}
       {phase === 'done' && finalWithQr && firebaseUrl && (
         <div className="flex gap-6 items-start">
-          {/* Left — final photo with QR already stamped */}
-          <div className="flex-shrink-0 w-[280px] flex justify-center">
+          {/* Left — photo preview with QR stamped */}
+          <div className="shrink-0 w-70 flex justify-center">
             <img
               src={finalWithQr}
               alt="Final photo"
-              className="w-full max-h-[520px] object-contain rounded-lg border border-[#2a2a2a]"
+              className="w-full max-h-130 object-contain rounded-lg border border-[#2a2a2a]"
             />
           </div>
 

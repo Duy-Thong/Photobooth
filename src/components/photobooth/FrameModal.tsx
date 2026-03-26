@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo } from 'react'
 import { Modal, Input, Spin, Empty } from 'antd'
 import { fetchFrames, fetchCategories, frameImageUrl } from '@/lib/frameService'
 import type { FrameItem, FrameCategory } from '@/lib/frameService'
-import { STATIC_FRAMES } from '@/lib/frames-static'
 import type { LayoutConfig } from '@/types/photobooth'
 import ContributeFrameModal from './ContributeFrameModal'
 
@@ -38,23 +37,16 @@ export default function FrameModal({
     if (open) setSlotFilter(currentLayout.slots)
   }, [open, currentLayout.slots])
 
-  // Load data when modal opens
-  // Show static frames instantly, then replace with Firestore data in background
+  // Load data when modal opens — wait for Firebase, no static preload
   useEffect(() => {
     if (!open) return
-    // Show static frames right away so user sees content immediately
-    if (frames.length === 0) {
-      setFrames(STATIC_FRAMES)
-      setLoading(false)
-    }
-    if (categories.length === 0) {
-      fetchCategories().then(c => setCategories(c)).catch(() => {})
-    }
-    // Background-fetch full Firestore data (cached after first load)
+    if (frames.length > 0) return // already loaded (cached)
+    setLoading(true)
     setError(null)
-    fetchFrames()
-      .then(f => setFrames(f))
+    Promise.all([fetchFrames(), fetchCategories()])
+      .then(([f, c]) => { setFrames(f); setCategories(c) })
       .catch(() => setError('Không tải được danh sách khung. Kiểm tra kết nối mạng.'))
+      .finally(() => setLoading(false))
   }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const filtered = useMemo(() => {
