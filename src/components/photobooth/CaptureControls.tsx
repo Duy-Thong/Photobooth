@@ -50,8 +50,23 @@ export default function CaptureControls({
         />
       </div>
 
-      {/* Main buttons */}
-      <div className="flex items-center justify-center gap-5">
+      {/* Main buttons - 5 items in a single row */}
+      <div className="flex items-center justify-between sm:justify-center gap-2 sm:gap-6 mt-1">
+        
+        {/* Toggle Video Recap */}
+        <label className="flex flex-col items-center gap-1.5 cursor-pointer select-none">
+          <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full flex items-center justify-center border transition-all duration-150
+            ${videoRecap
+              ? 'bg-[#1a1a1a] border-[#4da6ff] shadow-[0_0_12px_rgba(77,166,255,0.15)]'
+              : 'bg-[#1a1a1a] border-[#2a2a2a] hover:border-[#444]'
+            }`}>
+            <Switch size="small" checked={videoRecap} onChange={onToggleVideoRecap} style={{ background: videoRecap ? '#4da6ff' : undefined }} />
+          </div>
+          <span className={`text-[8px] sm:text-[9px] font-semibold uppercase tracking-[0.05em] sm:tracking-[0.12em] whitespace-nowrap ${videoRecap ? 'text-[#4da6ff]' : 'text-[#555]'}`}>
+            Video
+          </span>
+        </label>
+
         {/* Manual capture */}
         <button
           onClick={onManualCapture}
@@ -59,16 +74,16 @@ export default function CaptureControls({
           title="Chụp một ảnh"
           className="flex flex-col items-center gap-1.5 disabled:cursor-not-allowed"
         >
-          <div className={`w-12 h-12 rounded-full flex items-center justify-center border transition-all duration-150
+          <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full flex items-center justify-center border transition-all duration-150
             ${disabled || allDone
               ? 'bg-[#141414] border-[#1e1e1e] text-[#2e2e2e]'
               : 'bg-[#1a1a1a] border-[#2a2a2a] text-[#999] hover:border-[#444] hover:text-white active:scale-95'
             }`}>
-            <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+            <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 sm:w-5 sm:h-5">
               <path d="M20 5h-3.17L15 3H9L7.17 5H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-8 13c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.65 0-3 1.35-3 3s1.35 3 3 3 3-1.35 3-3-1.35-3-3-3z" />
             </svg>
           </div>
-          <span className={`text-[9px] font-semibold uppercase tracking-[0.12em] ${disabled || allDone ? 'text-[#2e2e2e]' : 'text-[#555]'}`}>
+          <span className={`text-[8px] sm:text-[9px] font-semibold uppercase tracking-[0.05em] sm:tracking-[0.12em] whitespace-nowrap ${disabled || allDone ? 'text-[#2e2e2e]' : 'text-[#555]'}`}>
             Chụp
           </span>
         </button>
@@ -78,9 +93,9 @@ export default function CaptureControls({
           onClick={onAutoCapture}
           disabled={disabled || allDone}
           title="Tự động chụp hết"
-          className="flex flex-col items-center gap-1.5 disabled:cursor-not-allowed"
+          className="flex flex-col items-center gap-1.5 disabled:cursor-not-allowed transform -translate-y-1"
         >
-          <div className={`w-16 h-16 rounded-full flex items-center justify-center transition-all duration-150
+          <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center transition-all duration-150
             ${disabled || allDone
               ? 'bg-[#141414] border border-[#1e1e1e] text-[#2e2e2e]'
               : isCapturing
@@ -88,16 +103,16 @@ export default function CaptureControls({
                 : 'bg-white text-black hover:bg-[#e8e8e8] active:scale-95 shadow-[0_0_16px_rgba(255,255,255,0.08)]'
             }`}>
             {isCapturing ? (
-              <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 animate-pulse">
+              <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 sm:w-6 sm:h-6 animate-pulse">
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z" />
               </svg>
             ) : (
-              <svg viewBox="0 0 24 24" fill="currentColor" className="w-7 h-7">
+              <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 sm:w-7 sm:h-7">
                 <path d="M20 5h-3.17L15 3H9L7.17 5H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-8 13c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z" />
               </svg>
             )}
           </div>
-          <span className={`text-[9px] font-semibold uppercase tracking-[0.12em] ${disabled || allDone ? 'text-[#2e2e2e]' : 'text-white'}`}>
+          <span className={`text-[8px] sm:text-[9px] font-bold uppercase tracking-[0.05em] sm:tracking-[0.12em] whitespace-nowrap ${disabled || allDone ? 'text-[#2e2e2e]' : 'text-white'}`}>
             {isCapturing ? 'Chụp...' : 'AUTO'}
           </span>
         </button>
@@ -109,33 +124,32 @@ export default function CaptureControls({
           title="Chụp lại từ đầu"
           className="flex flex-col items-center gap-1.5 disabled:cursor-not-allowed"
         >
-          <div className={`w-12 h-12 rounded-full flex items-center justify-center border transition-all duration-150
+          <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full flex items-center justify-center border transition-all duration-150
             ${capturedCount === 0
               ? 'bg-[#141414] border-[#1e1e1e] text-[#2e2e2e]'
               : 'bg-[#1a1a1a] border-[#2a2a2a] text-[#999] hover:border-[#444] hover:text-white active:scale-95'
             }`}>
-            <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+            <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 sm:w-5 sm:h-5">
               <path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z" />
             </svg>
           </div>
-          <span className={`text-[9px] font-semibold uppercase tracking-[0.12em] ${capturedCount === 0 ? 'text-[#2e2e2e]' : 'text-[#555]'}`}>
+          <span className={`text-[8px] sm:text-[9px] font-semibold uppercase tracking-[0.05em] sm:tracking-[0.12em] whitespace-nowrap ${capturedCount === 0 ? 'text-[#2e2e2e]' : 'text-[#555]'}`}>
             Lại
           </span>
         </button>
-      </div>
 
-      {/* Secondary row */}
-      <div className="flex items-center justify-center gap-4 border-t border-[#181818] pt-2.5">
-        <label className="flex items-center gap-2 cursor-pointer select-none">
-          <Switch size="small" checked={videoRecap} onChange={onToggleVideoRecap} />
-          <span className="text-[10px] text-[#4a4a4a]">Video Recap</span>
-        </label>
-        <div className="w-px h-3 bg-[#1e1e1e]" />
+        {/* Upload File */}
         <button
           onClick={() => uploadRef.current?.click()}
-          className="flex items-center gap-1.5 text-[10px] text-[#4a4a4a] hover:text-[#aaa] transition-colors"
+          title="Tải ảnh lên thay vì chụp"
+          className="flex flex-col items-center gap-1.5 group"
         >
-          <UploadOutlined style={{ fontSize: 10 }} /> Tải ảnh lên
+          <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-full flex items-center justify-center border bg-[#1a1a1a] border-[#2a2a2a] text-[#999] group-hover:border-[#444] group-hover:text-white group-active:scale-95 transition-all duration-150">
+            <UploadOutlined style={{ fontSize: 16 }} />
+          </div>
+          <span className="text-[8px] sm:text-[9px] font-semibold uppercase tracking-[0.05em] sm:tracking-[0.12em] whitespace-nowrap text-[#555] group-hover:text-[#aaa] transition-colors">
+            Tải Ảnh
+          </span>
         </button>
         <input ref={uploadRef} type="file" accept="image/*" className="hidden" onChange={handleUploadFile} />
       </div>
