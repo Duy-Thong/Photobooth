@@ -90,7 +90,7 @@ function deriveCategoryId(name: string): number {
  */
 export async function uploadFrame(
   file: File,
-  meta: { name: string; categoryName: string; slots: number; frame: FrameItem['frame'] },
+  meta: { name: string; categoryName: string; slots: number; frame: FrameItem['frame']; slots_data?: SlotRect[] },
 ): Promise<FrameItem> {
   const ext = file.name.split('.').pop()?.toLowerCase() ?? 'png'
   const filename = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
@@ -107,6 +107,7 @@ export async function uploadFrame(
     categoryName: meta.categoryName,
     slots: meta.slots,
     storageUrl,
+    slots_data: meta.slots_data,
   }
   const docRef = await addDoc(collection(db, FRAMES_COLLECTION), frameDoc)
   return { ...frameDoc, firestoreId: docRef.id }
@@ -133,7 +134,7 @@ export async function fetchCategories(): Promise<FrameCategory[]> {
 
 export async function updateFrame(
   firestoreId: string,
-  patch: Partial<Pick<FrameItem, 'name' | 'categoryName' | 'slots' | 'frame'>>,
+  patch: Partial<Pick<FrameItem, 'name' | 'categoryName' | 'slots' | 'frame' | 'slots_data'>>,
 ): Promise<void> {
   const updates: Record<string, string | number> = {}
   if (patch.name !== undefined) updates.name = patch.name
@@ -143,6 +144,7 @@ export async function updateFrame(
   }
   if (patch.slots !== undefined) updates.slots = patch.slots
   if (patch.frame !== undefined) updates.frame = patch.frame
+  if (patch.slots_data !== undefined) (updates as any).slots_data = patch.slots_data
   await updateDoc(doc(db, FRAMES_COLLECTION, firestoreId), updates)
 }
 

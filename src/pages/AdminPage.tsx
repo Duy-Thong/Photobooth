@@ -16,6 +16,8 @@ import {
   type FrameRequest,
 } from '@/lib/frameService'
 import { detectFrameSlots } from '@/lib/imageProcessing'
+import FrameSlotEditor from '@/components/admin/FrameSlotEditor'
+import { type SlotRect } from '@/types/photobooth'
 import { Button, Input, Modal, Select, Spin, Empty, Tooltip } from 'antd'
 import { DeleteOutlined, ReloadOutlined, LogoutOutlined, PlayCircleOutlined, DeleteFilled, ClockCircleOutlined, UploadOutlined, PictureOutlined, EditOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons'
 
@@ -40,7 +42,7 @@ function formatDate(iso: string) {
 }
 
 export default function AdminPage() {
-  const { logout, user } = useAdminAuth()
+  const { logout } = useAdminAuth()
   const [photos, setPhotos] = useState<MediaItem[]>([])
   const [videos, setVideos] = useState<MediaItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -48,6 +50,7 @@ export default function AdminPage() {
   const [bulkDeleting, setBulkDeleting] = useState(false)
   const [previewItem, setPreviewItem] = useState<MediaItem | null>(null)
   const [tab, setTab] = useState<'photos' | 'videos' | 'frames' | 'requests'>('photos')
+  const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set())
 
   // ── Frames tab state ────────────────────────────────────────────────────────
   const [customFrames, setCustomFrames] = useState<FrameItem[]>([])
@@ -82,7 +85,7 @@ export default function AdminPage() {
   const [uploadFile, setUploadFile] = useState<File | null>(null)
   const [uploadPreviewUrl, setUploadPreviewUrl] = useState<string | null>(null)
   const [detectingSlots, setDetectingSlots] = useState(false)
-  const [uploadSlots, setUploadSlots] = useState(0)
+  const [uploadSlotsData, setUploadSlotsData] = useState<SlotRect[]>([])
   const [uploadName, setUploadName] = useState('')
   const [uploadCategory, setUploadCategory] = useState('')
   const [uploadFrameType, setUploadFrameType] = useState<FrameItem['frame']>('square')
@@ -93,7 +96,7 @@ export default function AdminPage() {
   const [editingFrame, setEditingFrame] = useState<FrameItem | null>(null)
   const [editName, setEditName] = useState('')
   const [editCategory, setEditCategory] = useState('')
-  const [editSlots, setEditSlots] = useState(4)
+  const [editSlotsData, setEditSlotsData] = useState<SlotRect[]>([])
   const [editFrameType, setEditFrameType] = useState<FrameItem['frame']>('square')
   const [editSaving, setEditSaving] = useState(false)
 
@@ -101,7 +104,7 @@ export default function AdminPage() {
     setEditingFrame(frame)
     setEditName(frame.name)
     setEditCategory(frame.categoryName)
-    setEditSlots(frame.slots)
+    setEditSlotsData(frame.slots_data || [])
     setEditFrameType(frame.frame)
   }
 
@@ -112,12 +115,13 @@ export default function AdminPage() {
       await updateFrameService(editingFrame.firestoreId, {
         name: editName.trim(),
         categoryName: editCategory.trim(),
-        slots: editSlots,
+        slots: editSlotsData.length,
+        slots_data: editSlotsData,
         frame: editFrameType,
       })
       setCustomFrames(prev => prev.map(f =>
         f.firestoreId === editingFrame.firestoreId
-          ? { ...f, name: editName.trim(), categoryName: editCategory.trim(), slots: editSlots, frame: editFrameType }
+          ? { ...f, name: editName.trim(), categoryName: editCategory.trim(), slots: editSlotsData.length, slots_data: editSlotsData, frame: editFrameType }
           : f
       ))
       setEditingFrame(null)
@@ -382,6 +386,58 @@ export default function AdminPage() {
     })
   }
 
+  const handleDeleteSelected = () => {
+    if (selectedPaths.size === 0) return
+    const count = selectedPaths.size
+    Modal.confirm({
+      title: `Xóa ${count} file đã chọn?`,
+      content: 'Hành động này không thể hoàn tác.',
+      okText: `Xóa ${count} file`,
+      okButtonProps: { danger: true },
+      cancelText: 'Hủy',
+      centered: true,
+      styles: {
+        body: { background: '#1a1a1a', color: '#e5e5e5' },
+        header: { background: '#1a1a1a' },
+        footer: { background: '#1a1a1a' },
+        mask: { backdropFilter: 'blur(4px)' },
+      },
+      onOk: async () => {
+        setBulkDeleting(true)
+        try {
+          const toDelete = items.filter(i => selectedPaths.has(i.fullPath))
+          await Promise.allSettled(toDelete.map(async item => {
+            await deleteObject(ref(storage, item.fullPath)).catch(() => {})
+            if (item.sessionId) await deleteSession(item.sessionId).catch(() => {})
+          }))
+          const deletedPaths = new Set(toDelete.map(i => i.fullPath))
+          setPhotos(ps => ps.filter(p => !deletedPaths.has(p.fullPath)))
+          setVideos(vs => vs.filter(v => !deletedPaths.has(v.fullPath)))
+          setSelectedPaths(new Set())
+        } finally {
+          setBulkDeleting(false)
+        }
+      },
+    })
+  }
+
+  const toggleSelect = (path: string) => {
+    setSelectedPaths(prev => {
+      const next = new Set(prev)
+      if (next.has(path)) next.delete(path)
+      else next.add(path)
+      return next
+    })
+  }
+
+  const selectAll = () => {
+    setSelectedPaths(new Set(items.map(i => i.fullPath)))
+  }
+
+  const deselectAll = () => {
+    setSelectedPaths(new Set())
+  }
+
   // ── Frame upload / delete handlers ─────────────────────────────────────────
 
   const handleFileSelect = async (file: File) => {
@@ -396,9 +452,8 @@ export default function AdminPage() {
     setDetectingSlots(true)
     try {
       const slots = await detectFrameSlots(url)
-      const count = slots.length
-      setUploadSlots(count)
-      setUploadFrameType(count === 6 ? 'bigrectangle' : count === 4 ? 'square' : 'grid')
+      setUploadSlotsData(slots)
+      setUploadFrameType(slots.length === 6 ? 'bigrectangle' : slots.length === 4 ? 'square' : 'grid')
     } finally {
       setDetectingSlots(false)
     }
@@ -409,7 +464,7 @@ export default function AdminPage() {
     setShowUploadModal(false)
     setUploadFile(null)
     setUploadPreviewUrl(null)
-    setUploadSlots(0)
+    setUploadSlotsData([])
     setUploadName('')
     setUploadCategory('')
     setUploadFrameType('square')
@@ -422,7 +477,8 @@ export default function AdminPage() {
       const frame = await uploadFrameService(uploadFile, {
         name: uploadName.trim(),
         categoryName: uploadCategory.trim(),
-        slots: uploadSlots,
+        slots: uploadSlotsData.length,
+        slots_data: uploadSlotsData,
         frame: uploadFrameType,
       })
       setCustomFrames(prev => [...prev, frame].sort((a, b) => a.name.localeCompare(b.name, 'vi')))
@@ -466,17 +522,36 @@ export default function AdminPage() {
   return (
     <div className="min-h-dvh bg-[#111] flex flex-col">
       {/* Header */}
-      <header className="border-b border-[#1f1f1f] px-6 py-4 flex items-center justify-between">
+      <header className="border-b border-[#1f1f1f] px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-white font-bold text-lg" style={{ letterSpacing: '-0.02em' }}>Sổ Media</h1>
           <p className="text-[#555] text-[10px] uppercase tracking-widest">Admin Panel</p>
         </div>
-        <div className="flex items-center gap-3">
-          <span className="text-[#555] text-xs hidden sm:block">{user?.email}</span>
+        <div className="flex flex-wrap items-center gap-2">
+          {selectedPaths.size > 0 && (
+            <div className="flex items-center gap-2 bg-[#1a1a1a] border border-blue-900/50 rounded-lg px-2 py-1 mr-2">
+              <span className="text-blue-400 text-[10px] font-bold px-1 uppercase tracking-wider">Đã chọn {selectedPaths.size}</span>
+              <Button size="small" type="primary" danger icon={<DeleteFilled />} onClick={handleDeleteSelected}>
+                Xóa {selectedPaths.size}
+              </Button>
+              <Button size="small" ghost onClick={deselectAll} style={{ color: '#888', borderColor: '#333' }}>
+                Bỏ chọn
+              </Button>
+            </div>
+          )}
+
           <Button size="small" icon={<ReloadOutlined />} onClick={fetchAll} disabled={bulkDeleting}
             style={{ background: '#1e1e1e', border: '1px solid #2a2a2a', color: '#888' }}>
             Tải lại
           </Button>
+
+          {(tab === 'photos' || tab === 'videos') && items.length > 0 && (
+            <Button size="small" onClick={selectedPaths.size === items.length ? deselectAll : selectAll}
+              style={{ background: '#1e1e1e', border: '1px solid #2a2a2a', color: '#888' }}>
+              {selectedPaths.size === items.length ? 'Bỏ chọn hết' : 'Chọn tất cả'}
+            </Button>
+          )}
+
           <Tooltip title="Xóa dữ liệu cũ hơn 7 ngày (cả ảnh & video)">
             <Button size="small" icon={<ClockCircleOutlined />} onClick={handleDeleteOlderThan7Days}
               loading={bulkDeleting}
@@ -503,7 +578,7 @@ export default function AdminPage() {
         {(['photos', 'videos', 'frames', 'requests'] as const).map(t => (
           <button
             key={t}
-            onClick={() => setTab(t)}
+            onClick={() => { setTab(t); setSelectedPaths(new Set()); }}
             className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors ${
               tab === t
                 ? 'border-white text-white'
@@ -730,12 +805,19 @@ export default function AdminPage() {
             {items.map(item => (
               <div
                 key={item.fullPath}
-                className="group relative bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl overflow-hidden hover:border-[#444] transition-colors"
+                className={`group relative bg-[#1a1a1a] border rounded-xl overflow-hidden transition-all duration-200 ${
+                  selectedPaths.has(item.fullPath) 
+                    ? 'border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.2)]' 
+                    : 'border-[#2a2a2a] hover:border-[#444]'
+                }`}
               >
                 {/* Thumbnail */}
                 <div
                   className="relative cursor-pointer"
-                  onClick={() => setPreviewItem(item)}
+                  onClick={() => {
+                    if (selectedPaths.size > 0) toggleSelect(item.fullPath)
+                    else setPreviewItem(item)
+                  }}
                 >
                   {item.type === 'photo' ? (
                     <img
@@ -752,6 +834,18 @@ export default function AdminPage() {
                       </div>
                     </div>
                   )}
+
+                  {/* Checkbox indicator */}
+                  <div 
+                    className={`absolute top-2 left-2 w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
+                      selectedPaths.has(item.fullPath)
+                        ? 'bg-blue-500 border-blue-500'
+                        : 'bg-black/40 border-white/40 opacity-0 group-hover:opacity-100'
+                    }`}
+                    onClick={(e) => { e.stopPropagation(); toggleSelect(item.fullPath); }}
+                  >
+                    {selectedPaths.has(item.fullPath) && <CheckOutlined className="text-white text-[10px]" />}
+                  </div>
                 </div>
 
                 {/* Info */}
@@ -800,7 +894,7 @@ export default function AdminPage() {
           </div>
         }
         centered
-        width={460}
+        width={940}
         styles={{
           body: { background: '#1a1a1a', color: '#e5e5e5' },
           header: { background: '#1a1a1a' },
@@ -808,105 +902,87 @@ export default function AdminPage() {
           mask: { backdropFilter: 'blur(4px)' },
         }}
       >
-        <div className="flex flex-col gap-4 py-2">
-          {/* File drop zone */}
-          <div
-            className="border-2 border-dashed border-[#2a2a2a] rounded-xl overflow-hidden cursor-pointer hover:border-[#444] transition-colors"
-            onClick={() => fileInputRef.current?.click()}
-            onDragOver={e => e.preventDefault()}
-            onDrop={e => {
-              e.preventDefault()
-              const file = e.dataTransfer.files[0]
-              if (file) handleFileSelect(file)
-            }}
-          >
+        <div className="flex flex-col md:flex-row gap-6 py-2">
+          {/* Left - Slot Editor */}
+          <div className="flex-1 min-w-0">
             {uploadPreviewUrl ? (
-              <div className="relative flex items-center justify-center bg-[#111] p-2" style={{ minHeight: 160 }}>
-                <img src={uploadPreviewUrl} alt="preview" className="max-h-40 object-contain rounded" />
-                {detectingSlots && (
-                  <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center gap-2">
-                    <Spin size="small" />
-                    <span className="text-white text-xs">Đang phát hiện slot...</span>
-                  </div>
-                )}
-              </div>
+              <FrameSlotEditor 
+                imageUrl={uploadPreviewUrl} 
+                slots={uploadSlotsData} 
+                onChange={setUploadSlotsData} 
+              />
             ) : (
-              <div className="flex flex-col items-center justify-center gap-2 py-10 text-[#3a3a3a]">
+              <div
+                className="border-2 border-dashed border-[#2a2a2a] rounded-xl flex flex-col items-center justify-center gap-2 py-20 text-[#3a3a3a] cursor-pointer hover:border-[#444] transition-colors"
+                onClick={() => fileInputRef.current?.click()}
+              >
                 <PictureOutlined style={{ fontSize: 36 }} />
-                <span className="text-xs">Kéo thả hoặc click để chọn file PNG</span>
+                <span className="text-xs">Chọn file PNG để bắt đầu</span>
               </div>
             )}
           </div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".png,image/png"
-            className="sr-only"
-            onChange={e => { const f = e.target.files?.[0]; if (f) handleFileSelect(f); e.target.value = '' }}
-          />
 
-          {/* Detected slots info */}
-          {uploadFile && !detectingSlots && (
-            <div className="flex items-center gap-3">
-              <span className="text-[#555] text-xs">Slot phát hiện:</span>
-              <span className="text-white text-xs font-bold">{uploadSlots}</span>
-              <span className="text-[#555] text-xs">·</span>
-              <Select
-                size="small"
-                value={uploadSlots}
-                onChange={v => {
-                  setUploadSlots(v)
-                  setUploadFrameType(v === 6 ? 'bigrectangle' : v === 4 ? 'square' : 'grid')
-                }}
-                options={[1,2,3,4,5,6,8,9].map(n => ({ value: n, label: `${n} slot` }))}
-                style={{ width: 100 }}
+          {/* Right - Form */}
+          <div className="w-80 flex flex-col gap-4">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".png,image/png"
+              className="sr-only"
+              onChange={e => { const f = e.target.files?.[0]; if (f) handleFileSelect(f); e.target.value = '' }}
+            />
+
+            {/* Name */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[#888] text-xs font-semibold uppercase tracking-wider">Tên Khung *</label>
+              <Input
+                value={uploadName}
+                onChange={e => setUploadName(e.target.value)}
+                placeholder="Ví dụ: HelloKitty, Y2K..."
+                style={{ background: '#111', borderColor: '#222', color: '#e5e5e5' }}
               />
             </div>
-          )}
 
-          {/* Name */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[#888] text-xs">Tên Khung *</label>
-            <Input
-              value={uploadName}
-              onChange={e => setUploadName(e.target.value)}
-              placeholder="Ví dụ: HelloKitty, Y2K..."
-              style={{ background: '#111', borderColor: '#2a2a2a', color: '#e5e5e5' }}
-            />
-          </div>
+            {/* Category */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[#888] text-xs font-semibold uppercase tracking-wider">Danh Mục *</label>
+              <Input
+                value={uploadCategory}
+                onChange={e => setUploadCategory(e.target.value)}
+                placeholder="Ví dụ: Frame Basic, Frame Cartoon..."
+                list="known-categories"
+                style={{ background: '#111', borderColor: '#222', color: '#e5e5e5' }}
+              />
+              <datalist id="known-categories">
+                <option value="Frame Basic" />
+                <option value="Frame Cartoon" />
+                <option value="Frame Amazing ⭐️" />
+                <option value="Frame IDOL Hoạt Họa" />
+              </datalist>
+            </div>
 
-          {/* Category */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[#888] text-xs">Danh Mục *</label>
-            <Input
-              value={uploadCategory}
-              onChange={e => setUploadCategory(e.target.value)}
-              placeholder="Ví dụ: Frame Basic, Frame Cartoon..."
-              list="known-categories"
-              style={{ background: '#111', borderColor: '#2a2a2a', color: '#e5e5e5' }}
-            />
-            <datalist id="known-categories">
-              <option value="Frame Basic" />
-              <option value="Frame Cartoon" />
-              <option value="Frame Amazing ⭐️" />
-              <option value="Frame IDOL Hoạt Họa" />
-            </datalist>
-          </div>
-
-          {/* Frame type */}
-          <div className="flex items-center gap-3">
-            <span className="text-[#888] text-xs">Loại Frame:</span>
-            <Select
-              value={uploadFrameType}
-              onChange={setUploadFrameType}
-              size="small"
-              options={[
-                { value: 'square', label: 'square (4 slot)' },
-                { value: 'bigrectangle', label: 'bigrectangle (6 slot)' },
-                { value: 'grid', label: 'grid (khác)' },
-              ]}
-              style={{ flex: 1 }}
-            />
+            {/* Slot count info */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[#888] text-xs font-semibold uppercase tracking-wider">Số Slot</label>
+                <div className="bg-[#111] border border-[#222] rounded px-3 py-1.5 text-white font-bold h-8 flex items-center">
+                  {uploadSlotsData.length}
+                </div>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[#888] text-xs font-semibold uppercase tracking-wider">Loại</label>
+                <Select
+                  value={uploadFrameType}
+                  onChange={setUploadFrameType}
+                  options={[
+                    { value: 'square', label: 'square' },
+                    { value: 'bigrectangle', label: 'tall' },
+                    { value: 'grid', label: 'grid' },
+                  ]}
+                  style={{ width: '100%' }}
+                />
+              </div>
+            </div>
           </div>
         </div>
       </Modal>
@@ -917,7 +993,7 @@ export default function AdminPage() {
         onCancel={() => setPreviewItem(null)}
         footer={null}
         centered
-        width={previewItem?.type === 'video' ? 720 : 420}
+        width={previewItem ? (previewItem.type === 'video' ? 720 : 420) : 420}
         styles={{
           body: { background: '#111', padding: 0 },
           header: { background: '#111', borderBottom: '1px solid #1f1f1f' },
@@ -976,7 +1052,7 @@ export default function AdminPage() {
           </div>
         }
         centered
-        width={420}
+        width={940}
         styles={{
           body: { background: '#1a1a1a', color: '#e5e5e5' },
           header: { background: '#1a1a1a' },
@@ -984,25 +1060,30 @@ export default function AdminPage() {
           mask: { backdropFilter: 'blur(4px)' },
         }}
       >
-        <div className="flex gap-4 py-2">
-          {editingFrame && (
-            <img
-              src={frameImageUrl(editingFrame.filename, editingFrame.storageUrl)}
-              alt={editingFrame.name}
-              className="w-20 object-contain rounded-md bg-[#111] shrink-0"
-            />
-          )}
-          <div className="flex flex-col gap-3 flex-1">
+        <div className="flex flex-col md:flex-row gap-6 py-2">
+          {/* Left - Slot Editor */}
+          <div className="flex-1 min-w-0">
+            {editingFrame && (
+              <FrameSlotEditor 
+                imageUrl={frameImageUrl(editingFrame.filename, editingFrame.storageUrl)} 
+                slots={editSlotsData} 
+                onChange={setEditSlotsData} 
+              />
+            )}
+          </div>
+
+          {/* Right - Form */}
+          <div className="w-80 flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
-              <label className="text-[#888] text-xs">Tên Khung</label>
+              <label className="text-[#888] text-xs font-semibold uppercase tracking-wider">Tên Khung</label>
               <Input value={editName} onChange={e => setEditName(e.target.value)}
-                style={{ background: '#111', borderColor: '#2a2a2a', color: '#e5e5e5' }} />
+                style={{ background: '#111', borderColor: '#222', color: '#e5e5e5' }} />
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-[#888] text-xs">Danh Mục</label>
+              <label className="text-[#888] text-xs font-semibold uppercase tracking-wider">Danh Mục</label>
               <Input value={editCategory} onChange={e => setEditCategory(e.target.value)}
                 list="edit-categories"
-                style={{ background: '#111', borderColor: '#2a2a2a', color: '#e5e5e5' }} />
+                style={{ background: '#111', borderColor: '#222', color: '#e5e5e5' }} />
               <datalist id="edit-categories">
                 <option value="Frame Basic" />
                 <option value="Frame Cartoon" />
@@ -1010,14 +1091,15 @@ export default function AdminPage() {
                 <option value="Frame IDOL Hoạt Họa" />
               </datalist>
             </div>
-            <div className="flex gap-3">
-              <div className="flex flex-col gap-1.5 flex-1">
-                <label className="text-[#888] text-xs">Số Slot</label>
-                <Select value={editSlots} onChange={v => { setEditSlots(v); setEditFrameType(v === 6 ? 'bigrectangle' : v === 4 ? 'square' : 'grid') }}
-                  options={[1,2,3,4,5,6,8,9].map(n => ({ value: n, label: `${n} slot` }))} />
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[#888] text-xs font-semibold uppercase tracking-wider">Số Slot</label>
+                <div className="bg-[#111] border border-[#222] rounded px-3 py-1.5 text-white font-bold h-8 flex items-center">
+                  {editSlotsData.length}
+                </div>
               </div>
-              <div className="flex flex-col gap-1.5 flex-1">
-                <label className="text-[#888] text-xs">Loại</label>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[#888] text-xs font-semibold uppercase tracking-wider">Loại</label>
                 <Select value={editFrameType} onChange={setEditFrameType}
                   options={[
                     { value: 'square', label: 'square' },
@@ -1061,7 +1143,7 @@ export default function AdminPage() {
               <p className="text-[#888] text-xs">Slot: <span className="text-white">{previewRequest.slots}</span> · {previewRequest.suggestedFrame}</p>
               <p className="text-[#888] text-xs">Từ: <span className="text-white">{previewRequest.submitterName || 'Ẩn danh'}</span> · {previewRequest.submitterContact}</p>
               {previewRequest.note && <p className="text-[#888] text-xs">Ghi chú: <span className="text-[#aaa]">{previewRequest.note}</span></p>}
-              <p className="text-white text-[10px]">{new Date(previewRequest.submittedAt).toLocaleString('vi-VN')}</p>
+              <p className="text-white text-[10px]">{previewRequest.submittedAt ? new Date(previewRequest.submittedAt).toLocaleString('vi-VN') : ''}</p>
             </div>
           </>
         )}
