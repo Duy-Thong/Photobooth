@@ -1319,7 +1319,7 @@ export const STATIC_FRAMES: FrameItem[] = [
   {
     "id": 543,
     "filename": "FRAME ECONY 1.png",
-    "name": "ECONY 1",
+    "name": "ECN 1",
     "frame": "square",
     "categoryId": 20,
     "categoryName": "SYP",
@@ -1328,7 +1328,7 @@ export const STATIC_FRAMES: FrameItem[] = [
   {
     "id": 544,
     "filename": "FRAME ECONY 2.png",
-    "name": "ECONY 2",
+    "name": "ECN 2",
     "frame": "square",
     "categoryId": 20,
     "categoryName": "SYP",
@@ -1337,7 +1337,7 @@ export const STATIC_FRAMES: FrameItem[] = [
   {
     "id": 545,
     "filename": "FRAME ECONY 3.png",
-    "name": "ECONY 3",
+    "name": "ECN 3",
     "frame": "square",
     "categoryId": 20,
     "categoryName": "SYP",
@@ -1346,7 +1346,7 @@ export const STATIC_FRAMES: FrameItem[] = [
   {
     "id": 546,
     "filename": "FRAME ECONY 4.png",
-    "name": "ECONY 4",
+    "name": "ECN 4",
     "frame": "square",
     "categoryId": 20,
     "categoryName": "SYP",
