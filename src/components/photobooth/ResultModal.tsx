@@ -48,7 +48,25 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
 
   useEffect(() => {
     if (!open || !imageBlobUrl) return
-    // Reset and start uploading immediately
+
+    // If we already have the result for THIS blob URL, don't reset everything.
+    // This allows re-opening the modal without re-uploading or seeing a blank screen.
+    if (imageBlobUrl === lastOpenedUrlRef.current) {
+      if (phase === 'done' && sessionId && finalWithQr) return
+      if (phase === 'uploading') return // Already working on it
+    }
+
+    lastOpenedUrlRef.current = imageBlobUrl
+    
+    // If we have cached data for this EXACT blob URL from a previous open/close, restore it
+    if (imageBlobUrl === lastUploadedUrlRef.current && lastSessionIdRef.current && lastFinalWithQrRef.current) {
+      setSessionId(lastSessionIdRef.current)
+      setFinalWithQr(lastFinalWithQrRef.current)
+      setPhase('done')
+      return
+    }
+
+    // Otherwise, reset and start a new upload flow
     setPhase('uploading')
     setSessionId(null)
     setFinalWithQr(null)
@@ -57,25 +75,47 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
     setUploadKey(k => k + 1)
   }, [open, imageBlobUrl])
 
+  const lastOpenedUrlRef = useRef<string | null>(null)
   const lastUploadKeyRef = useRef(0)
   const lastUploadedUrlRef = useRef<string | null>(null)
+  const lastSessionIdRef = useRef<string | null>(null)
+  const lastFinalWithQrRef = useRef<string | null>(null)
+  const isUploadingRef = useRef(false)
 
   // Upload flow — only starts when user explicitly triggers via uploadKey
   useEffect(() => {
     if (uploadKey === 0 || !imageBlobUrl) return
+    
+    // 1. Wait if we're still building the strip video
     if (buildingStrip) return
+    
+    // 2. Prevent parallel uploads
+    if (isUploadingRef.current) return
+
+    // 3. Skip if this specific upload attempt was already handled
     if (lastUploadKeyRef.current === uploadKey) return
-    if (lastUploadedUrlRef.current === imageBlobUrl) {
-      // Already uploaded this exact same image blob!
-      // Just set phase to done and skip the upload so we don't create a new session
+    
+    // 4. Skip if the final result for this image is already stored
+    if (lastUploadedUrlRef.current === imageBlobUrl && lastSessionIdRef.current) {
+      if (sessionId !== lastSessionIdRef.current) setSessionId(lastSessionIdRef.current)
+      if (finalWithQr !== lastFinalWithQrRef.current) setFinalWithQr(lastFinalWithQrRef.current)
       setPhase('done')
       return
     }
 
     lastUploadKeyRef.current = uploadKey
+    isUploadingRef.current = true
     lastUploadedUrlRef.current = imageBlobUrl
 
     let cancelled = false
+
+    // 15s timeout fallback
+    const timeout = setTimeout(() => {
+      if (!cancelled && phase === 'uploading') {
+        setPhase('done')
+        message.info('Mạng hơi chậm, bạn có thể tải ảnh local về trước nhé!')
+      }
+    }, 15000)
 
     async function run() {
       try {
@@ -85,19 +125,31 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
           recapMimeType ?? undefined,
         )
         if (cancelled) return
+        clearTimeout(timeout)
         setSessionId(result.sessionId)
         setFinalWithQr(result.stampedBlobUrl)
+        lastSessionIdRef.current = result.sessionId
+        lastFinalWithQrRef.current = result.stampedBlobUrl
+        lastUploadedUrlRef.current = imageBlobUrl
         setPhase('done')
       } catch (err) {
         if (!cancelled) {
+          clearTimeout(timeout)
           setErrorMsg(err instanceof Error ? err.message : 'Upload thất bại')
           setPhase('error')
+        }
+      } finally {
+        if (!cancelled) {
+          isUploadingRef.current = false
         }
       }
     }
 
     run()
-    return () => { cancelled = true }
+    return () => { 
+      cancelled = true
+      clearTimeout(timeout)
+    }
   // NOTE: 'phase' intentionally excluded — including it would cause the cleanup
   // to fire (cancelled=true) when phase changes from 'uploading' to 'stamping',
   // which would leave the modal stuck at the stamping screen permanently.
@@ -163,13 +215,13 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
       )}
 
       {/* ── DONE ─────────────────────────────────────────────────────────────── */}
-      {phase === 'done' && finalWithQr && sessionId && (
+      {phase === 'done' && (finalWithQr || imageBlobUrl) && (
         <div className="flex flex-col md:flex-row gap-6 items-center md:items-start">
-          {/* Left — photo preview with QR stamped */}
+          {/* Left — photo preview */}
           <div className="w-full max-w-xs md:max-w-none md:w-[280px] shrink-0 flex flex-col gap-4">
             <div className="w-full flex justify-center">
               <img
-                src={finalWithQr}
+                src={finalWithQr || imageBlobUrl!}
                 alt="Final photo"
                 className="w-full max-h-[60vh] md:max-h-[520px] object-contain rounded-lg border border-[#2a2a2a]"
               />
@@ -196,34 +248,43 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
 
           {/* Right — QR + actions */}
           <div className="flex-1 w-full flex flex-col items-center gap-4">
-            <p className="text-[#666] text-[10px] uppercase tracking-widest self-start">Quét để xem &amp; chia sẻ</p>
-            <div className="p-2 rounded-2xl">
-              <QRCode value={`${window.location.origin}/session/${sessionId}`} size={150} bordered={false} errorLevel="H" icon="/clublogo.png" iconSize={34} />
-            </div>
-            {/* URL link row */}
-            <div className="w-full flex items-center gap-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-1.5 pl-3">
-              <span className="flex-1 text-[#888] text-[11px] truncate select-all">
-                {`${window.location.origin}/session/${sessionId}`}
-              </span>
-              <div className="flex items-center gap-1 shrink-0">
-                <a
-                  href={`${window.location.origin}/session/${sessionId}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-2.5 py-1 rounded bg-[#222] border border-[#333] text-[#aaa] hover:text-white hover:border-[#555] hover:bg-[#2a2a2a] text-[10px] font-semibold uppercase tracking-wider transition-all flex items-center gap-1.5"
-                  title="Mở link sang tab mới"
-                >
-                  Mở ↗
-                </a>
-                <button
-                  onClick={handleCopyUrl}
-                  className="px-2.5 py-1 rounded bg-[#222] border border-[#333] text-[#aaa] hover:text-white hover:border-[#555] hover:bg-[#2a2a2a] text-[10px] font-semibold uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer"
-                  title="Copy link"
-                >
-                  {copied ? <CheckOutlined className="text-green-400" /> : <CopyOutlined />} Copy
-                </button>
+            {sessionId ? (
+              <>
+                <p className="text-[#666] text-[10px] uppercase tracking-widest self-start">Quét để xem &amp; chia sẻ</p>
+                <div className="p-2 rounded-2xl">
+                  <QRCode value={`${window.location.origin}/session/${sessionId}`} size={150} bordered={false} errorLevel="H" icon="/clublogo.png" iconSize={34} />
+                </div>
+                {/* URL link row */}
+                <div className="w-full flex items-center gap-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-1.5 pl-3">
+                  <span className="flex-1 text-[#888] text-[11px] truncate select-all">
+                    {`${window.location.origin}/session/${sessionId}`}
+                  </span>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <a
+                      href={`${window.location.origin}/session/${sessionId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-2.5 py-1 rounded bg-[#222] border border-[#333] text-[#aaa] hover:text-white hover:border-[#555] hover:bg-[#2a2a2a] text-[10px] font-semibold uppercase tracking-wider transition-all flex items-center gap-1.5"
+                      title="Mở link sang tab mới"
+                    >
+                      Mở ↗
+                    </a>
+                    <button
+                      onClick={handleCopyUrl}
+                      className="px-2.5 py-1 rounded bg-[#222] border border-[#333] text-[#aaa] hover:text-white hover:border-[#555] hover:bg-[#2a2a2a] text-[10px] font-semibold uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer"
+                      title="Copy link"
+                    >
+                      {copied ? <CheckOutlined className="text-green-400" /> : <CopyOutlined />} Copy
+                    </button>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="flex-1 flex flex-col items-center justify-center py-6 text-center gap-3">
+                <Spin indicator={<LoadingOutlined style={{ fontSize: 24 }} spin />} />
+                <p className="text-[#555] text-xs">Đang cố gắng tạo mã QR...<br/>Bạn có thể tải ảnh local về trước.</p>
               </div>
-            </div>
+            )}
 
             {/* Video recap */}
             {(recapStripUrl || buildingStrip || hasClips) && (
