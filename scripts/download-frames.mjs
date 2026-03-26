@@ -14,6 +14,12 @@ const OUTPUT_FILE = path.join(ROOT, 'src', 'lib', 'frames-static.ts')
 const API_URL = 'https://photo.freehihi.com/api/images'
 const CDN_BASE = 'https://cdn.freehihi.com'
 
+function deriveCategoryId(name) {
+    let h = 0
+    for (let i = 0; i < name.length; i++) h = Math.imul(31, h) + name.charCodeAt(i) | 0
+    return Math.abs(h) % 90000 + 10000
+}
+
 async function fetchWithRetry(url, attempts = 3) {
     for (let i = 0; i < attempts; i++) {
         try {
@@ -66,14 +72,17 @@ async function main() {
 import type { FrameItem } from './frameService'
 
 export const STATIC_FRAMES: FrameItem[] = ${JSON.stringify(
-        results.map(f => ({
-            id: f.id,
-            filename: f.filename,
-            name: f.name,
-            frame: f.frame,
-            categoryId: Number(f.category_id),
-            categoryName: f.category?.name ?? '',
-        })),
+        results.map(f => {
+            const catName = f.category?.name ?? 'Khác'
+            return {
+                id: f.id,
+                filename: f.filename,
+                name: f.name,
+                frame: f.frame,
+                categoryId: deriveCategoryId(catName),
+                categoryName: catName,
+            }
+        }),
         null,
         2
     )}

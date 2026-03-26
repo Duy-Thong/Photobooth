@@ -78,7 +78,7 @@ export function invalidateFramesCache() {
 }
 
 /** Deterministic numeric category ID derived from a category name string. */
-function deriveCategoryId(name: string): number {
+export function deriveCategoryId(name: string): number {
   let h = 0
   for (let i = 0; i < name.length; i++) h = Math.imul(31, h) + name.charCodeAt(i) | 0
   return Math.abs(h) % 90000 + 10000
@@ -123,11 +123,13 @@ export async function deleteCustomFrame(firestoreId: string, filename: string): 
 
 export async function fetchCategories(): Promise<FrameCategory[]> {
   const frames = await fetchFrames()
-  const seen = new Map<number, string>()
+  const nameToId = new Map<string, number>()
   for (const f of frames) {
-    if (!seen.has(f.categoryId)) seen.set(f.categoryId, f.categoryName)
+    if (!nameToId.has(f.categoryName)) {
+      nameToId.set(f.categoryName, f.categoryId)
+    }
   }
-  return Array.from(seen.entries()).map(([id, name]) => ({ id, name }))
+  return Array.from(nameToId.entries()).map(([name, id]) => ({ id, name }))
 }
 
 // ─── Frame update ──────────────────────────────────────────────────────────────
