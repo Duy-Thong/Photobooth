@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
-import { Modal, QRCode, Spin, Button } from 'antd'
-import { DownloadOutlined, ReloadOutlined, PictureOutlined, LoadingOutlined } from '@ant-design/icons'
+import { Modal, QRCode, Spin, Button, message } from 'antd'
+import { DownloadOutlined, ReloadOutlined, PictureOutlined, LoadingOutlined, CopyOutlined, CheckOutlined } from '@ant-design/icons'
 import { uploadSession } from '@/lib/uploadService'
 import { downloadImage } from '@/lib/imageProcessing'
 
-type Phase = 'confirm' | 'uploading' | 'done' | 'error'
+type Phase = 'uploading' | 'done' | 'error'
 
 interface ResultModalProps {
   open: boolean
@@ -36,16 +36,27 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
   // Incremented each time the user explicitly triggers an upload.
   // Used as the effect dep so phase changes mid-async don't cancel the run.
   const [uploadKey, setUploadKey] = useState(0)
+  const [copied, setCopied] = useState(false)
+
+  const handleCopyUrl = () => {
+    const url = `${window.location.origin}/session/${sessionId}`
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true)
+      message.success('Đã copy link!')
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
 
   useEffect(() => {
     if (!open || !imageBlobUrl) return
-    // Reset and wait for user confirmation before uploading
-    setPhase('confirm')
+    // Reset and start uploading immediately
+    setPhase('uploading')
     setSessionId(null)
     setRecapStripFirebaseUrl(null)
     setFinalWithQr(null)
     setErrorMsg(null)
     setCurrentClipIdx(0)
+    setUploadKey(k => k + 1)
   }, [open, imageBlobUrl])
 
   // Upload flow — only starts when user explicitly triggers via uploadKey
@@ -112,7 +123,6 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
       onCancel={onClose}
       title={
         <span className="text-white font-semibold tracking-tight">
-          {phase === 'confirm' && 'Ảnh của bạn'}
           {phase === 'uploading' && 'Đang tải lên...'}
           {phase === 'done' && 'Ảnh của bạn đã sẵn sàng'}
           {phase === 'error' && 'Có lỗi xảy ra'}
@@ -126,131 +136,11 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
         header: { background: '#141414', borderBottom: '1px solid #1f1f1f' },
       }}
     >
-      {/* ── CONFIRM ─────────────────────────────────────────────────────────── */}
-      {phase === 'confirm' && imageBlobUrl && (
-        <div className="flex gap-5 items-start">
-          {/* Left — photo preview */}
-          <div className="shrink-0 w-70 flex justify-center">
-            <img
-              src={imageBlobUrl}
-              alt="Preview"
-              className="w-full max-h-120 object-contain rounded-lg border border-[#2a2a2a]"
-            />
-          </div>
-
-          {/* Right — video recap + actions */}
-          <div className="flex-1 flex flex-col gap-3 justify-between min-h-75">
-            {/* ── Strip video (combined, with frame) ── */}
-            {(recapStripUrl || buildingStrip) && (
-              <div className="flex flex-col gap-1.5">
-                <p className="text-[#666] text-[10px] uppercase tracking-widest flex items-center gap-1.5">
-                  Strip Video
-                  {buildingStrip && !recapStripUrl && <LoadingOutlined className="text-[#555]" />}
-                </p>
-                {recapStripUrl ? (
-                  <>
-                    <video
-                      src={recapStripUrl}
-                      controls
-                      autoPlay
-                      loop
-                      playsInline
-                      className="w-full rounded-lg border border-[#2a2a2a] bg-black object-contain max-h-48"
-                    />
-                    <a
-                      href={recapStripUrl}
-                      download={`somedia-strip-${Date.now()}.${recapExt}`}
-                      className="text-[#555] hover:text-white text-xs underline transition-colors text-center"
-                    >
-                      Tải strip video về máy
-                    </a>
-                  </>
-                ) : (
-                  <div className="flex items-center justify-center gap-2 py-3 text-[#555] text-xs">
-                    <LoadingOutlined />
-                    <span>Đang tạo strip video...</span>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* ── Individual clips (no frame) ── */}
-            {hasClips && (
-              <div className="flex flex-col gap-1.5">
-                <p className="text-[#666] text-[10px] uppercase tracking-widest">
-                  Clip đơn ({currentClipIdx + 1}&nbsp;/&nbsp;{recapClips!.length})
-                </p>
-                <video
-                  key={currentClipIdx}
-                  src={recapClips![currentClipIdx]}
-                  controls
-                  autoPlay
-                  playsInline
-                  onEnded={() => setCurrentClipIdx(i => (i + 1) % recapClips!.length)}
-                  className="w-full rounded-lg border border-[#2a2a2a] bg-black object-contain max-h-32"
-                />
-                {recapClips!.length > 1 && (
-                  <div className="flex gap-1.5 justify-center">
-                    {recapClips!.map((_, i) => (
-                      <button
-                        key={i}
-                        onClick={() => setCurrentClipIdx(i)}
-                        className={`w-2 h-2 rounded-full transition-colors ${
-                          i === currentClipIdx ? 'bg-white' : 'bg-[#444] hover:bg-[#666]'
-                        }`}
-                      />
-                    ))}
-                  </div>
-                )}
-                <a
-                  href={recapClips![currentClipIdx]}
-                  download={`somedia-clip-${currentClipIdx + 1}-${Date.now()}.${recapExt}`}
-                  className="text-[#555] hover:text-white text-xs underline transition-colors text-center"
-                >
-                  Tải clip {currentClipIdx + 1} về máy
-                </a>
-              </div>
-            )}
-
-            {!recapStripUrl && !buildingStrip && !hasClips && (
-              <p className="text-white text-xs text-center mt-4">
-                Nhấn <span className="text-white font-medium">Upload &amp; Lấy QR</span> để lưu lên đám mây.<br />
-                Hoặc <span className="text-white font-medium">Tải về</span> ngay không cần upload.
-              </p>
-            )}
-
-            <div className="flex flex-col gap-2 mt-auto">
-              <Button
-                block
-                onClick={handleStartUpload}
-                style={{ background: '#fff', color: '#000', border: 'none', fontWeight: 600, height: 40 }}
-              >
-                Upload &amp; Lấy QR
-              </Button>
-              <Button block icon={<DownloadOutlined />} onClick={handleDownload}
-                style={{ ...btnBase, color: '#e5e5e5', height: 36 }}>
-                Tải về không cần QR
-              </Button>
-              <div className="flex gap-2">
-                <Button icon={<PictureOutlined />} onClick={onChangeFrame}
-                  style={{ ...btnBase, color: '#888', flex: 1 }}>
-                  Đổi khung
-                </Button>
-                <Button icon={<ReloadOutlined />} onClick={handleRetake}
-                  style={{ ...btnBase, color: '#888', flex: 1 }}>
-                  Chụp lại
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── LOADING ──────────────────────────────────────────────────────────── */}
+      {/* ── LOADING ─────────────────────────────────────────────────────────── */}
       {phase === 'uploading' && (
         <div className="flex flex-col items-center gap-4 py-16">
           <Spin size="large" />
-          <p className="text-[#888] text-sm">Đang upload ảnh lên Firebase...</p>
+          <p className="text-[#888] text-sm">Đang xử lý QR...</p>
         </div>
       )}
 
@@ -258,12 +148,11 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
       {phase === 'error' && (
         <div className="flex flex-col items-center gap-4 py-10 text-center">
           <p className="text-red-400 text-sm">{errorMsg}</p>
-          <p className="text-[#555] text-xs">Bạn vẫn có thể tải ảnh về (không có QR)</p>
           <div className="flex gap-2 mt-2">
             <Button onClick={onClose} style={{ ...btnBase, color: '#888' }}>Đóng</Button>
-            <Button icon={<DownloadOutlined />} onClick={handleDownload}
-              style={{ ...btnBase, color: '#e5e5e5' }}>
-              Tải về (không QR)
+            <Button onClick={handleStartUpload}
+              style={{ background: '#fff', color: '#000', border: 'none', fontWeight: 600 }}>
+              Thử lại
             </Button>
           </div>
         </div>
@@ -284,8 +173,21 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
           {/* Right — QR + actions */}
           <div className="flex-1 flex flex-col items-center gap-4">
             <p className="text-[#666] text-[10px] uppercase tracking-widest self-start">Quét để xem &amp; chia sẻ</p>
-            <div className="p-3 rounded-2xl">
-              <QRCode value={`${window.location.origin}/session/${sessionId}`} size={200} bordered={false} errorLevel="H" icon="/clublogo.png" iconSize={44} />
+            <div className="p-2 rounded-2xl">
+              <QRCode value={`${window.location.origin}/session/${sessionId}`} size={150} bordered={false} errorLevel="H" icon="/clublogo.png" iconSize={34} />
+            </div>
+            {/* URL copy row */}
+            <div className="w-full flex items-center gap-1.5 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-2">
+              <span className="flex-1 text-[#888] text-xs truncate select-all">
+                {`${window.location.origin}/session/${sessionId}`}
+              </span>
+              <button
+                onClick={handleCopyUrl}
+                className="shrink-0 text-[#666] hover:text-white transition-colors p-0.5"
+                title="Copy link"
+              >
+                {copied ? <CheckOutlined className="text-green-400" /> : <CopyOutlined />}
+              </button>
             </div>
 
             {/* Video recap */}
