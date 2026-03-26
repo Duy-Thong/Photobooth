@@ -57,25 +57,11 @@ export default function HomePage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [finalImageUrl])
 
-  // ---------- Auto-open frame modal or auto-build when all slots filled ----------
-  // If a frame is already chosen, skip the modal and build directly.
+  // Auto-open frame modal only if no frame selected. 
+  // Auto-build is now DISABLED per user request (manual only).
   useEffect(() => {
     if (capturedCount !== layout.slots || finalImageUrl || isCapturing) return
-    if (selectedFrame) {
-      // Frame already selected — build with it immediately
-      const timer = setTimeout(async () => {
-        try {
-          const { capturedSlots: cs, layout: l, activeEffects: fx, selectedFrame: f } = usePhotoboothStore.getState()
-          if (!f) return
-          if (videoRecap) setBuildingStrip(true)
-          const fUrl = f.storageUrl ?? `/frames/${f.filename}`
-          const url = await buildStripImage(cs, l, fx, fUrl, f.slots_data)
-          setFinalImageUrl(url)
-          setResultModalOpen(true)
-        } catch { /* noop */ }
-      }, 350)
-      return () => clearTimeout(timer)
-    } else {
+    if (!selectedFrame) {
       const timer = setTimeout(() => setFrameModalOpen(true), 350)
       return () => clearTimeout(timer)
     }
