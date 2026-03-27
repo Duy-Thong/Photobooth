@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { Spin } from 'antd'
-import { LoadingOutlined } from '@ant-design/icons'
+import { Spin, Modal } from 'antd'
+import { LoadingOutlined, PrinterOutlined } from '@ant-design/icons'
 import { fetchSession, type SessionData } from '@/lib/sessionService'
 import { downloadMedia } from '@/lib/imageProcessing'
 
@@ -72,6 +72,46 @@ export default function SessionPage() {
     }
   }
 
+  const handlePrint = () => {
+    const win = window.open('', '_blank')
+    if (!win) {
+      Modal.error({ title: 'Không thể mở cửa sổ in', content: 'Vui lòng tắt trình chặn popup và thử lại.', centered: true })
+      return
+    }
+    win.document.write(`
+      <html>
+        <head>
+          <title>In ảnh - Somedia Session</title>
+          <style>
+            @page { margin: 0; size: auto; }
+            body { margin: 0; padding: 0; display: flex; justify-content: center; align-items: start; background: white; }
+            img { width: 100%; height: auto; display: block; }
+          </style>
+        </head>
+        <body>
+          <img id="print-image" src="${session.imageUrl}" />
+          <script>
+            const img = document.getElementById('print-image');
+            const doPrint = () => {
+              window.print();
+              setTimeout(() => window.close(), 500);
+            };
+            if (img.complete) {
+              doPrint();
+            } else {
+              img.onload = doPrint;
+              img.onerror = () => {
+                alert('Không thể tải ảnh để in.');
+                window.close();
+              };
+            }
+          </script>
+        </body>
+      </html>
+    `)
+    win.document.close()
+  }
+
   return (
     <div className="min-h-dvh bg-[#0a0a0a] flex flex-col items-center py-10 px-4 gap-8">
       {/* Header */}
@@ -93,14 +133,21 @@ export default function SessionPage() {
         />
       </div>
 
-      {/* Download button */}
-      <button
-        onClick={handleDownloadPhoto}
-        disabled={downloadingPhoto}
-        className="w-full max-w-xs flex items-center justify-center gap-2 py-3 rounded-xl bg-white text-black font-semibold text-sm hover:bg-[#eee] transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
-      >
-        {downloadingPhoto ? <LoadingOutlined /> : '↓ Tải ảnh'}
-      </button>
+      <div className="w-full max-w-xs flex flex-col gap-2">
+        <button
+          onClick={handleDownloadPhoto}
+          disabled={downloadingPhoto}
+          className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-white text-black font-semibold text-sm hover:bg-[#eee] transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+        >
+          {downloadingPhoto ? <LoadingOutlined /> : '↓ Tải ảnh'}
+        </button>
+        <button
+          onClick={handlePrint}
+          className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-[#1a1a1a] text-white font-semibold text-sm hover:bg-[#222] transition-colors cursor-pointer border border-[#333]"
+        >
+          <PrinterOutlined /> In ảnh
+        </button>
+      </div>
 
       {/* Strip video */}
       {session.videoUrl && (
