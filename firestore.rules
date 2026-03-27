@@ -1,0 +1,28 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Feedback: Ai cũng có thể tạo, chỉ Admin có thể đọc và xóa
+    match /feedback/{id} {
+      allow create: if true;
+      allow read, delete: if request.auth != null;
+    }
+
+    // Sessions: Đọc public theo ID, tạo public, chỉ Admin có thể xóa/list
+    match /sessions/{id} {
+      allow create, get: if true;
+      allow list, delete: if request.auth != null;
+    }
+
+    // Frames: Ai cũng có thể đọc, chỉ Admin có thể viết
+    match /frames/{id} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // Frame Requests: Ai cũng có thể tạo đề xuất, chỉ Admin có thể quản lý
+    match /frame_requests/{id} {
+      allow create: if true;
+      allow read, update, delete: if request.auth != null;
+    }
+  }
+}

@@ -15,10 +15,12 @@ import {
   type FrameItem,
   type FrameRequest,
 } from '@/lib/frameService'
+import { fetchFeedbacks, deleteFeedback } from '@/lib/feedbackService'
+import type { Feedback } from '@/types/feedback'
 import { detectFrameSlots } from '@/lib/imageProcessing'
 import FrameSlotEditor from '@/components/admin/FrameSlotEditor'
 import { type SlotRect } from '@/types/photobooth'
-import { Button, Input, Modal, Select, Spin, Empty, Tooltip } from 'antd'
+import { Button, Input, Modal, Select, Spin, Empty, Tooltip, Table, Tag } from 'antd'
 import { DeleteOutlined, ReloadOutlined, LogoutOutlined, PlayCircleOutlined, DeleteFilled, ClockCircleOutlined, UploadOutlined, PictureOutlined, EditOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons'
 
 interface MediaItem {
@@ -60,9 +62,13 @@ export default function AdminPage() {
   const [deletingPath, setDeletingPath] = useState<string | null>(null)
   const [bulkDeleting, setBulkDeleting] = useState(false)
   const [previewItem, setPreviewItem] = useState<MediaItem | null>(null)
-  const [tab, setTab] = useState<'photos' | 'videos' | 'frames' | 'requests'>('photos')
+  const [tab, setTab] = useState<'photos' | 'videos' | 'frames' | 'requests' | 'feedback'>('photos')
   const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set())
   const [brokenPaths, setBrokenPaths] = useState<Set<string>>(new Set())
+
+  // ── Feedback tab state ──────────────────────────────────────────────────────
+  const [feedbacks, setFeedbacks] = useState<Feedback[]>([])
+  const [feedbacksLoading, setFeedbacksLoading] = useState(false)
 
   // ── Frames tab state ────────────────────────────────────────────────────────
   const [customFrames, setCustomFrames] = useState<FrameItem[]>([])
@@ -198,6 +204,37 @@ export default function AdminPage() {
           setRequests(prev => prev.filter(r => r.firestoreId !== req.firestoreId))
         } finally {
           setProcessingId(null)
+        }
+      },
+    })
+  }
+
+  const loadFeedbacks = useCallback(async () => {
+    setFeedbacksLoading(true)
+    try {
+      const data = await fetchFeedbacks()
+      setFeedbacks(data)
+    } finally {
+      setFeedbacksLoading(false)
+    }
+  }, [])
+
+  useEffect(() => { if (tab === 'feedback') loadFeedbacks() }, [tab, loadFeedbacks])
+
+  const handleDeleteFeedback = (fb: Feedback) => {
+    Modal.confirm({
+      title: 'Xóa góp ý này?',
+      content: `Góp ý từ ${fb.name || 'Ẩn danh'}`,
+      okText: 'Xóa',
+      okButtonProps: { danger: true },
+      cancelText: 'Hủy',
+      centered: true,
+      onOk: async () => {
+        try {
+          await deleteFeedback(fb.id)
+          setFeedbacks(prev => prev.filter(f => f.id !== fb.id))
+        } catch {
+          Modal.error({ title: 'Xóa thất bại', centered: true })
         }
       },
     })
@@ -720,7 +757,7 @@ export default function AdminPage() {
 
       {/* Tabs */}
       <div className="flex border-b border-[#1f1f1f] px-6">
-        {(['photos', 'videos', 'frames', 'requests'] as const).map(t => (
+        {(['photos', 'videos', 'frames', 'requests', 'feedback'] as const).map(t => (
           <button
             key={t}
             onClick={() => { setTab(t); setSelectedPaths(new Set()); }}
@@ -733,7 +770,8 @@ export default function AdminPage() {
             {t === 'photos' ? `Ảnh (${photos.length})`
               : t === 'videos' ? `Video (${videos.length})`
               : t === 'frames' ? `Khung (${customFrames.length})`
-              : `Đề Xuất${requests.length > 0 && requestStatusFilter === 'pending' ? ` (${requests.length})` : ''}`}
+              : t === 'requests' ? `Đề Xuất${requests.length > 0 && requestStatusFilter === 'pending' ? ` (${requests.length})` : ''}`
+              : `Góp ý (${feedbacks.length})`}
           </button>
         ))}
       </div>
@@ -936,6 +974,80 @@ export default function AdminPage() {
               ))}
             </div>
           )}
+        </div>
+      ) : tab === 'feedback' ? (
+        <div className="flex-1 p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <h2 className="text-white text-base font-semibold">Phản hồi từ người dùng</h2>
+            <Button size="small" icon={<ReloadOutlined />} onClick={loadFeedbacks} loading={feedbacksLoading}
+              style={{ background: '#1e1e1e', border: '1px solid #2a2a2a', color: '#888' }}>
+              Tải lại
+            </Button>
+          </div>
+
+          <Table
+            dataSource={feedbacks}
+            loading={feedbacksLoading}
+            rowKey="id"
+            pagination={{ pageSize: 10, size: 'small' }}
+            scroll={{ x: 800 }}
+            className="feedback-table"
+            columns={[
+              {
+                title: 'Thời gian',
+                dataIndex: 'createdAt',
+                key: 'createdAt',
+                width: 160,
+                render: (date) => <span className="text-[#888] text-xs">{formatDate(date)}</span>,
+                sorter: (a, b) => a.createdAt.localeCompare(b.createdAt),
+                defaultSortOrder: 'descend',
+              },
+              {
+                title: 'Loại',
+                dataIndex: 'type',
+                key: 'type',
+                width: 100,
+                render: (type: string) => {
+                  const colors: Record<string, string> = { bug: 'red', feature: 'blue', other: 'default' }
+                  const labels: Record<string, string> = { bug: 'Lỗi', feature: 'Tính năng', other: 'Khác' }
+                  return <Tag color={colors[type] || 'default'}>{labels[type] || type}</Tag>
+                },
+                filters: [
+                  { text: 'Lỗi', value: 'bug' },
+                  { text: 'Tính năng', value: 'feature' },
+                  { text: 'Khác', value: 'other' },
+                ],
+                onFilter: (value, record) => record.type === value,
+              },
+              {
+                title: 'Người gửi',
+                dataIndex: 'name',
+                key: 'name',
+                width: 150,
+                render: (name) => <span className="text-white font-medium">{name || 'Ẩn danh'}</span>,
+              },
+              {
+                title: 'Nội dung',
+                dataIndex: 'message',
+                key: 'message',
+                render: (msg) => <div className="text-[#aaa] max-w-md whitespace-pre-wrap">{msg}</div>,
+              },
+              {
+                title: 'Thao tác',
+                key: 'action',
+                width: 80,
+                fixed: 'right',
+                render: (_, record) => (
+                  <Button 
+                    type="text" 
+                    danger 
+                    icon={<DeleteOutlined />} 
+                    onClick={() => handleDeleteFeedback(record)}
+                  />
+                ),
+              },
+            ]}
+          />
         </div>
       ) : (
       <div className="flex-1 p-6">
