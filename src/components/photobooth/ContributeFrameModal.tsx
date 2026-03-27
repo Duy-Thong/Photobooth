@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import { Button, Input, Modal, Select, Spin } from 'antd'
 import { PictureOutlined } from '@ant-design/icons'
 import { detectFrameSlots } from '@/lib/imageProcessing'
-import { submitFrameRequest, type FrameItem } from '@/lib/frameService'
+import { submitFrameRequest } from '@/lib/frameService'
 
 interface Props {
   open: boolean
