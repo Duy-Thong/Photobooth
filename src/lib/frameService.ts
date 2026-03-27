@@ -8,8 +8,6 @@ export interface FrameItem {
   id: number
   filename: string
   name: string
-  /** frame type: 'square' = strip (1x3/1x4), 'bigrectangle' = tall/1x2, 'grid' = 2x2 */
-  frame: 'square' | 'bigrectangle' | 'grid'
   categoryId: number
   categoryName: string
   /** number of transparent photo slots detected in the PNG */
@@ -20,6 +18,8 @@ export interface FrameItem {
   firestoreId?: string
   /** Pre-calculated slot coordinates to eliminate on-the-fly detection delay */
   slots_data?: SlotRect[]
+  /** Detected layout string: '1x4', '2x2', '2x3', etc. */
+  layout?: string
   /** Frame image dimensions from Firestore metadata */
   width?: number
   height?: number
@@ -93,7 +93,7 @@ export function deriveCategoryId(name: string): number {
  */
 export async function uploadFrame(
   file: File,
-  meta: { name: string; categoryName: string; slots: number; frame: FrameItem['frame']; slots_data?: SlotRect[] },
+  meta: { name: string; categoryName: string; slots: number; slots_data?: SlotRect[]; layout?: string },
 ): Promise<FrameItem> {
   const ext = file.name.split('.').pop()?.toLowerCase() ?? 'png'
   const filename = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
@@ -105,12 +105,12 @@ export async function uploadFrame(
     id: Date.now(),
     filename,
     name: meta.name,
-    frame: meta.frame,
     categoryId: deriveCategoryId(meta.categoryName),
     categoryName: meta.categoryName,
     slots: meta.slots,
     storageUrl,
     slots_data: meta.slots_data,
+    layout: meta.layout,
   }
   const docRef = await addDoc(collection(db, FRAMES_COLLECTION), frameDoc)
   return { ...frameDoc, firestoreId: docRef.id }
@@ -139,7 +139,7 @@ export async function fetchCategories(): Promise<FrameCategory[]> {
 
 export async function updateFrame(
   firestoreId: string,
-  patch: Partial<Pick<FrameItem, 'name' | 'categoryName' | 'slots' | 'frame' | 'slots_data'>>,
+  patch: Partial<Pick<FrameItem, 'name' | 'categoryName' | 'slots' | 'slots_data' | 'layout'>>,
 ): Promise<void> {
   const updates: Record<string, string | number> = {}
   if (patch.name !== undefined) updates.name = patch.name
@@ -148,8 +148,8 @@ export async function updateFrame(
     updates.categoryId = deriveCategoryId(patch.categoryName)
   }
   if (patch.slots !== undefined) updates.slots = patch.slots
-  if (patch.frame !== undefined) updates.frame = patch.frame
   if (patch.slots_data !== undefined) (updates as any).slots_data = patch.slots_data
+  if (patch.layout !== undefined) updates.layout = patch.layout
   await updateDoc(doc(db, FRAMES_COLLECTION, firestoreId), updates)
 }
 
@@ -182,7 +182,6 @@ export async function submitFrameRequest(
     submitterContact: string
     suggestedName: string
     suggestedCategory: string
-    suggestedFrame: FrameItem['frame']
     slots: number
     note: string
   },
@@ -200,7 +199,6 @@ export async function submitFrameRequest(
     submitterContact: meta.submitterContact,
     suggestedName: meta.suggestedName,
     suggestedCategory: meta.suggestedCategory,
-    suggestedFrame: meta.suggestedFrame,
     slots: meta.slots,
     note: meta.note,
     status: 'pending' as FrameRequestStatus,
@@ -222,7 +220,6 @@ export async function approveFrameRequest(request: FrameRequest): Promise<void> 
     id: Date.now(),
     filename: request.filename,
     name: request.suggestedName,
-    frame: request.suggestedFrame,
     categoryId: deriveCategoryId(request.suggestedCategory),
     categoryName: request.suggestedCategory,
     slots: request.slots,

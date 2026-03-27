@@ -128,7 +128,7 @@ export default function SessionPage() {
         <img
           src={session.imageUrl}
           alt="Photo strip"
-          className="w-full rounded-2xl shadow-2xl border border-[#1a1a1a]"
+          className="w-full rounded-2xl shadow-2xl border border-[#222]"
           crossOrigin="anonymous"
         />
       </div>
@@ -143,7 +143,7 @@ export default function SessionPage() {
         </button>
         <button
           onClick={handlePrint}
-          className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-[#1a1a1a] text-white font-semibold text-sm hover:bg-[#222] transition-colors cursor-pointer border border-[#333]"
+          className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-[#0a0a0a] text-white font-semibold text-sm hover:bg-[#111] transition-colors cursor-pointer border border-[#333]"
         >
           <PrinterOutlined /> In ảnh
         </button>
@@ -159,7 +159,7 @@ export default function SessionPage() {
             autoPlay
             loop
             playsInline
-            className="w-full rounded-xl border border-[#1a1a1a] bg-black"
+            className="w-full rounded-xl border border-[#222] bg-black"
           />
           <button
             onClick={handleDownloadVideo}

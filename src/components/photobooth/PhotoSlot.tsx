@@ -55,7 +55,7 @@ export default function PhotoSlot({ index, slot, onUpload, onRemove }: PhotoSlot
   return (
     <div
       onClick={() => inputRef.current?.click()}
-      className="w-full h-full flex flex-col items-center justify-center gap-1 border border-dashed border-[#2a2a2a] rounded-xl cursor-pointer hover:border-[#555] hover:bg-[#1a1a1a] transition bg-[#141414]"
+      className="w-full h-full flex flex-col items-center justify-center gap-1 border border-dashed border-[#2a2a2a] rounded-xl cursor-pointer hover:border-[#555] hover:bg-[#0a0a0a] transition bg-[#141414]"
     >
       <svg viewBox="0 0 80 80" className="w-10 h-10 text-[#333]" fill="currentColor">
         <rect x="8" y="14" width="50" height="52" rx="4" opacity="0.5" />

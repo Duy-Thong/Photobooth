@@ -50,7 +50,7 @@ export default function CameraView({
   const filterCss = FILTERS.find(f => f.value === activeFilter)?.css ?? 'none'
 
   return (
-    <div className="relative w-full rounded-xl overflow-hidden bg-[#080808] border border-[#1a1a1a] aspect-4/3">
+    <div className="relative w-full rounded-xl overflow-hidden bg-[#080808] border border-[#222] aspect-4/3">
       <video
         ref={videoRef}
         autoPlay
@@ -99,7 +99,7 @@ export default function CameraView({
             className="h-10 max-w-48 px-3 rounded-xl bg-black/60 backdrop-blur-md text-white/90 text-xs font-bold border border-white/10 hover:bg-black/80 transition cursor-pointer outline-none shadow-lg"
           >
             {devices.map((d, i) => (
-              <option key={d.deviceId} value={d.deviceId} className="bg-[#1a1a1a] text-white">
+              <option key={d.deviceId} value={d.deviceId} className="bg-[#0a0a0a] text-white">
                 {d.label.length > 28 ? d.label.slice(0, 26) + '…' : d.label || `Camera ${i + 1}`}
               </option>
             ))}

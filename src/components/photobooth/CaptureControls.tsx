@@ -69,8 +69,8 @@ export default function CaptureControls({
         >
           <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full flex items-center justify-center border transition-all duration-150
             ${videoRecap && countdown > 0
-              ? 'bg-[#1a1a1a] border-[#4da6ff] shadow-[0_0_12px_rgba(77,166,255,0.15)]'
-              : 'bg-[#1a1a1a] border-[#2a2a2a] hover:border-[#444]'
+              ? 'bg-[#0a0a0a] border-[#4da6ff] shadow-[0_0_12px_rgba(77,166,255,0.15)]'
+              : 'bg-[#0a0a0a] border-[#2a2a2a] hover:border-[#444]'
             }`}>
             <Switch size="small" disabled={countdown === 0} checked={videoRecap} onChange={onToggleVideoRecap} style={{ background: videoRecap && countdown > 0 ? '#4da6ff' : undefined }} />
           </div>
@@ -88,8 +88,8 @@ export default function CaptureControls({
           >
             <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full flex items-center justify-center border transition-all duration-150
               ${isX2
-                ? 'bg-[#1a1a1a] border-[#ff9f4d] shadow-[0_0_12px_rgba(255,159,77,0.15)] text-[#ff9f4d]'
-                : 'bg-[#1a1a1a] border-[#2a2a2a] text-[#555] hover:border-[#444] hover:text-[#999]'
+                ? 'bg-[#0a0a0a] border-[#ff9f4d] shadow-[0_0_12px_rgba(255,159,77,0.15)] text-[#ff9f4d]'
+                : 'bg-[#0a0a0a] border-[#2a2a2a] text-[#555] hover:border-[#444] hover:text-[#999]'
               }`}>
               <span className="text-[12px] font-bold">x2</span>
             </div>
@@ -109,7 +109,7 @@ export default function CaptureControls({
           <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full flex items-center justify-center border transition-all duration-150
             ${disabled || allDone
               ? 'bg-[#141414] border-[#1e1e1e] text-[#2e2e2e]'
-              : 'bg-[#1a1a1a] border-[#2a2a2a] text-[#999] hover:border-[#444] hover:text-white active:scale-95'
+              : 'bg-[#0a0a0a] border-[#2a2a2a] text-[#999] hover:border-[#444] hover:text-white active:scale-95'
             }`}>
             <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 sm:w-5 sm:h-5">
               <path d="M20 5h-3.17L15 3H9L7.17 5H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-8 13c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.65 0-3 1.35-3 3s1.35 3 3 3 3-1.35 3-3-1.35-3-3-3z" />
@@ -159,7 +159,7 @@ export default function CaptureControls({
           <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full flex items-center justify-center border transition-all duration-150
             ${capturedCount === 0
               ? 'bg-[#141414] border-[#1e1e1e] text-[#2e2e2e]'
-              : 'bg-[#1a1a1a] border-[#2a2a2a] text-[#999] hover:border-[#444] hover:text-white active:scale-95'
+              : 'bg-[#0a0a0a] border-[#2a2a2a] text-[#999] hover:border-[#444] hover:text-white active:scale-95'
             }`}>
             <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 sm:w-5 sm:h-5">
               <path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z" />
@@ -176,7 +176,7 @@ export default function CaptureControls({
           title="Tải ảnh lên thay vì chụp"
           className="flex flex-col items-center gap-1.5 group"
         >
-          <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-full flex items-center justify-center border bg-[#1a1a1a] border-[#2a2a2a] text-[#999] group-hover:border-[#444] group-hover:text-white group-active:scale-95 transition-all duration-150">
+          <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-full flex items-center justify-center border bg-[#0a0a0a] border-[#2a2a2a] text-[#999] group-hover:border-[#444] group-hover:text-white group-active:scale-95 transition-all duration-150">
             <UploadOutlined style={{ fontSize: 16 }} />
           </div>
           <span className="text-[8px] sm:text-[9px] font-semibold uppercase tracking-[0.05em] sm:tracking-[0.12em] whitespace-nowrap text-[#555] group-hover:text-[#aaa] transition-colors">

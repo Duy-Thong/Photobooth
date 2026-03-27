@@ -266,7 +266,7 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
                   <QRCode value={`${window.location.origin}/session/${sessionId}`} size={150} bordered={false} errorLevel="H" icon="/clublogo.png" iconSize={34} />
                 </div>
                 {/* URL link row */}
-                <div className="w-full flex items-center gap-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-1.5 pl-3">
+                <div className="w-full flex items-center gap-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg p-1.5 pl-3">
                   <span className="flex-1 text-[#888] text-[11px] truncate select-all">
                     {`${window.location.origin}/session/${sessionId}`}
                   </span>
@@ -329,7 +329,7 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
                                 setDownloading(false)
                               }
                             }}
-                            className="px-3 py-1.5 rounded-md bg-[#1a1a1a] border border-[#333] text-[#aaa] hover:text-white hover:border-[#555] hover:bg-[#222] text-[10px] font-semibold uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="px-3 py-1.5 rounded-md bg-[#0a0a0a] border border-[#333] text-[#aaa] hover:text-white hover:border-[#555] hover:bg-[#111] text-[10px] font-semibold uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             {downloading ? <LoadingOutlined /> : <DownloadOutlined />} Tải về
                           </button>
@@ -381,7 +381,7 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
                             setDownloading(false)
                           }
                         }}
-                        className="px-3 py-1.5 rounded-md bg-[#1a1a1a] border border-[#333] text-[#aaa] hover:text-white hover:border-[#555] hover:bg-[#222] text-[10px] font-semibold uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="px-3 py-1.5 rounded-md bg-[#0a0a0a] border border-[#333] text-[#aaa] hover:text-white hover:border-[#555] hover:bg-[#111] text-[10px] font-semibold uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {downloading ? <LoadingOutlined /> : <DownloadOutlined />} Tải về
                       </button>

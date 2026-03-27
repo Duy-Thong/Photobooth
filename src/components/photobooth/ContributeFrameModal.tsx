@@ -17,7 +17,6 @@ export default function ContributeFrameModal({ open, onClose }: Props) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [detecting, setDetecting] = useState(false)
   const [slots, setSlots] = useState(4)
-  const [frameType, setFrameType] = useState<FrameItem['frame']>('square')
 
   const [submitterName, setSubmitterName] = useState('')
   const [submitterContact, setSubmitterContact] = useState('')
@@ -43,7 +42,6 @@ export default function ContributeFrameModal({ open, onClose }: Props) {
       const detected = await detectFrameSlots(url)
       const count = detected.length
       setSlots(count)
-      setFrameType(count === 6 ? 'bigrectangle' : count === 4 ? 'square' : 'grid')
     } finally {
       setDetecting(false)
     }
@@ -54,7 +52,6 @@ export default function ContributeFrameModal({ open, onClose }: Props) {
     setFile(null)
     setPreviewUrl(null)
     setSlots(4)
-    setFrameType('square')
     setSubmitterName('')
     setSubmitterContact('')
     setSuggestedName('')
@@ -77,7 +74,6 @@ export default function ContributeFrameModal({ open, onClose }: Props) {
         submitterContact: submitterContact.trim(),
         suggestedName: suggestedName.trim(),
         suggestedCategory: suggestedCategory.trim(),
-        suggestedFrame: frameType,
         slots,
         note: note.trim(),
       })
@@ -101,7 +97,7 @@ export default function ContributeFrameModal({ open, onClose }: Props) {
           </div>
         ) : (
           <div className="flex justify-end gap-2">
-            <Button onClick={handleClose} style={{ background: '#1e1e1e', border: '1px solid #2a2a2a', color: '#888' }}>
+            <Button onClick={handleClose}>
               Hủy
             </Button>
             <Button
@@ -118,9 +114,6 @@ export default function ContributeFrameModal({ open, onClose }: Props) {
       centered
       width={480}
       styles={{
-        body: { background: '#1a1a1a', color: '#e5e5e5' },
-        header: { background: '#1a1a1a' },
-        footer: { background: '#1a1a1a' },
         mask: { backdropFilter: 'blur(4px)' },
       }}
     >
@@ -178,10 +171,7 @@ export default function ContributeFrameModal({ open, onClose }: Props) {
               <Select
                 size="small"
                 value={slots}
-                onChange={v => {
-                  setSlots(v)
-                  setFrameType(v === 6 ? 'bigrectangle' : v === 4 ? 'square' : 'grid')
-                }}
+                onChange={v => setSlots(v)}
                 options={[1,2,3,4,5,6,8,9].map(n => ({ value: n, label: `${n}` }))}
                 style={{ width: 70 }}
               />

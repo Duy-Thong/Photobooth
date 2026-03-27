@@ -39,7 +39,7 @@ export default function TopControls({
             onClick={onChooseFrame}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-[13px] font-semibold transition-all duration-150 ${
               selectedFrame
-                ? 'border-white/20 text-white bg-[#1a1a1a] hover:bg-[#222]'
+                ? 'border-white/20 text-white bg-[#0a0a0a] hover:bg-[#111]'
                 : 'border-dashed border-[#252525] text-[#c9c9c9] hover:border-[#383838] hover:text-white'
             }`}
           >
@@ -109,7 +109,7 @@ export default function TopControls({
           title={soundEnabled ? 'Tắt âm thanh chụp' : 'Bật âm thanh chụp'}
           className={`w-9 h-9 flex items-center justify-center rounded-lg border transition-all duration-150 ${
             soundEnabled
-              ? 'border-white/20 bg-[#1a1a1a] text-white hover:bg-[#222]'
+              ? 'border-white/20 bg-[#0a0a0a] text-white hover:bg-[#111]'
               : 'border-[#252525] text-[#555] hover:border-[#444] hover:text-[#888]'
           }`}
         >

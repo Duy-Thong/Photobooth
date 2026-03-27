@@ -28,14 +28,14 @@ export default function FrameModal({
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [activeCategoryName, setActiveCategoryName] = useState<string | null>(null)
-  const [slotFilter, setSlotFilter] = useState<number>(currentLayout.slots || 0)
+  const [layoutFilter, setLayoutFilter] = useState<string | null>(currentLayout.type)
   const [preview, setPreview] = useState<FrameItem | null>(null)
   const [contributeOpen, setContributeOpen] = useState(false)
 
   // Sync slotFilter when modal opens (layout may have changed outside)
   useEffect(() => {
-    if (open) setSlotFilter(currentLayout.slots || 0)
-  }, [open, currentLayout.slots])
+    if (open) setLayoutFilter(currentLayout.type)
+  }, [open, currentLayout.type])
 
   // Load data when modal opens — wait for Firebase, no static preload
   useEffect(() => {
@@ -50,8 +50,8 @@ export default function FrameModal({
   }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const filtered = useMemo(() => {
-    let list = slotFilter > 0
-      ? frames.filter(f => f.slots === slotFilter)
+    let list = layoutFilter
+      ? frames.filter(f => f.layout === layoutFilter)
       : frames
     if (activeCategoryName !== null) {
       list = list.filter((f) => f.categoryName === activeCategoryName)
@@ -61,21 +61,21 @@ export default function FrameModal({
       list = list.filter((f) => f.name.toLowerCase().includes(q))
     }
     return list
-  }, [frames, slotFilter, activeCategoryName, search])
+  }, [frames, layoutFilter, activeCategoryName, search])
 
   // Categories available for current slot filter
   const availableCategories = useMemo(() => {
-    const base = slotFilter > 0
-      ? frames.filter(f => f.slots === slotFilter)
+    const base = layoutFilter
+      ? frames.filter(f => f.layout === layoutFilter)
       : frames
     const names = new Set(base.map(f => f.categoryName))
     return categories.filter(c => names.has(c.name))
-  }, [frames, categories, slotFilter])
+  }, [frames, categories, layoutFilter])
 
   // Distinct slot counts in ALL frames
-  const availableSlots = useMemo(() => {
-    const counts = [...new Set(frames.map(f => f.slots))].sort((a, b) => a - b)
-    return counts
+  const availableLayouts = useMemo(() => {
+    const layouts = [...new Set(frames.map(f => f.layout).filter(Boolean) as string[])].sort()
+    return layouts
   }, [frames])
 
   function handleConfirm() {
@@ -124,18 +124,18 @@ export default function FrameModal({
         centered
       >
         <div className="px-4 pt-3 pb-2 flex items-center gap-2 flex-wrap">
-          <span className="text-[10px] text-white font-semibold uppercase tracking-[0.15em] shrink-0">Số Ảnh:</span>
-          {[0, ...availableSlots].map(n => (
+          <span className="text-[10px] text-white font-semibold uppercase tracking-[0.15em] shrink-0">Layout:</span>
+          {['Tất cả', ...availableLayouts].map(ly => (
             <button
-              key={n}
-              onClick={() => { setSlotFilter(n); setActiveCategoryName(null) }}
+              key={ly}
+              onClick={() => { setLayoutFilter(ly === 'Tất cả' ? null : ly); setActiveCategoryName(null) }}
               className={`text-[11px] px-2.5 py-0.5 rounded-md border transition-all duration-150 ${
-                slotFilter === n
+                (layoutFilter === ly || (ly === 'Tất cả' && !layoutFilter))
                   ? 'bg-white text-black border-white font-semibold'
                   : 'border-[#252525] text-[#5a5a5a] hover:border-[#3a3a3a] hover:text-[#bbb]'
               }`}
             >
-              {n === 0 ? 'Tất cả' : n}
+              {ly}
             </button>
           ))}
         </div>

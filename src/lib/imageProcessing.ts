@@ -171,8 +171,38 @@ function detectSlotsFromImg(img: HTMLImageElement): SlotRect[] {
   }
 
   // Sort top→bottom, then left→right
-  slots.sort((a, b) => a.y !== b.y ? a.y - b.y : a.x - b.x)
+  slots.sort((a, b) => (Math.abs(a.y - b.y) > 20 ? a.y - b.y : a.x - b.x))
   return slots
+}
+
+/**
+ * Inferred layout string (e.g., '1x4', '2x2') based on slot coordinates.
+ */
+export function getLayoutFromSlots(slots: SlotRect[]): string {
+  if (!slots || slots.length === 0) return '0x0'
+  
+  const getUniqueGroups = (coords: number[], tolerance = 60) => {
+    const sorted = [...coords].sort((a, b) => a - b)
+    const groups: number[] = []
+    sorted.forEach(c => {
+      if (groups.length === 0 || c - groups[groups.length - 1] > tolerance) {
+        groups.push(c)
+      }
+    })
+    return groups.length
+  }
+
+  const cols = getUniqueGroups(slots.map(s => s.x))
+  const rows = getUniqueGroups(slots.map(s => s.y))
+  
+  // Final count check
+  if (cols * rows < slots.length || (cols === 1 && rows === 1 && slots.length > 1)) {
+    const finalCols = Math.min(slots.length, cols > 0 ? cols : 1)
+    const finalRows = Math.ceil(slots.length / finalCols)
+    return `${finalCols}x${finalRows}`
+  }
+
+  return `${cols}x${rows}`
 }
 
 // ─── Cover-fit helper ─────────────────────────────────────────────────────────

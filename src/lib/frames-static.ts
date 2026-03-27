@@ -41,7 +41,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 176,
         "h": 132
       }
-    ]
+    ],
+    "layout": "2x3"
   },
   {
     "id": 68,
@@ -76,7 +77,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 772,
         "h": 568
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 69,
@@ -111,7 +113,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 768,
         "h": 568
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 70,
@@ -158,7 +161,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 520,
         "h": 392
       }
-    ]
+    ],
+    "layout": "2x3"
   },
   {
     "id": 74,
@@ -193,7 +197,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 768,
         "h": 560
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 75,
@@ -228,7 +233,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 772,
         "h": 572
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 76,
@@ -263,7 +269,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 768,
         "h": 560
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 77,
@@ -298,7 +305,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 772,
         "h": 568
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 78,
@@ -345,7 +353,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 524,
         "h": 392
       }
-    ]
+    ],
+    "layout": "2x3"
   },
   {
     "id": 80,
@@ -380,7 +389,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 756,
         "h": 552
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 81,
@@ -415,7 +425,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 756,
         "h": 552
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 84,
@@ -450,7 +461,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 772,
         "h": 568
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 85,
@@ -497,7 +509,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 524,
         "h": 392
       }
-    ]
+    ],
+    "layout": "2x3"
   },
   {
     "id": 87,
@@ -544,7 +557,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 516,
         "h": 384
       }
-    ]
+    ],
+    "layout": "2x3"
   },
   {
     "id": 88,
@@ -591,7 +605,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 516,
         "h": 384
       }
-    ]
+    ],
+    "layout": "2x3"
   },
   {
     "id": 91,
@@ -638,7 +653,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 524,
         "h": 388
       }
-    ]
+    ],
+    "layout": "2x3"
   },
   {
     "id": 95,
@@ -685,7 +701,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 524,
         "h": 388
       }
-    ]
+    ],
+    "layout": "2x3"
   },
   {
     "id": 105,
@@ -720,7 +737,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 772,
         "h": 572
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 107,
@@ -767,7 +785,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 524,
         "h": 388
       }
-    ]
+    ],
+    "layout": "2x3"
   },
   {
     "id": 108,
@@ -802,7 +821,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 772,
         "h": 572
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 118,
@@ -837,7 +857,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 756,
         "h": 552
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 123,
@@ -872,7 +893,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 756,
         "h": 548
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 129,
@@ -907,7 +929,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 756,
         "h": 552
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 133,
@@ -942,7 +965,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 768,
         "h": 564
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 138,
@@ -977,7 +1001,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 768,
         "h": 564
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 150,
@@ -1012,7 +1037,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 752,
         "h": 548
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 152,
@@ -1047,7 +1073,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 756,
         "h": 548
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 155,
@@ -1082,7 +1109,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 756,
         "h": 548
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 167,
@@ -1117,7 +1145,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 772,
         "h": 568
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 170,
@@ -1152,7 +1181,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 756,
         "h": 548
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 175,
@@ -1187,7 +1217,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 772,
         "h": 568
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 176,
@@ -1222,7 +1253,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 772,
         "h": 568
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 184,
@@ -1257,7 +1289,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 772,
         "h": 560
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 185,
@@ -1292,7 +1325,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 756,
         "h": 548
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 192,
@@ -1327,7 +1361,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 772,
         "h": 568
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 195,
@@ -1368,7 +1403,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 772,
         "h": 568
       }
-    ]
+    ],
+    "layout": "2x3"
   },
   {
     "id": 197,
@@ -1403,7 +1439,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 772,
         "h": 568
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 206,
@@ -1438,7 +1475,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 756,
         "h": 548
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 223,
@@ -1473,7 +1511,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 772,
         "h": 568
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 224,
@@ -1508,7 +1547,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 764,
         "h": 560
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 231,
@@ -1543,7 +1583,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 768,
         "h": 560
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 237,
@@ -1572,7 +1613,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 748,
         "h": 536
       }
-    ]
+    ],
+    "layout": "1x3"
   },
   {
     "id": 248,
@@ -1607,7 +1649,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 756,
         "h": 552
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 252,
@@ -1648,7 +1691,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 764,
         "h": 560
       }
-    ]
+    ],
+    "layout": "2x3"
   },
   {
     "id": 264,
@@ -1713,7 +1757,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 524,
         "h": 588
       }
-    ]
+    ],
+    "layout": "5x2"
   },
   {
     "id": 265,
@@ -1748,7 +1793,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 756,
         "h": 524
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 269,
@@ -1783,7 +1829,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 772,
         "h": 572
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 270,
@@ -1818,7 +1865,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 1632,
         "h": 1184
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 276,
@@ -1853,7 +1901,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 768,
         "h": 568
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 278,
@@ -1888,7 +1937,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 760,
         "h": 556
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 297,
@@ -1923,7 +1973,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 508,
         "h": 680
       }
-    ]
+    ],
+    "layout": "2x2"
   },
   {
     "id": 298,
@@ -1958,7 +2009,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 508,
         "h": 684
       }
-    ]
+    ],
+    "layout": "2x2"
   },
   {
     "id": 311,
@@ -1993,7 +2045,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 756,
         "h": 552
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 312,
@@ -2028,7 +2081,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 772,
         "h": 564
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 314,
@@ -2063,7 +2117,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 764,
         "h": 460
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 316,
@@ -2098,7 +2153,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 756,
         "h": 548
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 317,
@@ -2133,7 +2189,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 500,
         "h": 592
       }
-    ]
+    ],
+    "layout": "2x2"
   },
   {
     "id": 319,
@@ -2168,7 +2225,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 772,
         "h": 564
       }
-    ]
+    ],
+    "layout": "2x2"
   },
   {
     "id": 320,
@@ -2203,7 +2261,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 2560,
         "h": 1876
       }
-    ]
+    ],
+    "layout": "2x2"
   },
   {
     "id": 325,
@@ -2238,7 +2297,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 508,
         "h": 684
       }
-    ]
+    ],
+    "layout": "2x2"
   },
   {
     "id": 327,
@@ -2267,7 +2327,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 768,
         "h": 564
       }
-    ]
+    ],
+    "layout": "1x3"
   },
   {
     "id": 333,
@@ -2302,7 +2363,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 756,
         "h": 548
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 334,
@@ -2331,7 +2393,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 772,
         "h": 564
       }
-    ]
+    ],
+    "layout": "2x2"
   },
   {
     "id": 335,
@@ -2366,7 +2429,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 508,
         "h": 684
       }
-    ]
+    ],
+    "layout": "2x2"
   },
   {
     "id": 336,
@@ -2401,7 +2465,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 508,
         "h": 684
       }
-    ]
+    ],
+    "layout": "2x2"
   },
   {
     "id": 337,
@@ -2436,7 +2501,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 508,
         "h": 684
       }
-    ]
+    ],
+    "layout": "2x2"
   },
   {
     "id": 338,
@@ -2471,7 +2537,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 512,
         "h": 684
       }
-    ]
+    ],
+    "layout": "2x2"
   },
   {
     "id": 339,
@@ -2506,7 +2573,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 512,
         "h": 684
       }
-    ]
+    ],
+    "layout": "2x2"
   },
   {
     "id": 340,
@@ -2541,7 +2609,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 772,
         "h": 564
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 341,
@@ -2576,7 +2645,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 772,
         "h": 564
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 342,
@@ -2611,7 +2681,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 772,
         "h": 564
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 343,
@@ -2646,7 +2717,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 772,
         "h": 564
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 345,
@@ -2681,7 +2753,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 772,
         "h": 564
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 346,
@@ -2716,7 +2789,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 772,
         "h": 564
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 347,
@@ -2751,7 +2825,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 508,
         "h": 684
       }
-    ]
+    ],
+    "layout": "2x2"
   },
   {
     "id": 348,
@@ -2786,7 +2861,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 512,
         "h": 684
       }
-    ]
+    ],
+    "layout": "2x2"
   },
   {
     "id": 349,
@@ -2833,7 +2909,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 524,
         "h": 392
       }
-    ]
+    ],
+    "layout": "2x3"
   },
   {
     "id": 350,
@@ -2880,7 +2957,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 524,
         "h": 392
       }
-    ]
+    ],
+    "layout": "2x3"
   },
   {
     "id": 351,
@@ -2927,7 +3005,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 524,
         "h": 392
       }
-    ]
+    ],
+    "layout": "2x3"
   },
   {
     "id": 352,
@@ -2974,7 +3053,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 524,
         "h": 392
       }
-    ]
+    ],
+    "layout": "2x3"
   },
   {
     "id": 353,
@@ -3021,7 +3101,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 524,
         "h": 392
       }
-    ]
+    ],
+    "layout": "2x3"
   },
   {
     "id": 354,
@@ -3068,7 +3149,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 524,
         "h": 392
       }
-    ]
+    ],
+    "layout": "2x3"
   },
   {
     "id": 358,
@@ -3103,7 +3185,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 752,
         "h": 544
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 364,
@@ -3138,7 +3221,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 772,
         "h": 564
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 365,
@@ -3185,7 +3269,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 120,
         "h": 160
       }
-    ]
+    ],
+    "layout": "3x2"
   },
   {
     "id": 375,
@@ -3220,7 +3305,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 772,
         "h": 564
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 377,
@@ -3255,7 +3341,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 772,
         "h": 564
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 379,
@@ -3290,7 +3377,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 772,
         "h": 564
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 385,
@@ -3325,7 +3413,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 772,
         "h": 564
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 386,
@@ -3354,7 +3443,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 764,
         "h": 556
       }
-    ]
+    ],
+    "layout": "1x3"
   },
   {
     "id": 387,
@@ -3383,7 +3473,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 764,
         "h": 556
       }
-    ]
+    ],
+    "layout": "1x3"
   },
   {
     "id": 388,
@@ -3412,7 +3503,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 764,
         "h": 556
       }
-    ]
+    ],
+    "layout": "1x3"
   },
   {
     "id": 389,
@@ -3441,7 +3533,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 764,
         "h": 556
       }
-    ]
+    ],
+    "layout": "1x3"
   },
   {
     "id": 390,
@@ -3470,7 +3563,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 764,
         "h": 556
       }
-    ]
+    ],
+    "layout": "1x3"
   },
   {
     "id": 413,
@@ -3505,7 +3599,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 2408,
         "h": 1764
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 427,
@@ -3540,7 +3635,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 756,
         "h": 500
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 431,
@@ -3569,7 +3665,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 764,
         "h": 556
       }
-    ]
+    ],
+    "layout": "1x3"
   },
   {
     "id": 441,
@@ -3598,7 +3695,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 772,
         "h": 564
       }
-    ]
+    ],
+    "layout": "1x3"
   },
   {
     "id": 455,
@@ -3633,7 +3731,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 512,
         "h": 680
       }
-    ]
+    ],
+    "layout": "2x2"
   },
   {
     "id": 461,
@@ -3662,7 +3761,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 764,
         "h": 556
       }
-    ]
+    ],
+    "layout": "1x3"
   },
   {
     "id": 462,
@@ -3691,7 +3791,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 764,
         "h": 556
       }
-    ]
+    ],
+    "layout": "1x3"
   },
   {
     "id": 465,
@@ -3726,7 +3827,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 772,
         "h": 564
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 470,
@@ -3761,7 +3863,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 772,
         "h": 564
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 471,
@@ -3796,7 +3899,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 772,
         "h": 564
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 472,
@@ -3831,7 +3935,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 772,
         "h": 564
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 473,
@@ -3866,7 +3971,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 512,
         "h": 684
       }
-    ]
+    ],
+    "layout": "2x2"
   },
   {
     "id": 474,
@@ -3901,7 +4007,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 772,
         "h": 564
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 478,
@@ -3936,7 +4043,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 772,
         "h": 564
       }
-    ]
+    ],
+    "layout": "2x2"
   },
   {
     "id": 479,
@@ -3971,7 +4079,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 772,
         "h": 564
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 482,
@@ -4006,7 +4115,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 772,
         "h": 564
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 483,
@@ -4035,7 +4145,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 772,
         "h": 564
       }
-    ]
+    ],
+    "layout": "1x3"
   },
   {
     "id": 484,
@@ -4070,7 +4181,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 772,
         "h": 564
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 486,
@@ -4105,7 +4217,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 768,
         "h": 560
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 491,
@@ -4140,7 +4253,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 772,
         "h": 564
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 492,
@@ -4175,7 +4289,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 772,
         "h": 564
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 493,
@@ -4210,7 +4325,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 404,
         "h": 580
       }
-    ]
+    ],
+    "layout": "2x2"
   },
   {
     "id": 495,
@@ -4245,7 +4361,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 768,
         "h": 564
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 496,
@@ -4280,7 +4397,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 768,
         "h": 560
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 500,
@@ -4315,7 +4433,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 768,
         "h": 560
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 504,
@@ -4350,7 +4469,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 508,
         "h": 688
       }
-    ]
+    ],
+    "layout": "2x2"
   },
   {
     "id": 506,
@@ -4385,7 +4505,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 772,
         "h": 564
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 507,
@@ -4420,7 +4541,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 768,
         "h": 568
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 508,
@@ -4455,7 +4577,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 772,
         "h": 564
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 509,
@@ -4502,7 +4625,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 520,
         "h": 392
       }
-    ]
+    ],
+    "layout": "2x3"
   },
   {
     "id": 510,
@@ -4537,7 +4661,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 772,
         "h": 564
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 511,
@@ -4572,7 +4697,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 728,
         "h": 532
       }
-    ]
+    ],
+    "layout": "2x2"
   },
   {
     "id": 515,
@@ -4607,7 +4733,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 496,
         "h": 300
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 522,
@@ -4642,7 +4769,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 1688,
         "h": 1252
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 524,
@@ -4677,7 +4805,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 560,
         "h": 424
       }
-    ]
+    ],
+    "layout": "2x2"
   },
   {
     "id": 525,
@@ -4712,7 +4841,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 552,
         "h": 356
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 526,
@@ -4747,7 +4877,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 672,
         "h": 440
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 528,
@@ -4782,7 +4913,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 1116,
         "h": 560
       }
-    ]
+    ],
+    "layout": "3x2"
   },
   {
     "id": 529,
@@ -4817,7 +4949,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 672,
         "h": 440
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 530,
@@ -4852,7 +4985,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 600,
         "h": 356
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 531,
@@ -4887,7 +5021,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 388,
         "h": 212
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 532,
@@ -4922,7 +5057,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 716,
         "h": 400
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 533,
@@ -4957,7 +5093,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 604,
         "h": 916
       }
-    ]
+    ],
+    "layout": "2x2"
   },
   {
     "id": 534,
@@ -4992,7 +5129,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 624,
         "h": 376
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 535,
@@ -5027,7 +5165,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 612,
         "h": 376
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 536,
@@ -5062,7 +5201,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 3224,
         "h": 1876
       }
-    ]
+    ],
+    "layout": "2x2"
   },
   {
     "id": 537,
@@ -5097,7 +5237,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 612,
         "h": 364
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 538,
@@ -5132,7 +5273,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 676,
         "h": 592
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 539,
@@ -5167,7 +5309,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 860,
         "h": 644
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 540,
@@ -5202,7 +5345,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 936,
         "h": 700
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 541,
@@ -5237,7 +5381,8 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 908,
         "h": 684
       }
-    ]
+    ],
+    "layout": "1x4"
   },
   {
     "id": 542,
@@ -5272,6 +5417,7 @@ export const STATIC_FRAMES: FrameItem[] = [
         "w": 568,
         "h": 708
       }
-    ]
+    ],
+    "layout": "3x2"
   }
-]
+];

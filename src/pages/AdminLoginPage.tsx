@@ -21,7 +21,7 @@ export default function AdminLoginPage() {
           <p className="text-[#555] text-[10px] uppercase tracking-widest mt-1">Admin Panel</p>
         </div>
 
-        <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl p-6">
+        <div className="bg-[#0a0a0a] border border-[#2a2a2a] rounded-2xl p-6">
           <Form
             form={form}
             layout="vertical"

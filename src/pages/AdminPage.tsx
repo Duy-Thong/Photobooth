@@ -20,7 +20,7 @@ import {
 } from '@/lib/frameService'
 import { fetchFeedbacks, deleteFeedback } from '@/lib/feedbackService'
 import type { Feedback } from '@/types/feedback'
-import { detectFrameSlots } from '@/lib/imageProcessing'
+import { detectFrameSlots, getLayoutFromSlots } from '@/lib/imageProcessing'
 import FrameSlotEditor from '@/components/admin/FrameSlotEditor'
 import { type SlotRect } from '@/types/photobooth'
 import { Button, Input, Modal, Select, Spin, Empty, Tooltip, Table, Tag, Checkbox, Form, DatePicker } from 'antd'
@@ -28,6 +28,15 @@ import dayjs from 'dayjs'
 import { DeleteOutlined, ReloadOutlined, LogoutOutlined, PlayCircleOutlined, DeleteFilled, ClockCircleOutlined, UploadOutlined, PictureOutlined, EditOutlined, CheckOutlined, CloseOutlined, UserOutlined } from '@ant-design/icons'
 import type { AdminUser } from '@/types/admin'
 import { fetchAllAdmins, createOrUpdateAdmin, DEFAULT_PERMISSIONS } from '@/lib/adminService'
+const LAYOUT_OPTIONS = [
+  { value: '1x1', label: '1x1' },
+  { value: '1x2', label: '1x2' },
+  { value: '1x3', label: '1x3' },
+  { value: '1x4', label: '1x4' },
+  { value: '2x2', label: '2x2' },
+  { value: '2x3', label: '2x3' },
+  { value: '2x4', label: '2x4' },
+]
 
 interface MediaItem {
   name: string
@@ -110,28 +119,28 @@ export default function AdminPage() {
   const [framesLoading, setFramesLoading] = useState(false)
   const [deletingFrameId, setDeletingFrameId] = useState<string | null>(null)
   const [frameSearch, setFrameSearch] = useState('')
-  const [frameSlotFilter, setFrameSlotFilter] = useState<number | null>(null)
+  const [frameLayoutFilter, setFrameLayoutFilter] = useState<string | null>(null)
   const [frameCategoryFilter, setFrameCategoryFilter] = useState<string | null>(null)
 
-  const frameSlotOptions = useMemo(() =>
-    [...new Set(customFrames.map(f => f.slots))].sort((a, b) => a - b)
+  const frameLayoutOptions = useMemo(() =>
+    [...new Set(customFrames.map(f => f.layout).filter(Boolean) as string[])].sort()
   , [customFrames])
 
   const frameCategoryOptions = useMemo(() => {
-    const base = frameSlotFilter !== null ? customFrames.filter(f => f.slots === frameSlotFilter) : customFrames
+    const base = frameLayoutFilter !== null ? customFrames.filter(f => f.layout === frameLayoutFilter) : customFrames
     return [...new Set(base.map(f => f.categoryName))].sort((a, b) => a.localeCompare(b, 'vi'))
-  }, [customFrames, frameSlotFilter])
+  }, [customFrames, frameLayoutFilter])
 
   const filteredFrames = useMemo(() => {
     let list = customFrames
-    if (frameSlotFilter !== null) list = list.filter(f => f.slots === frameSlotFilter)
+    if (frameLayoutFilter !== null) list = list.filter(f => f.layout === frameLayoutFilter)
     if (frameCategoryFilter !== null) list = list.filter(f => f.categoryName === frameCategoryFilter)
     if (frameSearch.trim()) {
       const q = frameSearch.toLowerCase()
       list = list.filter(f => f.name.toLowerCase().includes(q) || f.categoryName.toLowerCase().includes(q))
     }
     return list
-  }, [customFrames, frameSlotFilter, frameCategoryFilter, frameSearch])
+  }, [customFrames, frameLayoutFilter, frameCategoryFilter, frameSearch])
 
   // Upload modal state
   const [showUploadModal, setShowUploadModal] = useState(false)
@@ -141,7 +150,7 @@ export default function AdminPage() {
   const [uploadSlotsData, setUploadSlotsData] = useState<SlotRect[]>([])
   const [uploadName, setUploadName] = useState('')
   const [uploadCategory, setUploadCategory] = useState('')
-  const [uploadFrameType, setUploadFrameType] = useState<FrameItem['frame']>('square')
+  const [uploadLayout, setUploadLayout] = useState('')
   const [uploading, setUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -150,7 +159,7 @@ export default function AdminPage() {
   const [editName, setEditName] = useState('')
   const [editCategory, setEditCategory] = useState('')
   const [editSlotsData, setEditSlotsData] = useState<SlotRect[]>([])
-  const [editFrameType, setEditFrameType] = useState<FrameItem['frame']>('square')
+  const [editLayout, setEditLayout] = useState('')
   const [editSaving, setEditSaving] = useState(false)
 
   const openEditFrame = (frame: FrameItem) => {
@@ -158,23 +167,24 @@ export default function AdminPage() {
     setEditName(frame.name)
     setEditCategory(frame.categoryName)
     setEditSlotsData(frame.slots_data || [])
-    setEditFrameType(frame.frame)
+    setEditLayout(frame.layout || (frame.slots_data ? getLayoutFromSlots(frame.slots_data) : ''))
   }
 
   const handleSaveEdit = async () => {
     if (!editingFrame?.firestoreId) return
     setEditSaving(true)
     try {
+      const newLayout = editLayout || getLayoutFromSlots(editSlotsData)
       await updateFrameService(editingFrame.firestoreId, {
         name: editName.trim(),
         categoryName: editCategory.trim(),
         slots: editSlotsData.length,
         slots_data: editSlotsData,
-        frame: editFrameType,
+        layout: newLayout,
       })
       setCustomFrames(prev => prev.map(f =>
         f.firestoreId === editingFrame.firestoreId
-          ? { ...f, name: editName.trim(), categoryName: editCategory.trim(), slots: editSlotsData.length, slots_data: editSlotsData, frame: editFrameType }
+          ? { ...f, name: editName.trim(), categoryName: editCategory.trim(), slots: editSlotsData.length, slots_data: editSlotsData, layout: newLayout }
           : f
       ))
       setEditingFrame(null)
@@ -227,9 +237,9 @@ export default function AdminPage() {
       cancelText: 'Hủy',
       centered: true,
       styles: {
-        body: { background: '#1a1a1a', color: '#e5e5e5' },
-        header: { background: '#1a1a1a' },
-        footer: { background: '#1a1a1a' },
+        body: { background: '#000', color: '#e5e5e5' },
+        header: { background: '#000' },
+        footer: { background: '#000' },
         mask: { backdropFilter: 'blur(4px)' },
       },
       onOk: async () => {
@@ -391,9 +401,9 @@ export default function AdminPage() {
       cancelText: 'Hủy',
       centered: true,
       styles: {
-        body: { background: '#1a1a1a', color: '#e5e5e5' },
-        header: { background: '#1a1a1a' },
-        footer: { background: '#1a1a1a' },
+        body: { background: '#000', color: '#e5e5e5' },
+        header: { background: '#000' },
+        footer: { background: '#000' },
         mask: { backdropFilter: 'blur(4px)' },
       },
       onOk: async () => {
@@ -423,9 +433,9 @@ export default function AdminPage() {
       cancelText: 'Hủy',
       centered: true,
       styles: {
-        body: { background: '#1a1a1a', color: '#e5e5e5' },
-        header: { background: '#1a1a1a' },
-        footer: { background: '#1a1a1a' },
+        body: { background: '#000', color: '#e5e5e5' },
+        header: { background: '#000' },
+        footer: { background: '#000' },
         mask: { backdropFilter: 'blur(4px)' },
       },
       onOk: async () => {
@@ -455,9 +465,9 @@ export default function AdminPage() {
         centered: true,
         okText: 'Đóng',
         styles: {
-          body: { background: '#1a1a1a', color: '#e5e5e5' },
-          header: { background: '#1a1a1a' },
-          footer: { background: '#1a1a1a' },
+          body: { background: '#000', color: '#e5e5e5' },
+          header: { background: '#000' },
+          footer: { background: '#000' },
         },
       })
       return
@@ -470,9 +480,9 @@ export default function AdminPage() {
       cancelText: 'Hủy',
       centered: true,
       styles: {
-        body: { background: '#1a1a1a', color: '#e5e5e5' },
-        header: { background: '#1a1a1a' },
-        footer: { background: '#1a1a1a' },
+        body: { background: '#000', color: '#e5e5e5' },
+        header: { background: '#000' },
+        footer: { background: '#000' },
         mask: { backdropFilter: 'blur(4px)' },
       },
       onOk: async () => {
@@ -503,9 +513,9 @@ export default function AdminPage() {
       cancelText: 'Hủy',
       centered: true,
       styles: {
-        body: { background: '#1a1a1a', color: '#e5e5e5' },
-        header: { background: '#1a1a1a' },
-        footer: { background: '#1a1a1a' },
+        body: { background: '#000', color: '#e5e5e5' },
+        header: { background: '#000' },
+        footer: { background: '#000' },
         mask: { backdropFilter: 'blur(4px)' },
       },
       onOk: async () => {
@@ -678,7 +688,8 @@ export default function AdminPage() {
     try {
       const slots = await detectFrameSlots(url)
       setUploadSlotsData(slots)
-      setUploadFrameType(slots.length === 6 ? 'bigrectangle' : slots.length === 4 ? 'square' : 'grid')
+      const layoutStr = getLayoutFromSlots(slots)
+      setUploadLayout(layoutStr)
     } finally {
       setDetectingSlots(false)
     }
@@ -692,7 +703,7 @@ export default function AdminPage() {
     setUploadSlotsData([])
     setUploadName('')
     setUploadCategory('')
-    setUploadFrameType('square')
+    setUploadLayout('')
   }
 
   const handleUploadFrame = async () => {
@@ -704,7 +715,7 @@ export default function AdminPage() {
         categoryName: uploadCategory.trim(),
         slots: uploadSlotsData.length,
         slots_data: uploadSlotsData,
-        frame: uploadFrameType,
+        layout: uploadLayout || getLayoutFromSlots(uploadSlotsData),
       })
       setCustomFrames(prev => [...prev, frame].sort((a, b) => a.name.localeCompare(b.name, 'vi')))
       handleCloseUploadModal()
@@ -725,9 +736,9 @@ export default function AdminPage() {
       cancelText: 'Hủy',
       centered: true,
       styles: {
-        body: { background: '#1a1a1a', color: '#e5e5e5' },
-        header: { background: '#1a1a1a' },
-        footer: { background: '#1a1a1a' },
+        body: { background: '#000', color: '#e5e5e5' },
+        header: { background: '#000' },
+        footer: { background: '#000' },
         mask: { backdropFilter: 'blur(4px)' },
       },
       onOk: async () => {
@@ -839,7 +850,7 @@ export default function AdminPage() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {selectedPaths.size > 0 && (
-            <div className="flex items-center gap-2 bg-[#1a1a1a] border border-blue-900/50 rounded-lg px-2 py-1 mr-2">
+            <div className="flex items-center gap-2 bg-[#0a0a0a] border border-blue-900/50 rounded-lg px-2 py-1 mr-2">
               <span className="text-blue-400 text-[10px] font-bold px-1 uppercase tracking-wider">Đã chọn {selectedPaths.size}</span>
               
               {tab === 'photos' && (
@@ -1008,21 +1019,21 @@ export default function AdminPage() {
             />
           </div>
 
-          {/* Slot filter pills */}
-          {frameSlotOptions.length > 1 && (
+          {/* Layout filter pills */}
+          {frameLayoutOptions.length > 1 && (
             <div className="flex items-center gap-2 flex-wrap mb-3">
-              <span className="text-[10px] text-white font-semibold uppercase tracking-[0.15em] shrink-0">Số slot:</span>
-              {[null, ...frameSlotOptions].map(n => (
+              <span className="text-[10px] text-white font-semibold uppercase tracking-[0.15em] shrink-0">Layout:</span>
+              {[null, ...frameLayoutOptions].map(ly => (
                 <button
-                  key={n ?? 'all'}
-                  onClick={() => { setFrameSlotFilter(n); setFrameCategoryFilter(null) }}
+                  key={ly ?? 'all'}
+                  onClick={() => { setFrameLayoutFilter(ly); setFrameCategoryFilter(null) }}
                   className={`text-[11px] px-2.5 py-0.5 rounded-md border transition-all duration-150 ${
-                    frameSlotFilter === n
+                    frameLayoutFilter === ly
                       ? 'bg-white text-black border-white font-semibold'
                       : 'border-[#252525] text-[#5a5a5a] hover:border-[#3a3a3a] hover:text-[#bbb]'
                   }`}
                 >
-                  {n === null ? 'Tất cả' : `${n} slot`}
+                  {ly === null ? 'Tất cả' : ly}
                 </button>
               ))}
             </div>
@@ -1061,7 +1072,7 @@ export default function AdminPage() {
               {filteredFrames.map(frame => (
                 <div
                   key={frame.firestoreId}
-                  className="group relative bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl overflow-hidden hover:border-[#444] transition-colors"
+                  className="group relative bg-[#0a0a0a] border border-[#2a2a2a] rounded-xl overflow-hidden hover:border-[#444] transition-colors"
                 >
                   <div className="p-1 bg-[#111] flex items-center justify-center aspect-3/4">
                     <img
@@ -1074,7 +1085,7 @@ export default function AdminPage() {
                   <div className="p-2">
                     <p className="text-white text-xs font-medium truncate">{frame.name}</p>
                     <p className="text-[#555] text-[10px] truncate">{frame.categoryName}</p>
-                    <p className="text-[#3a3a3a] text-[10px]">{frame.slots} slot · {frame.frame}</p>
+                    <p className="text-[#3a3a3a] text-[10px]">{frame.slots} slot · Layout: {frame.layout || 'N/A'}</p>
                   </div>
                   <Tooltip title="Chỉnh sửa">
                     <button
@@ -1128,7 +1139,7 @@ export default function AdminPage() {
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
               {requests.map(req => (
-                <div key={req.firestoreId} className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl overflow-hidden hover:border-[#363636] transition-colors">
+                <div key={req.firestoreId} className="bg-[#0a0a0a] border border-[#2a2a2a] rounded-xl overflow-hidden hover:border-[#363636] transition-colors">
                   {/* Preview */}
                   <div
                     className="bg-[#111] flex items-center justify-center aspect-3/4 cursor-pointer"
@@ -1261,7 +1272,7 @@ export default function AdminPage() {
             {items.map(item => (
               <div
                 key={item.fullPath}
-                className={`group relative bg-[#1a1a1a] border rounded-xl overflow-hidden transition-all duration-200 ${
+                className={`group relative bg-[#0a0a0a] border rounded-xl overflow-hidden transition-all duration-200 ${
                   selectedPaths.has(item.fullPath) 
                     ? 'border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.2)]' 
                     : 'border-[#2a2a2a] hover:border-[#444]'
@@ -1385,12 +1396,6 @@ export default function AdminPage() {
         }
         centered
         width={940}
-        styles={{
-          body: { background: '#1a1a1a', color: '#e5e5e5' },
-          header: { background: '#1a1a1a' },
-          footer: { background: '#1a1a1a' },
-          mask: { backdropFilter: 'blur(4px)' },
-        }}
       >
         <div className="flex flex-col md:flex-row gap-6 py-2">
           {/* Left - Slot Editor */}
@@ -1429,7 +1434,7 @@ export default function AdminPage() {
                 value={uploadName}
                 onChange={e => setUploadName(e.target.value)}
                 placeholder="Ví dụ: HelloKitty, Y2K..."
-                style={{ background: '#111', borderColor: '#222', color: '#e5e5e5' }}
+                style={{ borderColor: '#222' }}
               />
             </div>
 
@@ -1441,7 +1446,7 @@ export default function AdminPage() {
                 onChange={e => setUploadCategory(e.target.value)}
                 placeholder="Ví dụ: Frame Basic, Frame Cartoon..."
                 list="known-categories"
-                style={{ background: '#111', borderColor: '#222', color: '#e5e5e5' }}
+                style={{ borderColor: '#222' }}
               />
               <datalist id="known-categories">
                 <option value="Frame Basic" />
@@ -1451,26 +1456,23 @@ export default function AdminPage() {
               </datalist>
             </div>
 
+            {/* Layout */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[#888] text-xs font-semibold uppercase tracking-wider">Layout (Bố cục)</label>
+              <Select
+                value={uploadLayout}
+                onChange={v => setUploadLayout(v)}
+                placeholder="Chọn bố cục..."
+                options={LAYOUT_OPTIONS}
+                showSearch
+              />
+            </div>
+
             {/* Slot count info */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[#888] text-xs font-semibold uppercase tracking-wider">Số Slot</label>
-                <div className="bg-[#111] border border-[#222] rounded px-3 py-1.5 text-white font-bold h-8 flex items-center">
-                  {uploadSlotsData.length}
-                </div>
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[#888] text-xs font-semibold uppercase tracking-wider">Loại</label>
-                <Select
-                  value={uploadFrameType}
-                  onChange={setUploadFrameType}
-                  options={[
-                    { value: 'square', label: 'square' },
-                    { value: 'bigrectangle', label: 'tall' },
-                    { value: 'grid', label: 'grid' },
-                  ]}
-                  style={{ width: '100%' }}
-                />
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[#888] text-xs font-semibold uppercase tracking-wider">Số Slot</label>
+              <div className="bg-[#050505] border border-[#222] rounded px-3 py-1.5 text-white font-bold h-8 flex items-center">
+                {uploadSlotsData.length}
               </div>
             </div>
           </div>
@@ -1543,12 +1545,6 @@ export default function AdminPage() {
         }
         centered
         width={940}
-        styles={{
-          body: { background: '#1a1a1a', color: '#e5e5e5' },
-          header: { background: '#1a1a1a' },
-          footer: { background: '#1a1a1a' },
-          mask: { backdropFilter: 'blur(4px)' },
-        }}
       >
         <div className="flex flex-col md:flex-row gap-6 py-2">
           {/* Left - Slot Editor */}
@@ -1567,13 +1563,13 @@ export default function AdminPage() {
             <div className="flex flex-col gap-1.5">
               <label className="text-[#888] text-xs font-semibold uppercase tracking-wider">Tên Khung</label>
               <Input value={editName} onChange={e => setEditName(e.target.value)}
-                style={{ background: '#111', borderColor: '#222', color: '#e5e5e5' }} />
+                placeholder="Ví dụ: 1x4, 2x2..." />
             </div>
             <div className="flex flex-col gap-1.5">
               <label className="text-[#888] text-xs font-semibold uppercase tracking-wider">Danh Mục</label>
               <Input value={editCategory} onChange={e => setEditCategory(e.target.value)}
                 list="edit-categories"
-                style={{ background: '#111', borderColor: '#222', color: '#e5e5e5' }} />
+                placeholder="Ví dụ: 1x4, 2x2..." />
               <datalist id="edit-categories">
                 <option value="Frame Basic" />
                 <option value="Frame Cartoon" />
@@ -1581,21 +1577,21 @@ export default function AdminPage() {
                 <option value="Frame IDOL Hoạt Họa" />
               </datalist>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[#888] text-xs font-semibold uppercase tracking-wider">Số Slot</label>
-                <div className="bg-[#111] border border-[#222] rounded px-3 py-1.5 text-white font-bold h-8 flex items-center">
-                  {editSlotsData.length}
-                </div>
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[#888] text-xs font-semibold uppercase tracking-wider">Loại</label>
-                <Select value={editFrameType} onChange={setEditFrameType}
-                  options={[
-                    { value: 'square', label: 'square' },
-                    { value: 'bigrectangle', label: 'bigrectangle' },
-                    { value: 'grid', label: 'grid' },
-                  ]} />
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[#888] text-xs font-semibold uppercase tracking-wider">Layout (Bố cục)</label>
+              <Select
+                value={editLayout}
+                onChange={v => setEditLayout(v)}
+                placeholder="Chọn bố cục..."
+                options={LAYOUT_OPTIONS}
+                showSearch
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[#888] text-xs font-semibold uppercase tracking-wider">Số Slot</label>
+              <div className="bg-[#050505] border border-[#222] rounded px-3 py-1.5 text-white font-bold h-8 flex items-center">
+                {editSlotsData.length}
               </div>
             </div>
           </div>
@@ -1620,9 +1616,7 @@ export default function AdminPage() {
         centered
         width={360}
         styles={{
-          body: { background: '#111', padding: 0 },
-          header: { background: '#111', borderBottom: '1px solid #1f1f1f' },
-          footer: { background: '#111' },
+          body: { padding: 0 },
         }}
       >
         {previewRequest && (
@@ -1630,7 +1624,7 @@ export default function AdminPage() {
             <img src={previewRequest.storageUrl} alt={previewRequest.suggestedName} className="w-full" />
             <div className="p-3 flex flex-col gap-1">
               <p className="text-[#888] text-xs">Danh mục: <span className="text-white">{previewRequest.suggestedCategory}</span></p>
-              <p className="text-[#888] text-xs">Slot: <span className="text-white">{previewRequest.slots}</span> · {previewRequest.suggestedFrame}</p>
+              <p className="text-[#888] text-xs">Slot: <span className="text-white">{previewRequest.slots}</span></p>
               <p className="text-[#888] text-xs">Từ: <span className="text-white">{previewRequest.submitterName || 'Ẩn danh'}</span> · {previewRequest.submitterContact}</p>
               {previewRequest.note && <p className="text-[#888] text-xs">Ghi chú: <span className="text-[#aaa]">{previewRequest.note}</span></p>}
               <p className="text-white text-[10px]">{previewRequest.submittedAt ? new Date(previewRequest.submittedAt).toLocaleString('vi-VN') : ''}</p>
