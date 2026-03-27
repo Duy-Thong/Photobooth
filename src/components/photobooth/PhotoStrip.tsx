@@ -87,12 +87,19 @@ export default function PhotoStrip({
   const nextTargetIndex = slots.findIndex(s => s === null)
   const { previewUrl, rendering, detectedSlots, dimensions } = useStripPreview(slots, selectedFrame, layout, activeEffects)
 
+  // Use the frame's metadata dimensions first, then fall back to loaded image dimensions, then layout default
+  const containerAspectRatio = selectedFrame?.width && selectedFrame?.height
+    ? `${selectedFrame.width}/${selectedFrame.height}`
+    : dimensions
+      ? `${dimensions.w}/${dimensions.h}`
+      : (layout.cols === 2 ? '2/3.1' : '1/3')
+
   return (
     <div className="flex flex-col gap-2">
 
       {/* ── Live composite preview ── */}
       <div className="relative bg-[#0d0d0d] rounded-xl border border-[#141414] overflow-hidden flex items-center justify-center p-0.5 shadow-2xl" 
-        style={{ aspectRatio: layout.cols === 2 ? '2/3.1' : '1/3' }}>
+        style={{ aspectRatio: containerAspectRatio }}>
         
         {/* Layer 0: Individual Live Videos for each empty slot (positioned exactly in the holes) */}
         {!finalImageUrl && stream && dimensions && detectedSlots.length > 0 && (

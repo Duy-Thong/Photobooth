@@ -20,6 +20,9 @@ export interface FrameItem {
   firestoreId?: string
   /** Pre-calculated slot coordinates to eliminate on-the-fly detection delay */
   slots_data?: SlotRect[]
+  /** Frame image dimensions from Firestore metadata */
+  width?: number
+  height?: number
 }
 
 export interface FrameCategory {
