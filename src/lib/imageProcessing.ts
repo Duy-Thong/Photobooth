@@ -425,11 +425,52 @@ export async function buildStripVideo(
   })
 }
 
+/**
+ * Robust download for any media type (image, video, etc).
+ * Fetches the URL as a blob to bypass cross-origin restrictions on the 'download' attribute.
+ */
+export async function downloadMedia(url: string, filename: string) {
+  try {
+    // If it's already a local blob/data URL, just download it directly
+    if (url.startsWith('blob:') || url.startsWith('data:')) {
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      return
+    }
+
+    // For external URLs, fetch as blob first
+    const res = await fetch(url)
+    if (!res.ok) throw new Error(`Failed to fetch media: ${res.statusText}`)
+    
+    const blob = await res.blob()
+    const blobUrl = URL.createObjectURL(blob)
+    
+    const a = document.createElement('a')
+    a.href = blobUrl
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    
+    // Clean up
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 100)
+  } catch (err) {
+    console.error('Download failed:', err)
+    // Fallback: open in new tab if blob download fails
+    const a = document.createElement('a')
+    a.href = url
+    a.target = '_blank'
+    a.rel = 'noopener noreferrer'
+    a.click()
+  }
+}
+
 export function downloadImage(url: string, filename = 'photobooth.jpg') {
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  a.click()
+  downloadMedia(url, filename)
 }
 
 /**

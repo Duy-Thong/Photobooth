@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { Spin } from 'antd'
 import { fetchSession, type SessionData } from '@/lib/sessionService'
+import { downloadMedia } from '@/lib/imageProcessing'
 
 export default function SessionPage() {
   const { id } = useParams<{ id: string }>()
@@ -42,6 +43,19 @@ export default function SessionPage() {
     dateStyle: 'short', timeStyle: 'short',
   })
 
+  const handleDownloadPhoto = (e: React.MouseEvent) => {
+    e.preventDefault()
+    downloadMedia(session.imageUrl, `somedia-${session.id}.jpg`)
+  }
+
+  const handleDownloadVideo = (e: React.MouseEvent) => {
+    e.preventDefault()
+    if (session.videoUrl) {
+      const ext = session.videoUrl.includes('.mp4') ? 'mp4' : 'webm'
+      downloadMedia(session.videoUrl, `somedia-video-${session.id}.${ext}`)
+    }
+  }
+
   return (
     <div className="min-h-dvh bg-[#0a0a0a] flex flex-col items-center py-10 px-4 gap-8">
       {/* Header */}
@@ -64,15 +78,12 @@ export default function SessionPage() {
       </div>
 
       {/* Download button */}
-      <a
-        href={session.imageUrl}
-        download={`somedia-${session.id}.jpg`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="w-full max-w-xs flex items-center justify-center gap-2 py-3 rounded-xl bg-white text-black font-semibold text-sm hover:bg-[#eee] transition-colors"
+      <button
+        onClick={handleDownloadPhoto}
+        className="w-full max-w-xs flex items-center justify-center gap-2 py-3 rounded-xl bg-white text-black font-semibold text-sm hover:bg-[#eee] transition-colors cursor-pointer"
       >
         ↓ Tải ảnh
-      </a>
+      </button>
 
       {/* Strip video */}
       {session.videoUrl && (
@@ -86,15 +97,12 @@ export default function SessionPage() {
             playsInline
             className="w-full rounded-xl border border-[#1a1a1a] bg-black"
           />
-          <a
-            href={session.videoUrl}
-            download={`somedia-${session.id}.webm`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-full max-w-xs flex items-center justify-center gap-2 py-3 rounded-xl bg-white text-black font-semibold text-sm hover:bg-[#eee] transition-colors"
+          <button
+            onClick={handleDownloadVideo}
+            className="w-full max-w-xs flex items-center justify-center gap-2 py-3 rounded-xl bg-white text-black font-semibold text-sm hover:bg-[#eee] transition-colors cursor-pointer"
           >
             Tải video
-          </a>
+          </button>
         </div>
       )}
 

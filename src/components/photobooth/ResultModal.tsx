@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { Modal, QRCode, Spin, Button, message } from 'antd'
 import { DownloadOutlined, ReloadOutlined, PictureOutlined, LoadingOutlined, CopyOutlined, CheckOutlined } from '@ant-design/icons'
 import { uploadSession } from '@/lib/uploadService'
-import { downloadImage } from '@/lib/imageProcessing'
+import { downloadImage, downloadMedia } from '@/lib/imageProcessing'
 
 type Phase = 'uploading' | 'done' | 'error'
 
@@ -307,10 +307,12 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
                           className="w-full rounded-lg border border-[#2a2a2a] bg-black object-contain max-h-44"
                         />
                         <div className="flex items-center justify-center gap-2 mt-0.5">
-                          <a href={recapStripUrl} download={`somedia-strip-${Date.now()}.${recapExt}`}
-                            className="px-3 py-1.5 rounded-md bg-[#1a1a1a] border border-[#333] text-[#aaa] hover:text-white hover:border-[#555] hover:bg-[#222] text-[10px] font-semibold uppercase tracking-wider transition-all flex items-center gap-1.5">
+                          <button 
+                            onClick={() => downloadMedia(recapStripUrl, `somedia-strip-${Date.now()}.${recapExt}`)}
+                            className="px-3 py-1.5 rounded-md bg-[#1a1a1a] border border-[#333] text-[#aaa] hover:text-white hover:border-[#555] hover:bg-[#222] text-[10px] font-semibold uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer"
+                          >
                             <DownloadOutlined /> Tải về
-                          </a>
+                          </button>
                         </div>
                       </>
                     ) : (
@@ -348,10 +350,12 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
                       </div>
                     )}
                     <div className="flex items-center justify-center gap-2 mt-0.5">
-                      <a href={recapClips![currentClipIdx]} download={`somedia-clip-${currentClipIdx + 1}-${Date.now()}.${recapExt}`}
-                        className="px-3 py-1.5 rounded-md bg-[#1a1a1a] border border-[#333] text-[#aaa] hover:text-white hover:border-[#555] hover:bg-[#222] text-[10px] font-semibold uppercase tracking-wider transition-all flex items-center gap-1.5">
+                      <button 
+                        onClick={() => downloadMedia(recapClips![currentClipIdx], `somedia-clip-${currentClipIdx + 1}-${Date.now()}.${recapExt}`)}
+                        className="px-3 py-1.5 rounded-md bg-[#1a1a1a] border border-[#333] text-[#aaa] hover:text-white hover:border-[#555] hover:bg-[#222] text-[10px] font-semibold uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer"
+                      >
                         <DownloadOutlined /> Tải về
-                      </a>
+                      </button>
                     </div>
                   </div>
                 )}
