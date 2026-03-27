@@ -859,9 +859,11 @@ export default function AdminPage() {
                 </Button>
               )}
 
-              <Button size="small" type="primary" danger icon={<DeleteFilled />} onClick={handleDeleteSelected}>
-                Xóa {selectedPaths.size}
-              </Button>
+              {permissions?.canManageAdmins && (
+                <Button size="small" type="primary" danger icon={<DeleteFilled />} onClick={handleDeleteSelected}>
+                  Xóa {selectedPaths.size}
+                </Button>
+              )}
               <Button size="small" ghost onClick={deselectAll} style={{ color: '#888', borderColor: '#333' }}>
                 Bỏ chọn
               </Button>
@@ -880,27 +882,31 @@ export default function AdminPage() {
             </Button>
           )}
 
-          <Tooltip title="Xóa dữ liệu cũ hơn 7 ngày (cả ảnh & video)">
-            <Button size="small" icon={<ClockCircleOutlined />} onClick={handleDeleteOlderThan7Days}
-              loading={bulkDeleting}
-              style={{ background: '#1e1e1e', border: '1px solid #2a2a2a', color: '#e67e22' }}>
-              <span className="hidden sm:inline">Cũ &gt; 7 ngày</span>
-            </Button>
-          </Tooltip>
-          <Tooltip title="Quét và xóa các bản ghi không còn file ảnh/video thực tế">
-            <Button size="small" icon={<ReloadOutlined />} onClick={handleCleanupSessions}
-              loading={bulkDeleting}
-              style={{ background: '#1e1e1e', border: '1px solid #2a2a2a', color: '#3498db' }}>
-              <span className="hidden sm:inline">Dọn dẹp DB</span>
-            </Button>
-          </Tooltip>
-          <Tooltip title="Xóa tất cả trong tab hiện tại">
-            <Button size="small" icon={<DeleteFilled />} onClick={handleDeleteAll}
-              loading={bulkDeleting} danger
-              style={{ background: '#1e1e1e', border: '1px solid #3a1a1a' }}>
-              <span className="hidden sm:inline">Xóa tất cả</span>
-            </Button>
-          </Tooltip>
+          {permissions?.canManageAdmins && (
+            <>
+              <Tooltip title="Xóa dữ liệu cũ hơn 7 ngày (cả ảnh & video)">
+                <Button size="small" icon={<ClockCircleOutlined />} onClick={handleDeleteOlderThan7Days}
+                  loading={bulkDeleting}
+                  style={{ background: '#1e1e1e', border: '1px solid #2a2a2a', color: '#e67e22' }}>
+                  <span className="hidden sm:inline">Cũ &gt; 7 ngày</span>
+                </Button>
+              </Tooltip>
+              <Tooltip title="Quét và xóa các bản ghi không còn file ảnh/video thực tế">
+                <Button size="small" icon={<ReloadOutlined />} onClick={handleCleanupSessions}
+                  loading={bulkDeleting}
+                  style={{ background: '#1e1e1e', border: '1px solid #2a2a2a', color: '#3498db' }}>
+                  <span className="hidden sm:inline">Dọn dẹp DB</span>
+                </Button>
+              </Tooltip>
+              <Tooltip title="Xóa tất cả trong tab hiện tại">
+                <Button size="small" icon={<DeleteFilled />} onClick={handleDeleteAll}
+                  loading={bulkDeleting} danger
+                  style={{ background: '#1e1e1e', border: '1px solid #3a1a1a' }}>
+                  <span className="hidden sm:inline">Xóa tất cả</span>
+                </Button>
+              </Tooltip>
+            </>
+          )}
           <Button size="small" icon={<LogoutOutlined />} onClick={logout}
             style={{ background: '#1e1e1e', border: '1px solid #2a2a2a', color: '#888' }}>
             Đăng xuất
@@ -1095,15 +1101,17 @@ export default function AdminPage() {
                       <EditOutlined />
                     </button>
                   </Tooltip>
-                  <Tooltip title="Xóa khung">
-                    <button
-                      onClick={() => handleDeleteFrame(frame)}
-                      disabled={deletingFrameId === frame.firestoreId}
-                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/70 hover:bg-red-600 text-white rounded-lg p-1.5"
-                    >
-                      {deletingFrameId === frame.firestoreId ? <Spin size="small" /> : <DeleteOutlined />}
-                    </button>
-                  </Tooltip>
+                  {permissions?.canManageAdmins && (
+                    <Tooltip title="Xóa khung">
+                      <button
+                        onClick={() => handleDeleteFrame(frame)}
+                        disabled={deletingFrameId === frame.firestoreId}
+                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/70 hover:bg-red-600 text-white rounded-lg p-1.5"
+                      >
+                        {deletingFrameId === frame.firestoreId ? <Spin size="small" /> : <DeleteOutlined />}
+                      </button>
+                    </Tooltip>
+                  )}
                 </div>
               ))}
             </div>
@@ -1248,12 +1256,14 @@ export default function AdminPage() {
                 width: 80,
                 fixed: 'right',
                 render: (_, record) => (
-                  <Button 
-                    type="text" 
-                    danger 
-                    icon={<DeleteOutlined />} 
-                    onClick={() => handleDeleteFeedback(record)}
-                  />
+                  permissions?.canManageAdmins ? (
+                    <Button 
+                      type="text" 
+                      danger 
+                      icon={<DeleteOutlined />} 
+                      onClick={() => handleDeleteFeedback(record)}
+                    />
+                  ) : null
                 ),
               },
             ]}
@@ -1355,17 +1365,19 @@ export default function AdminPage() {
                     </Tooltip>
                   )}
                   
-                  <Tooltip title="Xóa">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleDelete(item); }}
-                      disabled={deletingPath === item.fullPath}
-                      className="bg-black/70 hover:bg-red-600 text-white rounded-lg p-1.5"
-                    >
-                      {deletingPath === item.fullPath
-                        ? <Spin size="small" />
-                        : <DeleteOutlined />}
-                    </button>
-                  </Tooltip>
+                  {permissions?.canManageAdmins && (
+                    <Tooltip title="Xóa">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleDelete(item); }}
+                        disabled={deletingPath === item.fullPath}
+                        className="bg-black/70 hover:bg-red-600 text-white rounded-lg p-1.5"
+                      >
+                        {deletingPath === item.fullPath
+                          ? <Spin size="small" />
+                          : <DeleteOutlined />}
+                      </button>
+                    </Tooltip>
+                  )}
                 </div>
               </div>
             ))}
