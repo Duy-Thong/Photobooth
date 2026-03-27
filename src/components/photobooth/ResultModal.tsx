@@ -36,6 +36,7 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
   // Used as the effect dep so phase changes mid-async don't cancel the run.
   const [uploadKey, setUploadKey] = useState(0)
   const [copied, setCopied] = useState(false)
+  const [downloading, setDownloading] = useState(false)
 
   const handleCopyUrl = () => {
     const url = `${window.location.origin}/session/${sessionId}`
@@ -156,9 +157,18 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uploadKey, imageBlobUrl, recapClips, recapMimeType, recapStripUrl])
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
+    if (downloading) return
     const src = finalWithQr || imageBlobUrl
-    if (src) downloadImage(src, `some-media-${Date.now()}.jpg`)
+    if (src) {
+      setDownloading(true)
+      try {
+        await downloadImage(src, `some-media-${Date.now()}.jpg`)
+      } finally {
+        setDownloading(true) // wait, I should set it to false. 
+        setDownloading(false)
+      }
+    }
   }
 
   const handleStartUpload = () => {
@@ -229,7 +239,8 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
             
             {/* Primary Action buttons */}
             <div className="w-full flex flex-col gap-2">
-              <Button block icon={<DownloadOutlined />} onClick={handleDownload}
+              <Button block icon={downloading ? <LoadingOutlined /> : <DownloadOutlined />} onClick={handleDownload}
+                disabled={downloading}
                 style={{ background: '#fff', color: '#000', border: 'none', fontWeight: 600, height: 40 }}>
                 Tải về
               </Button>
@@ -308,10 +319,19 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
                         />
                         <div className="flex items-center justify-center gap-2 mt-0.5">
                           <button 
-                            onClick={() => downloadMedia(recapStripUrl, `somedia-strip-${Date.now()}.${recapExt}`)}
-                            className="px-3 py-1.5 rounded-md bg-[#1a1a1a] border border-[#333] text-[#aaa] hover:text-white hover:border-[#555] hover:bg-[#222] text-[10px] font-semibold uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer"
+                            disabled={downloading}
+                            onClick={async () => {
+                              if (downloading) return
+                              setDownloading(true)
+                              try {
+                                await downloadMedia(recapStripUrl, `somedia-strip-${Date.now()}.${recapExt}`)
+                              } finally {
+                                setDownloading(false)
+                              }
+                            }}
+                            className="px-3 py-1.5 rounded-md bg-[#1a1a1a] border border-[#333] text-[#aaa] hover:text-white hover:border-[#555] hover:bg-[#222] text-[10px] font-semibold uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            <DownloadOutlined /> Tải về
+                            {downloading ? <LoadingOutlined /> : <DownloadOutlined />} Tải về
                           </button>
                         </div>
                       </>
@@ -351,10 +371,19 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
                     )}
                     <div className="flex items-center justify-center gap-2 mt-0.5">
                       <button 
-                        onClick={() => downloadMedia(recapClips![currentClipIdx], `somedia-clip-${currentClipIdx + 1}-${Date.now()}.${recapExt}`)}
-                        className="px-3 py-1.5 rounded-md bg-[#1a1a1a] border border-[#333] text-[#aaa] hover:text-white hover:border-[#555] hover:bg-[#222] text-[10px] font-semibold uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer"
+                        disabled={downloading}
+                        onClick={async () => {
+                          if (downloading) return
+                          setDownloading(true)
+                          try {
+                            await downloadMedia(recapClips![currentClipIdx], `somedia-clip-${currentClipIdx + 1}-${Date.now()}.${recapExt}`)
+                          } finally {
+                            setDownloading(false)
+                          }
+                        }}
+                        className="px-3 py-1.5 rounded-md bg-[#1a1a1a] border border-[#333] text-[#aaa] hover:text-white hover:border-[#555] hover:bg-[#222] text-[10px] font-semibold uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        <DownloadOutlined /> Tải về
+                        {downloading ? <LoadingOutlined /> : <DownloadOutlined />} Tải về
                       </button>
                     </div>
                   </div>

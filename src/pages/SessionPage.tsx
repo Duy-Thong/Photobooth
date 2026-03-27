@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { Spin } from 'antd'
+import { LoadingOutlined } from '@ant-design/icons'
 import { fetchSession, type SessionData } from '@/lib/sessionService'
 import { downloadMedia } from '@/lib/imageProcessing'
 
@@ -9,6 +10,9 @@ export default function SessionPage() {
   const [session, setSession] = useState<SessionData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
+  
+  const [downloadingPhoto, setDownloadingPhoto] = useState(false)
+  const [downloadingVideo, setDownloadingVideo] = useState(false)
 
   useEffect(() => {
     if (!id) return
@@ -43,16 +47,28 @@ export default function SessionPage() {
     dateStyle: 'short', timeStyle: 'short',
   })
 
-  const handleDownloadPhoto = (e: React.MouseEvent) => {
+  const handleDownloadPhoto = async (e: React.MouseEvent) => {
     e.preventDefault()
-    downloadMedia(session.imageUrl, `somedia-${session.id}.jpg`)
+    if (downloadingPhoto) return
+    setDownloadingPhoto(true)
+    try {
+      await downloadMedia(session.imageUrl, `somedia-${session.id}.jpg`)
+    } finally {
+      setDownloadingPhoto(false)
+    }
   }
 
-  const handleDownloadVideo = (e: React.MouseEvent) => {
+  const handleDownloadVideo = async (e: React.MouseEvent) => {
     e.preventDefault()
+    if (downloadingVideo) return
     if (session.videoUrl) {
-      const ext = session.videoUrl.includes('.mp4') ? 'mp4' : 'webm'
-      downloadMedia(session.videoUrl, `somedia-video-${session.id}.${ext}`)
+      setDownloadingVideo(true)
+      try {
+        const ext = session.videoUrl.includes('.mp4') ? 'mp4' : 'webm'
+        await downloadMedia(session.videoUrl, `somedia-video-${session.id}.${ext}`)
+      } finally {
+        setDownloadingVideo(false)
+      }
     }
   }
 
@@ -80,9 +96,10 @@ export default function SessionPage() {
       {/* Download button */}
       <button
         onClick={handleDownloadPhoto}
-        className="w-full max-w-xs flex items-center justify-center gap-2 py-3 rounded-xl bg-white text-black font-semibold text-sm hover:bg-[#eee] transition-colors cursor-pointer"
+        disabled={downloadingPhoto}
+        className="w-full max-w-xs flex items-center justify-center gap-2 py-3 rounded-xl bg-white text-black font-semibold text-sm hover:bg-[#eee] transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
       >
-        ↓ Tải ảnh
+        {downloadingPhoto ? <LoadingOutlined /> : '↓ Tải ảnh'}
       </button>
 
       {/* Strip video */}
@@ -99,9 +116,10 @@ export default function SessionPage() {
           />
           <button
             onClick={handleDownloadVideo}
-            className="w-full max-w-xs flex items-center justify-center gap-2 py-3 rounded-xl bg-white text-black font-semibold text-sm hover:bg-[#eee] transition-colors cursor-pointer"
+            disabled={downloadingVideo}
+            className="w-full max-w-xs flex items-center justify-center gap-2 py-3 rounded-xl bg-white text-black font-semibold text-sm hover:bg-[#eee] transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
           >
-            Tải video
+            {downloadingVideo ? <LoadingOutlined /> : 'Tải video'}
           </button>
         </div>
       )}
