@@ -1,6 +1,7 @@
 import { useRef } from 'react'
 import { Switch } from 'antd'
 import { UploadOutlined } from '@ant-design/icons'
+import type { LayoutConfig } from '@/types/photobooth'
 
 interface CaptureControlsProps {
   isReady: boolean
@@ -14,6 +15,9 @@ interface CaptureControlsProps {
   onRetake: () => void
   onUploadAll: (dataUrl: string) => void
   onToggleVideoRecap: (v: boolean) => void
+  isX2: boolean
+  onToggleX2: (v: boolean) => void
+  layout: LayoutConfig
 }
 
 export default function CaptureControls({
@@ -28,6 +32,9 @@ export default function CaptureControls({
   onRetake,
   onUploadAll,
   onToggleVideoRecap,
+  isX2,
+  onToggleX2,
+  layout,
 }: CaptureControlsProps) {
   const uploadRef = useRef<HTMLInputElement>(null)
   const disabled = !isReady || isCapturing
@@ -71,6 +78,26 @@ export default function CaptureControls({
             Video
           </span>
         </label>
+
+        {/* X2 Duplication (only for vertical strips) */}
+        {layout.cols === 1 && layout.slots > 1 && (
+          <button
+            onClick={() => onToggleX2(!isX2)}
+            title="Nhân đôi strip (side-by-side)"
+            className="flex flex-col items-center gap-1.5"
+          >
+            <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full flex items-center justify-center border transition-all duration-150
+              ${isX2
+                ? 'bg-[#1a1a1a] border-[#ff9f4d] shadow-[0_0_12px_rgba(255,159,77,0.15)] text-[#ff9f4d]'
+                : 'bg-[#1a1a1a] border-[#2a2a2a] text-[#555] hover:border-[#444] hover:text-[#999]'
+              }`}>
+              <span className="text-[12px] font-bold">x2</span>
+            </div>
+            <span className={`text-[8px] sm:text-[9px] font-semibold uppercase tracking-[0.05em] sm:tracking-[0.12em] whitespace-nowrap ${isX2 ? 'text-[#ff9f4d]' : 'text-[#555]'}`}>
+              Double
+            </span>
+          </button>
+        )}
 
         {/* Manual capture */}
         <button

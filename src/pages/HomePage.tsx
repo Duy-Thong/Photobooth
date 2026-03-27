@@ -24,6 +24,7 @@ export default function HomePage() {
     isCapturing, setIsCapturing,
     finalImageUrl, setFinalImageUrl,
     selectedFrame, setSelectedFrame,
+    isX2, setIsX2,
   } = usePhotoboothStore()
 
   const { startRecording, stopRecording, cancelRecording, getVideoMimeType } = useVideoRecap(videoRef, isMirrored)
@@ -49,7 +50,7 @@ export default function HomePage() {
     setRecapStripUrl(null)
     setBuildingStrip(true)
     const fUrl = selectedFrame.storageUrl ?? `/frames/${selectedFrame.filename}`
-    buildStripVideo(recapClips, fUrl, selectedFrame.slots_data, 24)
+    buildStripVideo(recapClips, fUrl, selectedFrame.slots_data, 24, isX2)
       .then(url => setRecapStripUrl(url))
       .catch(() => {})
       .finally(() => setBuildingStrip(false))
@@ -149,7 +150,7 @@ export default function HomePage() {
     try {
       if (videoRecap) setBuildingStrip(true)
       const fUrl = selectedFrame ? (selectedFrame.storageUrl ?? `/frames/${selectedFrame.filename}`) : null
-      const url = await buildStripImage(capturedSlots, layout, activeEffects, fUrl, selectedFrame?.slots_data)
+      const url = await buildStripImage(capturedSlots, layout, activeEffects, fUrl, selectedFrame?.slots_data, isX2)
       setFinalImageUrl(url)
       setResultModalOpen(true)
     } catch {
@@ -232,9 +233,9 @@ export default function HomePage() {
           if (refreshed.capturedSlots.every(s => s !== null)) {
             setTimeout(async () => {
               try {
-                const { capturedSlots: cs, activeEffects: fx } = usePhotoboothStore.getState()
+                const { capturedSlots: cs, activeEffects: fx, isX2: currentX2 } = usePhotoboothStore.getState()
                 if (videoRecap) setBuildingStrip(true)
-                const result = await buildStripImage(cs, targetLayout, fx, url, frameItem.slots_data)
+                const result = await buildStripImage(cs, targetLayout, fx, url, frameItem.slots_data, currentX2)
                 setFinalImageUrl(result)
                 setResultModalOpen(true)
               } catch { /* ignore */ }
@@ -326,6 +327,9 @@ export default function HomePage() {
                 onRetake={handleRetake}
                 onUploadAll={handleUploadAll}
                 onToggleVideoRecap={setVideoRecap}
+                isX2={isX2}
+                onToggleX2={setIsX2}
+                layout={layout}
               />
               <FilterPanel
                 activeFilter={activeFilter}

@@ -208,6 +208,7 @@ export async function buildStripImage(
   effects: EffectType[],
   frameUrl: string | null,
   slots_data?: SlotRect[],
+  isX2?: boolean,
 ): Promise<string> {
 
   // ── Frame-based path ────────────────────────────────────────────────────────
@@ -220,32 +221,37 @@ export async function buildStripImage(
       const fH = frameImg.naturalHeight || frameImg.height
 
       const canvas = document.createElement('canvas')
-      canvas.width  = fW
+      canvas.width  = isX2 ? fW * 2 : fW
       canvas.height = fH
       const ctx = canvas.getContext('2d')!
 
       ctx.fillStyle = STRIP_BG
-      ctx.fillRect(0, 0, fW, fH)
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
 
       const photos = slots.filter((s): s is CapturedSlot => s !== null)
 
-      await Promise.all(
-        frameSlots.map(async ({ x, y, w, h }, i) => {
-          const photo = photos[i]
-          if (!photo) return
-          const img = await loadImage(photo.dataUrl)
-          ctx.save()
-          ctx.beginPath()
-          ctx.rect(x, y, w, h) // frame defines the shape — no extra rounding
-          ctx.clip()
-          drawCoverFit(ctx, img, x, y, w, h)
-          applyEffects(ctx, effects, x, y, w, h)
-          ctx.restore()
-        }),
-      )
+      const drawStrip = async (offsetX: number) => {
+        await Promise.all(
+          frameSlots.map(async ({ x, y, w, h }, i) => {
+            const photo = photos[i]
+            if (!photo) return
+            const img = await loadImage(photo.dataUrl)
+            ctx.save()
+            ctx.translate(offsetX, 0)
+            ctx.beginPath()
+            ctx.rect(x, y, w, h)
+            ctx.clip()
+            drawCoverFit(ctx, img, x, y, w, h)
+            applyEffects(ctx, effects, x, y, w, h)
+            ctx.restore()
+          }),
+        )
+        // Draw frame on top of this strip
+        ctx.drawImage(frameImg, offsetX, 0, fW, fH)
+      }
 
-      // Frame on top
-      ctx.drawImage(frameImg, 0, 0, fW, fH)
+      await drawStrip(0)
+      if (isX2) await drawStrip(fW)
 
       return new Promise((resolve, reject) => {
         canvas.toBlob(
@@ -268,39 +274,45 @@ export async function buildStripImage(
   const canvasH = PADDING * 2 + rows * SLOT_H + (rows - 1) * GAP
 
   const canvas = document.createElement('canvas')
-  canvas.width  = canvasW
+  canvas.width  = isX2 ? canvasW * 2 : canvasW
   canvas.height = canvasH
   const ctx = canvas.getContext('2d')!
 
   ctx.fillStyle = STRIP_BG
-  ctx.fillRect(0, 0, canvasW, canvasH)
+  ctx.fillRect(0, 0, canvas.width, canvas.height)
 
-  await Promise.all(
-    slots.map(async (slot, i) => {
-      if (!slot) return
-      const col = i % cols
-      const row = Math.floor(i / cols)
-      const x = PADDING + col * (SLOT_W + GAP)
-      const y = PADDING + row * (SLOT_H + GAP)
+  const drawGridStrip = async (offsetX: number) => {
+    await Promise.all(
+      slots.map(async (slot, i) => {
+        if (!slot) return
+        const col = i % cols
+        const row = Math.floor(i / cols)
+        const x = PADDING + col * (SLOT_W + GAP)
+        const y = PADDING + row * (SLOT_H + GAP)
 
-      const img = await loadImage(slot.dataUrl)
+        const img = await loadImage(slot.dataUrl)
 
-      ctx.save()
-      ctx.beginPath()
-      ctx.roundRect(x, y, SLOT_W, SLOT_H, 8)
-      ctx.clip()
-      drawCoverFit(ctx, img, x, y, SLOT_W, SLOT_H)
-      applyEffects(ctx, effects, x, y, SLOT_W, SLOT_H)
-      ctx.restore()
-    }),
-  )
+        ctx.save()
+        ctx.translate(offsetX, 0)
+        ctx.beginPath()
+        ctx.roundRect(x, y, SLOT_W, SLOT_H, 8)
+        ctx.clip()
+        drawCoverFit(ctx, img, x, y, SLOT_W, SLOT_H)
+        applyEffects(ctx, effects, x, y, SLOT_W, SLOT_H)
+        ctx.restore()
+      }),
+    )
 
-  if (frameUrl) {
-    try {
-      const frameImg = await loadImage(frameUrl)
-      ctx.drawImage(frameImg, 0, 0, canvasW, canvasH)
-    } catch { /* ignore */ }
+    if (frameUrl) {
+      try {
+        const frameImg = await loadImage(frameUrl)
+        ctx.drawImage(frameImg, offsetX, 0, canvasW, canvasH)
+      } catch { /* ignore */ }
+    }
   }
+
+  await drawGridStrip(0)
+  if (isX2) await drawGridStrip(canvasW)
 
   return new Promise((resolve, reject) => {
     canvas.toBlob(
@@ -323,6 +335,7 @@ export async function buildStripVideo(
   frameUrl: string,
   slots_data?: SlotRect[],
   fps: 12 | 24 = 12,
+  isX2?: boolean,
 ): Promise<string | null> {
   if (!clipUrls.length) return null
 
@@ -354,7 +367,7 @@ export async function buildStripVideo(
   ))
 
   const canvas = document.createElement('canvas')
-  canvas.width  = fW
+  canvas.width  = isX2 ? fW * 2 : fW
   canvas.height = fH
   const ctx = canvas.getContext('2d')!
 
@@ -378,21 +391,28 @@ export async function buildStripVideo(
 
   function drawFrame() {
     ctx.fillStyle = STRIP_BG
-    ctx.fillRect(0, 0, fW, fH)
-    frameSlots.forEach(({ x, y, w, h }, i) => {
-      const vid = videos[i]
-      if (!vid || !vid.videoWidth) return
-      const scale = Math.max(w / vid.videoWidth, h / vid.videoHeight)
-      const dw = vid.videoWidth  * scale
-      const dh = vid.videoHeight * scale
-      ctx.save()
-      ctx.beginPath()
-      ctx.rect(x, y, w, h)
-      ctx.clip()
-      ctx.drawImage(vid, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh)
-      ctx.restore()
-    })
-    ctx.drawImage(frameImg, 0, 0, fW, fH)
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    
+    const drawStrip = (offsetX: number) => {
+      frameSlots.forEach(({ x, y, w, h }, i) => {
+        const vid = videos[i]
+        if (!vid || !vid.videoWidth) return
+        const scale = Math.max(w / vid.videoWidth, h / vid.videoHeight)
+        const dw = vid.videoWidth  * scale
+        const dh = vid.videoHeight * scale
+        ctx.save()
+        ctx.translate(offsetX, 0)
+        ctx.beginPath()
+        ctx.rect(x, y, w, h)
+        ctx.clip()
+        ctx.drawImage(vid, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh)
+        ctx.restore()
+      })
+      ctx.drawImage(frameImg, offsetX, 0, fW, fH)
+    }
+
+    drawStrip(0)
+    if (isX2) drawStrip(fW)
   }
 
   return new Promise(resolve => {

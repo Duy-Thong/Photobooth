@@ -33,12 +33,21 @@ interface PhotoboothState {
   // Frame overlay
   selectedFrame: FrameItem | null
   setSelectedFrame: (frame: FrameItem | null) => void
+  
+  // Printing options
+  isX2: boolean
+  setIsX2: (v: boolean) => void
 }
 
 export const usePhotoboothStore = create<PhotoboothState>((set, get) => ({
   layout: LAYOUTS[0], // 1x4 default
   countdown: 3,
-  setLayout: (layout) => set({ layout, capturedSlots: Array(layout.slots).fill(null), finalImageUrl: null }),
+  setLayout: (layout) => set({ 
+    layout, 
+    capturedSlots: Array(layout.slots).fill(null), 
+    finalImageUrl: null,
+    isX2: false // Reset when layout changes
+  }),
   setLayoutKeepPhotos: (layout) => set({ layout }),
   setCountdown: (countdown) => set({ countdown }),
 
@@ -68,6 +77,7 @@ export const usePhotoboothStore = create<PhotoboothState>((set, get) => ({
   resetPhotos: () => set((s) => ({
     capturedSlots: Array(s.layout.slots).fill(null),
     finalImageUrl: null,
+    isX2: false,
   })),
 
   isCapturing: false,
@@ -78,4 +88,7 @@ export const usePhotoboothStore = create<PhotoboothState>((set, get) => ({
 
   selectedFrame: null,
   setSelectedFrame: (selectedFrame) => set({ selectedFrame }),
+
+  isX2: false,
+  setIsX2: (isX2) => set({ isX2 }),
 }))
