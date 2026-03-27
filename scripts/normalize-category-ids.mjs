@@ -1,23 +1,50 @@
 
+import { existsSync, readFileSync } from 'fs'
+import path from 'path'
+import { fileURLToPath } from 'url'
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const ROOT = path.resolve(__dirname, '..')
+
+// ── Load .env ─────────────────────────────────────────────────────────────────
+let envPath = path.join(ROOT, '.env.local')
+if (!existsSync(envPath)) envPath = path.join(ROOT, '.env')
+
+if (!existsSync(envPath)) {
+    console.error('❌ .env or .env.local not found.')
+    process.exit(1)
+}
+
+const env = Object.fromEntries(
+    readFileSync(envPath, 'utf-8')
+        .split('\n')
+        .filter(l => l.includes('=') && !l.trimStart().startsWith('#'))
+        .map(l => {
+            const idx = l.indexOf('=')
+            const key = l.slice(0, idx).trim()
+            const val = l.slice(idx + 1).trim().replace(/^["']|["']$/g, '')
+            return [key, val]
+        }),
+)
+
 const firebaseConfig = {
-  apiKey: "AIzaSyCE1ucRmA662uTDBDbgzv5K3etgvZGOyE8",
-  authDomain: "somedia-b1b9a.firebaseapp.com",
-  projectId: "somedia-b1b9a",
-  storageBucket: "somedia-b1b9a.firebasestorage.app",
-  messagingSenderId: "1041780804476",
-  appId: "1:1041780804476:web:c3b501db61ffb49a02f2f9"
-};
+    apiKey: env.VITE_FIREBASE_API_KEY,
+    authDomain: env.VITE_FIREBASE_AUTH_DOMAIN,
+    projectId: env.VITE_FIREBASE_PROJECT_ID,
+    storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+    appId: env.VITE_FIREBASE_APP_ID,
+}
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-const ADMIN_EMAIL = "duythong.ptit@gmail.com";
-const ADMIN_PASSWORD = "Duythong2703@#$..";
+const ADMIN_EMAIL = env.ADMIN_EMAIL || env.VITE_ADMIN_EMAIL;
+const ADMIN_PASSWORD = env.ADMIN_PASSWORD;
 
 function deriveCategoryId(name) {
     let h = 0

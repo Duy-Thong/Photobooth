@@ -1,7 +1,10 @@
 import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import vm from 'vm';
 
-const filePath = 'd:/Learning/Photobooth/src/lib/frames-static.ts';
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const filePath = path.join(__dirname, '..', 'src', 'lib', 'frames-static.ts');
 
 async function updateLayouts() {
   const content = fs.readFileSync(filePath, 'utf8');
