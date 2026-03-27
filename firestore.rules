@@ -7,6 +7,13 @@ service cloud.firestore {
       allow read, delete: if request.auth != null;
     }
 
+    // Admins: Chỉ những ai đã là admin (có canManageAdmins) mới có thể đọc/ghi danh sách admin
+    // Để khởi tạo super admin ban đầu, cho phép read nếu là chính mình
+    match /admins/{uid} {
+      allow read: if request.auth != null && (request.auth.uid == uid || get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.permissions.canManageAdmins == true);
+      allow write: if request.auth != null && (get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.permissions.canManageAdmins == true || (request.auth.uid == uid && !exists(/databases/$(database)/documents/admins/$(uid))));
+    }
+
     // Sessions: Đọc public theo ID, tạo public, chỉ Admin có thể xóa/list
     match /sessions/{id} {
       allow create, get: if true;

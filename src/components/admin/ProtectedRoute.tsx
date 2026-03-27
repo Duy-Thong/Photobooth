@@ -3,10 +3,10 @@ import { Spin } from 'antd'
 import { useAdminAuth } from '@/hooks/useAdminAuth'
 
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user } = useAdminAuth()
+  const { user, permissions, isAdminLoading } = useAdminAuth()
 
-  // Still resolving auth state
-  if (user === undefined) {
+  // Still resolving auth state or admin permissions
+  if (user === undefined || isAdminLoading) {
     return (
       <div className="min-h-dvh flex items-center justify-center bg-[#111]">
         <Spin size="large" />
@@ -14,7 +14,7 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
     )
   }
 
-  if (!user) return <Navigate to="/admin/login" replace />
+  if (!user || !permissions) return <Navigate to="/admin/login" replace />
 
   return <>{children}</>
 }

@@ -1,4 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { initializeApp, getApps } from 'firebase/app'
+import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth'
+import { firebaseConfig } from '@/lib/firebase'
 import { ref, listAll, getDownloadURL, deleteObject, getMetadata } from 'firebase/storage'
 import { storage } from '@/lib/firebase'
 import { fetchSessions, deleteSession } from '@/lib/sessionService'
@@ -20,8 +23,11 @@ import type { Feedback } from '@/types/feedback'
 import { detectFrameSlots } from '@/lib/imageProcessing'
 import FrameSlotEditor from '@/components/admin/FrameSlotEditor'
 import { type SlotRect } from '@/types/photobooth'
-import { Button, Input, Modal, Select, Spin, Empty, Tooltip, Table, Tag } from 'antd'
-import { DeleteOutlined, ReloadOutlined, LogoutOutlined, PlayCircleOutlined, DeleteFilled, ClockCircleOutlined, UploadOutlined, PictureOutlined, EditOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons'
+import { Button, Input, Modal, Select, Spin, Empty, Tooltip, Table, Tag, Checkbox, Form, DatePicker } from 'antd'
+import dayjs from 'dayjs'
+import { DeleteOutlined, ReloadOutlined, LogoutOutlined, PlayCircleOutlined, DeleteFilled, ClockCircleOutlined, UploadOutlined, PictureOutlined, EditOutlined, CheckOutlined, CloseOutlined, UserOutlined } from '@ant-design/icons'
+import type { AdminUser } from '@/types/admin'
+import { fetchAllAdmins, createOrUpdateAdmin, DEFAULT_PERMISSIONS } from '@/lib/adminService'
 
 interface MediaItem {
   name: string
@@ -55,16 +61,45 @@ const getPathFromUrl = (url: string) => {
 }
 
 export default function AdminPage() {
-  const { logout } = useAdminAuth()
+  const { logout, permissions, user } = useAdminAuth()
   const [photos, setPhotos] = useState<MediaItem[]>([])
   const [videos, setVideos] = useState<MediaItem[]>([])
   const [loading, setLoading] = useState(true)
   const [deletingPath, setDeletingPath] = useState<string | null>(null)
   const [bulkDeleting, setBulkDeleting] = useState(false)
   const [previewItem, setPreviewItem] = useState<MediaItem | null>(null)
-  const [tab, setTab] = useState<'photos' | 'videos' | 'frames' | 'requests' | 'feedback'>('photos')
+  
+  const availableTabs = useMemo(() => {
+    if (!permissions) return []
+    const tabs: ('photos' | 'videos' | 'frames' | 'requests' | 'feedback' | 'admins')[] = []
+    if (permissions.canViewPhotos) tabs.push('photos')
+    if (permissions.canViewVideos) tabs.push('videos')
+    if (permissions.canManageFrames) tabs.push('frames')
+    if (permissions.canManageRequests) tabs.push('requests')
+    if (permissions.canManageFeedback) tabs.push('feedback')
+    if (permissions.canManageAdmins) tabs.push('admins')
+    return tabs
+  }, [permissions])
+
+  const [tab, setTab] = useState<'photos' | 'videos' | 'frames' | 'requests' | 'feedback' | 'admins'>('photos')
+
+  // Redirect if current tab becomes unavailable
+  useEffect(() => {
+    if (availableTabs.length > 0 && !availableTabs.includes(tab)) {
+      setTab(availableTabs[0])
+    }
+  }, [availableTabs, tab])
+
   const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set())
   const [brokenPaths, setBrokenPaths] = useState<Set<string>>(new Set())
+
+  // ── Admin Management state ──────────────────────────────────────────────────
+  const [admins, setAdmins] = useState<AdminUser[]>([])
+  const [adminsLoading, setAdminsLoading] = useState(false)
+  const [editingAdmin, setEditingAdmin] = useState<AdminUser | null>(null)
+  const [adminSaving, setAdminSaving] = useState(false)
+  const [showAddAdminModal, setShowAddAdminModal] = useState(false)
+  const [addAdminLoading, setAddAdminLoading] = useState(false)
 
   // ── Feedback tab state ──────────────────────────────────────────────────────
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([])
@@ -243,12 +278,12 @@ export default function AdminPage() {
   const fetchAll = useCallback(async () => {
     setLoading(true)
     try {
-      // 1. Fetch from Firestore (fast)
       const sessions = await fetchSessions()
-      const sessionPhotos: MediaItem[] = []
-      const sessionVideos: MediaItem[] = []
+      let sessionPhotos: MediaItem[] = []
+      let sessionVideos: MediaItem[] = []
       
       for (const s of sessions) {
+        // ... (collect all first, filter later or separately)
         sessionPhotos.push({
           name: `Session ${s.id.slice(0, 8)}`,
           fullPath: getPathFromUrl(s.imageUrl) || `sessions/${s.id}/strip.jpg`,
@@ -258,6 +293,7 @@ export default function AdminPage() {
           type: 'photo',
           sessionId: s.id,
         })
+
         if (s.videoUrl) {
           const ext = s.videoUrl.includes('.mp4') ? 'mp4' : 'webm'
           sessionVideos.push({
@@ -301,15 +337,36 @@ export default function AdminPage() {
         toItems(videoList.items, 'video')
       ])
 
-      const allPhotos = [...sessionPhotos, ...legacyP].sort((a, b) => new Date(b.timeCreated).getTime() - new Date(a.timeCreated).getTime())
-      const allVideos = [...sessionVideos, ...legacyV].sort((a, b) => new Date(b.timeCreated).getTime() - new Date(a.timeCreated).getTime())
+      let allPhotos = [...sessionPhotos, ...legacyP]
+      let allVideos = [...sessionVideos, ...legacyV]
+
+      // APPLY FILTERS UNIFORMALLY
+      if (permissions?.photoDateRange) {
+        const start = new Date(permissions.photoDateRange.start).getTime()
+        const end = new Date(permissions.photoDateRange.end).getTime()
+        allPhotos = allPhotos.filter(p => {
+          const t = new Date(p.timeCreated).getTime()
+          return t >= start && t <= end
+        })
+      }
+      if (permissions?.videoDateRange) {
+        const start = new Date(permissions.videoDateRange.start).getTime()
+        const end = new Date(permissions.videoDateRange.end).getTime()
+        allVideos = allVideos.filter(v => {
+          const t = new Date(v.timeCreated).getTime()
+          return t >= start && t <= end
+        })
+      }
+
+      allPhotos.sort((a, b) => new Date(b.timeCreated).getTime() - new Date(a.timeCreated).getTime())
+      allVideos.sort((a, b) => new Date(b.timeCreated).getTime() - new Date(a.timeCreated).getTime())
 
       setPhotos(allPhotos)
       setVideos(allVideos)
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [permissions])
 
   useEffect(() => { fetchAll() }, [fetchAll])
 
@@ -685,6 +742,91 @@ export default function AdminPage() {
     })
   }
 
+  const loadAdmins = useCallback(async () => {
+    setAdminsLoading(true)
+    try {
+      const data = await fetchAllAdmins()
+      setAdmins(data)
+    } finally {
+      setAdminsLoading(false)
+    }
+  }, [])
+
+  useEffect(() => { if (tab === 'admins') loadAdmins() }, [tab, loadAdmins])
+
+  const handleSaveAdmin = async (values: any) => {
+    if (!editingAdmin) return
+    setAdminSaving(true)
+    try {
+
+      const updated: AdminUser = {
+        ...editingAdmin,
+        permissions: {
+          ...editingAdmin.permissions,
+          ...values,
+          photoDateRange: values.photoDateRange ? {
+            start: values.photoDateRange[0].startOf('day').toISOString(),
+            end: values.photoDateRange[1].endOf('day').toISOString()
+          } : null,
+          videoDateRange: values.videoDateRange ? {
+            start: values.videoDateRange[0].startOf('day').toISOString(),
+            end: values.videoDateRange[1].endOf('day').toISOString()
+          } : null,
+        }
+      }
+      delete (updated.permissions as any).photoDateRange_Raw
+      delete (updated.permissions as any).videoDateRange_Raw
+
+      await createOrUpdateAdmin(editingAdmin.uid, updated)
+      setAdmins(prev => prev.map(a => a.uid === editingAdmin.uid ? updated : a))
+      setEditingAdmin(null)
+      Modal.success({ title: 'Đã lưu thay đổi', centered: true })
+    } catch {
+      Modal.error({ title: 'Lưu thất bại', centered: true })
+    } finally {
+      setAdminSaving(false)
+    }
+  }
+
+  const handleCreateAdmin = async (values: any) => {
+    setAddAdminLoading(true)
+    try {
+      // Create a secondary app to avoid signing out current user
+      const secondaryApp = getApps().find(a => a.name === 'Secondary') || initializeApp(firebaseConfig, 'Secondary')
+      const secondaryAuth = getAuth(secondaryApp)
+      
+      const { user: newUser } = await createUserWithEmailAndPassword(secondaryAuth, values.email, values.password)
+      
+      const newAdmin: AdminUser = {
+        uid: newUser.uid,
+        email: values.email,
+        permissions: {
+          ...DEFAULT_PERMISSIONS,
+          ...values,
+          photoDateRange: values.photoDateRange ? {
+            start: values.photoDateRange[0].startOf('day').toISOString(),
+            end: values.photoDateRange[1].endOf('day').toISOString()
+          } : null,
+          videoDateRange: values.videoDateRange ? {
+            start: values.videoDateRange[0].startOf('day').toISOString(),
+            end: values.videoDateRange[1].endOf('day').toISOString()
+          } : null,
+        },
+        createdAt: new Date().toISOString()
+      }
+      
+      await createOrUpdateAdmin(newUser.uid, newAdmin)
+      setAdmins(prev => [...prev, newAdmin])
+      setShowAddAdminModal(false)
+      Modal.success({ title: 'Đã tạo Admin mới', centered: true })
+    } catch (err: any) {
+      console.error(err)
+      Modal.error({ title: 'Lỗi tạo Admin', content: err.message, centered: true })
+    } finally {
+      setAddAdminLoading(false)
+    }
+  }
+
   const items = tab === 'photos' ? photos : videos
 
   return (
@@ -757,7 +899,7 @@ export default function AdminPage() {
 
       {/* Tabs */}
       <div className="flex border-b border-[#1f1f1f] px-6">
-        {(['photos', 'videos', 'frames', 'requests', 'feedback'] as const).map(t => (
+        {availableTabs.map(t => (
           <button
             key={t}
             onClick={() => { setTab(t); setSelectedPaths(new Set()); }}
@@ -771,13 +913,70 @@ export default function AdminPage() {
               : t === 'videos' ? `Video (${videos.length})`
               : t === 'frames' ? `Khung (${customFrames.length})`
               : t === 'requests' ? `Đề Xuất${requests.length > 0 && requestStatusFilter === 'pending' ? ` (${requests.length})` : ''}`
-              : `Góp ý (${feedbacks.length})`}
+              : t === 'feedback' ? `Góp ý (${feedbacks.length})`
+              : 'Admin'}
           </button>
         ))}
       </div>
 
       {/* Content */}
-      {tab === 'frames' ? (
+      {tab === 'admins' ? (
+        <div className="flex-1 p-6 overflow-auto">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-white font-bold text-xl">Quản lý Admin</h2>
+            <div className="flex gap-2">
+              <Button type="primary" icon={<UserOutlined />} onClick={() => setShowAddAdminModal(true)}>Thêm Admin Mới</Button>
+              <Button icon={<ReloadOutlined />} onClick={loadAdmins} loading={adminsLoading}>Làm mới</Button>
+            </div>
+          </div>
+          
+          <Table
+            dataSource={admins}
+            loading={adminsLoading}
+            rowKey="uid"
+            pagination={false}
+            columns={[
+              { title: 'Email', dataIndex: 'email', key: 'email', render: (t) => <span className="text-white font-medium">{t}</span> },
+              { 
+                title: 'Quyền hạn', 
+                key: 'permissions',
+                render: (_, record) => (
+                  <div className="flex flex-wrap gap-1">
+                    {record.permissions.canViewPhotos && <Tag color="blue">Ảnh</Tag>}
+                    {record.permissions.canViewVideos && <Tag color="cyan">Video</Tag>}
+                    {record.permissions.canManageFrames && <Tag color="purple">Khung</Tag>}
+                    {record.permissions.canManageRequests && <Tag color="orange">Đề xuất</Tag>}
+                    {record.permissions.canManageFeedback && <Tag color="green">Góp ý</Tag>}
+                    {record.permissions.canManageAdmins && <Tag color="red">Super Admin</Tag>}
+                  </div>
+                )
+              },
+              {
+                title: 'Giới hạn thời gian',
+                key: 'ranges',
+                render: (_, record) => (
+                  <div className="text-[10px] text-[#888]">
+                    {record.permissions.photoDateRange && <div>Ảnh: {formatDate(record.permissions.photoDateRange.start)} - {formatDate(record.permissions.photoDateRange.end)}</div>}
+                    {record.permissions.videoDateRange && <div>Video: {formatDate(record.permissions.videoDateRange.start)} - {formatDate(record.permissions.videoDateRange.end)}</div>}
+                    {!record.permissions.photoDateRange && !record.permissions.videoDateRange && "Không giới hạn"}
+                  </div>
+                )
+              },
+              {
+                title: 'Hành động',
+                key: 'action',
+                render: (_, record) => (
+                  <Button 
+                    icon={<EditOutlined />} 
+                    onClick={() => setEditingAdmin(record)}
+                    disabled={record.email === import.meta.env.VITE_ADMIN_EMAIL && user?.email !== record.email}
+                  >Sửa</Button>
+                )
+              }
+            ]}
+          />
+        </div>
+      ) : tab === 'frames' ? (
         <div className="flex-1 p-6">
           {/* Toolbar */}
           <div className="flex items-center gap-3 mb-4">
@@ -1438,6 +1637,123 @@ export default function AdminPage() {
             </div>
           </>
         )}
+      </Modal>
+
+      {/* Edit Admin Modal */}
+      {editingAdmin && (
+        <Modal
+          title={<span><UserOutlined /> Quyền cho {editingAdmin.email}</span>}
+          open={!!editingAdmin}
+          onCancel={() => setEditingAdmin(null)}
+          footer={null}
+          centered
+          width={600}
+        >
+          <Form
+            layout="vertical"
+            initialValues={{
+              ...editingAdmin.permissions,
+              photoDateRange: editingAdmin.permissions.photoDateRange ? [dayjs(editingAdmin.permissions.photoDateRange.start), dayjs(editingAdmin.permissions.photoDateRange.end)] : null,
+              videoDateRange: editingAdmin.permissions.videoDateRange ? [dayjs(editingAdmin.permissions.videoDateRange.start), dayjs(editingAdmin.permissions.videoDateRange.end)] : null,
+            }}
+            onFinish={handleSaveAdmin}
+          >
+            <div className="grid grid-cols-2 gap-4">
+              <Form.Item name="canViewPhotos" valuePropName="checked">
+                <Checkbox>Xem ảnh</Checkbox>
+              </Form.Item>
+              <Form.Item name="canViewVideos" valuePropName="checked">
+                <Checkbox>Xem video</Checkbox>
+              </Form.Item>
+              <Form.Item name="canManageFrames" valuePropName="checked">
+                <Checkbox>Quản lý khung</Checkbox>
+              </Form.Item>
+              <Form.Item name="canManageRequests" valuePropName="checked">
+                <Checkbox>Duyệt đề xuất</Checkbox>
+              </Form.Item>
+              <Form.Item name="canManageFeedback" valuePropName="checked">
+                <Checkbox>Góp ý</Checkbox>
+              </Form.Item>
+              <Form.Item name="canManageAdmins" valuePropName="checked">
+                <Checkbox>Quản lý Admin</Checkbox>
+              </Form.Item>
+            </div>
+
+            <div className="mt-4 border-t border-[#333] pt-4">
+              <p className="text-[#888] text-xs font-semibold mb-4 uppercase tracking-wider">Giới hạn thời gian truy cập</p>
+              <Form.Item name="photoDateRange" label="Khoảng thời gian được xem Ảnh">
+                <DatePicker.RangePicker className="w-full" placeholder={['Ngày bắt đầu', 'Ngày kết thúc']} />
+              </Form.Item>
+              <Form.Item name="videoDateRange" label="Khoảng thời gian được xem Video">
+                <DatePicker.RangePicker className="w-full" placeholder={['Ngày bắt đầu', 'Ngày kết thúc']} />
+              </Form.Item>
+            </div>
+
+            <div className="flex justify-end gap-2 mt-6">
+              <Button onClick={() => setEditingAdmin(null)}>Hủy</Button>
+              <Button type="primary" htmlType="submit" loading={adminSaving}>Lưu thiết lập</Button>
+            </div>
+          </Form>
+        </Modal>
+      )}
+
+      {/* Add Admin Modal */}
+      <Modal
+        title={<span><UserOutlined /> Tạo tài khoản Admin mới</span>}
+        open={showAddAdminModal}
+        onCancel={() => setShowAddAdminModal(false)}
+        footer={null}
+        centered
+        width={500}
+      >
+        <Form
+          layout="vertical"
+          onFinish={handleCreateAdmin}
+          initialValues={DEFAULT_PERMISSIONS}
+        >
+          <Form.Item name="email" label="Email" rules={[{ required: true, type: 'email' }]}>
+            <Input placeholder="admin@example.com" />
+          </Form.Item>
+          <Form.Item name="password" label="Mật khẩu" rules={[{ required: true, min: 6 }]}>
+            <Input.Password placeholder="Tối thiểu 6 ký tự" />
+          </Form.Item>
+          
+          <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-4 p-4 bg-[#111] rounded border border-[#222]">
+            <Form.Item name="canViewPhotos" valuePropName="checked" className="mb-0">
+              <Checkbox>Xem ảnh</Checkbox>
+            </Form.Item>
+            <Form.Item name="canViewVideos" valuePropName="checked" className="mb-0">
+              <Checkbox>Xem video</Checkbox>
+            </Form.Item>
+            <Form.Item name="canManageFrames" valuePropName="checked" className="mb-0">
+              <Checkbox>Quản lý khung</Checkbox>
+            </Form.Item>
+            <Form.Item name="canManageRequests" valuePropName="checked" className="mb-0">
+              <Checkbox>Duyệt đề xuất</Checkbox>
+            </Form.Item>
+            <Form.Item name="canManageFeedback" valuePropName="checked" className="mb-0">
+              <Checkbox>Góp ý</Checkbox>
+            </Form.Item>
+            <Form.Item name="canManageAdmins" valuePropName="checked" className="mb-0">
+              <Checkbox>Quản lý Admin</Checkbox>
+            </Form.Item>
+          </div>
+
+          <div className="mt-4 border-t border-[#333] pt-4">
+            <p className="text-[#888] text-xs font-semibold mb-3 uppercase tracking-wider">Giới hạn thời gian truy cập</p>
+            <Form.Item name="photoDateRange" label="Khoảng thời gian được xem Ảnh">
+              <DatePicker.RangePicker className="w-full" placeholder={['Ngày bắt đầu', 'Ngày kết thúc']} />
+            </Form.Item>
+            <Form.Item name="videoDateRange" label="Khoảng thời gian được xem Video">
+              <DatePicker.RangePicker className="w-full" placeholder={['Ngày bắt đầu', 'Ngày kết thúc']} />
+            </Form.Item>
+          </div>
+
+          <div className="flex justify-end gap-2 mt-6">
+            <Button onClick={() => setShowAddAdminModal(false)}>Hủy</Button>
+            <Button type="primary" htmlType="submit" loading={addAdminLoading}>Tạo tài khoản</Button>
+          </div>
+        </Form>
       </Modal>
     </div>
   )
