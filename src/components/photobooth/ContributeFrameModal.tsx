@@ -11,6 +11,13 @@ interface Props {
 
 const KNOWN_CATEGORIES = ['Frame Basic', 'Frame Cartoon', 'Frame Amazing ⭐️', 'Frame IDOL Hoạt Họa']
 
+const FRAME_TYPE_OPTIONS = [
+  { value: 'vertical', label: 'Vertical (Mặc định)' },
+  { value: 'square', label: 'Square (Vuông)' },
+  { value: 'grid', label: 'Grid (Lưới 2 cột)' },
+  { value: 'bigrectangle', label: 'Big Rectangle (Ngang to)' },
+]
+
 export default function ContributeFrameModal({ open, onClose }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [file, setFile] = useState<File | null>(null)
@@ -22,6 +29,7 @@ export default function ContributeFrameModal({ open, onClose }: Props) {
   const [submitterContact, setSubmitterContact] = useState('')
   const [suggestedName, setSuggestedName] = useState('')
   const [suggestedCategory, setSuggestedCategory] = useState('')
+  const [suggestedFrame, setSuggestedFrame] = useState('vertical')
   const [note, setNote] = useState('')
 
   const [submitting, setSubmitting] = useState(false)
@@ -56,6 +64,7 @@ export default function ContributeFrameModal({ open, onClose }: Props) {
     setSubmitterContact('')
     setSuggestedName('')
     setSuggestedCategory('')
+    setSuggestedFrame('vertical')
     setNote('')
     setDone(false)
     setSubmitError(null)
@@ -74,6 +83,7 @@ export default function ContributeFrameModal({ open, onClose }: Props) {
         submitterContact: submitterContact.trim(),
         suggestedName: suggestedName.trim(),
         suggestedCategory: suggestedCategory.trim(),
+        suggestedFrame,
         slots,
         note: note.trim(),
       })
@@ -202,6 +212,18 @@ export default function ContributeFrameModal({ open, onClose }: Props) {
             <datalist id="contribute-categories">
               {KNOWN_CATEGORIES.map(c => <option key={c} value={c} />)}
             </datalist>
+          </div>
+
+          {/* Suggested Frame Type */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[#888] text-xs">Loại khung đề xuất</label>
+            <Select
+              value={suggestedFrame}
+              onChange={v => setSuggestedFrame(v)}
+              options={FRAME_TYPE_OPTIONS}
+              style={{ background: '#111', color: '#e5e5e5' }}
+              className="custom-select"
+            />
           </div>
 
           {/* Submitter contact */}

@@ -8,6 +8,8 @@ export interface FrameItem {
   id: number
   filename: string
   name: string
+  /** 'vertical', 'square', 'grid', 'bigrectangle', etc. Helps UI auto-pick layout. */
+  frame?: string
   categoryId: number
   categoryName: string
   /** number of transparent photo slots detected in the PNG */
@@ -93,7 +95,7 @@ export function deriveCategoryId(name: string): number {
  */
 export async function uploadFrame(
   file: File,
-  meta: { name: string; categoryName: string; slots: number; slots_data?: SlotRect[]; layout?: string },
+  meta: { name: string; categoryName: string; slots: number; slots_data?: SlotRect[]; layout?: string; frame?: string },
 ): Promise<FrameItem> {
   const ext = file.name.split('.').pop()?.toLowerCase() ?? 'png'
   const filename = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
@@ -111,6 +113,7 @@ export async function uploadFrame(
     storageUrl,
     slots_data: meta.slots_data,
     layout: meta.layout,
+    frame: meta.frame,
   }
   const docRef = await addDoc(collection(db, FRAMES_COLLECTION), frameDoc)
   return { ...frameDoc, firestoreId: docRef.id }
@@ -139,7 +142,7 @@ export async function fetchCategories(): Promise<FrameCategory[]> {
 
 export async function updateFrame(
   firestoreId: string,
-  patch: Partial<Pick<FrameItem, 'name' | 'categoryName' | 'slots' | 'slots_data' | 'layout'>>,
+  patch: Partial<Pick<FrameItem, 'name' | 'categoryName' | 'slots' | 'slots_data' | 'layout' | 'frame'>>,
 ): Promise<void> {
   const updates: Record<string, string | number> = {}
   if (patch.name !== undefined) updates.name = patch.name
@@ -150,6 +153,7 @@ export async function updateFrame(
   if (patch.slots !== undefined) updates.slots = patch.slots
   if (patch.slots_data !== undefined) (updates as any).slots_data = patch.slots_data
   if (patch.layout !== undefined) updates.layout = patch.layout
+  if (patch.frame !== undefined) updates.frame = patch.frame
   await updateDoc(doc(db, FRAMES_COLLECTION, firestoreId), updates)
 }
 
@@ -167,7 +171,7 @@ export interface FrameRequest {
   submitterContact: string  // email or social handle
   suggestedName: string
   suggestedCategory: string
-  suggestedFrame: FrameItem['frame']
+  suggestedFrame?: string
   slots: number
   note: string
   status: FrameRequestStatus
@@ -182,6 +186,7 @@ export async function submitFrameRequest(
     submitterContact: string
     suggestedName: string
     suggestedCategory: string
+    suggestedFrame?: string
     slots: number
     note: string
   },
@@ -199,6 +204,7 @@ export async function submitFrameRequest(
     submitterContact: meta.submitterContact,
     suggestedName: meta.suggestedName,
     suggestedCategory: meta.suggestedCategory,
+    suggestedFrame: meta.suggestedFrame,
     slots: meta.slots,
     note: meta.note,
     status: 'pending' as FrameRequestStatus,
@@ -224,6 +230,7 @@ export async function approveFrameRequest(request: FrameRequest): Promise<void> 
     categoryName: request.suggestedCategory,
     slots: request.slots,
     storageUrl: request.storageUrl,
+    frame: request.suggestedFrame,
   }
   await Promise.all([
     addDoc(collection(db, FRAMES_COLLECTION), frameDoc),

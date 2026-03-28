@@ -38,6 +38,13 @@ const LAYOUT_OPTIONS = [
   { value: '2x4', label: '2x4' },
 ]
 
+const FRAME_TYPE_OPTIONS = [
+  { value: 'vertical', label: 'Vertical (Mặc định)' },
+  { value: 'square', label: 'Square (Vuông)' },
+  { value: 'grid', label: 'Grid (Lưới 2 cột)' },
+  { value: 'bigrectangle', label: 'Big Rectangle (Ngang to)' },
+]
+
 interface MediaItem {
   name: string
   fullPath: string
@@ -151,6 +158,7 @@ export default function AdminPage() {
   const [uploadName, setUploadName] = useState('')
   const [uploadCategory, setUploadCategory] = useState('')
   const [uploadLayout, setUploadLayout] = useState('')
+  const [uploadFrameType, setUploadFrameType] = useState('vertical')
   const [uploading, setUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -160,6 +168,7 @@ export default function AdminPage() {
   const [editCategory, setEditCategory] = useState('')
   const [editSlotsData, setEditSlotsData] = useState<SlotRect[]>([])
   const [editLayout, setEditLayout] = useState('')
+  const [editFrameType, setEditFrameType] = useState('')
   const [editSaving, setEditSaving] = useState(false)
 
   const openEditFrame = (frame: FrameItem) => {
@@ -168,6 +177,7 @@ export default function AdminPage() {
     setEditCategory(frame.categoryName)
     setEditSlotsData(frame.slots_data || [])
     setEditLayout(frame.layout || (frame.slots_data ? getLayoutFromSlots(frame.slots_data) : ''))
+    setEditFrameType(frame.frame || 'vertical')
   }
 
   const handleSaveEdit = async () => {
@@ -181,10 +191,11 @@ export default function AdminPage() {
         slots: editSlotsData.length,
         slots_data: editSlotsData,
         layout: newLayout,
+        frame: editFrameType,
       })
       setCustomFrames(prev => prev.map(f =>
         f.firestoreId === editingFrame.firestoreId
-          ? { ...f, name: editName.trim(), categoryName: editCategory.trim(), slots: editSlotsData.length, slots_data: editSlotsData, layout: newLayout }
+          ? { ...f, name: editName.trim(), categoryName: editCategory.trim(), slots: editSlotsData.length, slots_data: editSlotsData, layout: newLayout, frame: editFrameType }
           : f
       ))
       setEditingFrame(null)
@@ -704,6 +715,7 @@ export default function AdminPage() {
     setUploadName('')
     setUploadCategory('')
     setUploadLayout('')
+    setUploadFrameType('vertical')
   }
 
   const handleUploadFrame = async () => {
@@ -716,6 +728,7 @@ export default function AdminPage() {
         slots: uploadSlotsData.length,
         slots_data: uploadSlotsData,
         layout: uploadLayout || getLayoutFromSlots(uploadSlotsData),
+        frame: uploadFrameType,
       })
       setCustomFrames(prev => [...prev, frame].sort((a, b) => a.name.localeCompare(b.name, 'vi')))
       handleCloseUploadModal()
@@ -1091,7 +1104,7 @@ export default function AdminPage() {
                   <div className="p-2">
                     <p className="text-white text-xs font-medium truncate">{frame.name}</p>
                     <p className="text-[#555] text-[10px] truncate">{frame.categoryName}</p>
-                    <p className="text-[#3a3a3a] text-[10px]">{frame.slots} slot · Layout: {frame.layout || 'N/A'}</p>
+                    <p className="text-[#3a3a3a] text-[10px]">{frame.slots} slot · Layout: {frame.layout || 'N/A'} · Loại: {frame.frame || 'vertical'}</p>
                   </div>
                   <Tooltip title="Chỉnh sửa">
                     <button
@@ -1480,6 +1493,16 @@ export default function AdminPage() {
               />
             </div>
 
+            {/* Frame Type */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[#888] text-xs font-semibold uppercase tracking-wider">Loại khung</label>
+              <Select
+                value={uploadFrameType}
+                onChange={v => setUploadFrameType(v)}
+                options={FRAME_TYPE_OPTIONS}
+              />
+            </div>
+
             {/* Slot count info */}
             <div className="flex flex-col gap-1.5">
               <label className="text-[#888] text-xs font-semibold uppercase tracking-wider">Số Slot</label>
@@ -1589,6 +1612,7 @@ export default function AdminPage() {
                 <option value="Frame IDOL Hoạt Họa" />
               </datalist>
             </div>
+            {/* Layout */}
             <div className="flex flex-col gap-1.5">
               <label className="text-[#888] text-xs font-semibold uppercase tracking-wider">Layout (Bố cục)</label>
               <Select
@@ -1597,6 +1621,16 @@ export default function AdminPage() {
                 placeholder="Chọn bố cục..."
                 options={LAYOUT_OPTIONS}
                 showSearch
+              />
+            </div>
+
+            {/* Frame Type */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[#888] text-xs font-semibold uppercase tracking-wider">Loại khung</label>
+              <Select
+                value={editFrameType}
+                onChange={v => setEditFrameType(v)}
+                options={FRAME_TYPE_OPTIONS}
               />
             </div>
 
