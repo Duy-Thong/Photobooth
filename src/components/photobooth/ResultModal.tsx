@@ -3,6 +3,7 @@ import { Modal, QRCode, Spin, Button, message } from 'antd'
 import { DownloadOutlined, ReloadOutlined, PictureOutlined, LoadingOutlined, CopyOutlined, CheckOutlined } from '@ant-design/icons'
 import { uploadSession } from '@/lib/uploadService'
 import { downloadImage, downloadMedia } from '@/lib/imageProcessing'
+import { useThemeClass } from '@/stores/themeStore'
 
 type Phase = 'uploading' | 'done' | 'error'
 
@@ -24,6 +25,7 @@ interface ResultModalProps {
 }
 
 export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeType, recapStripUrl, buildingStrip, onClose, onRetake, onChangeFrame }: ResultModalProps) {
+  const tc = useThemeClass()
   const recapExt = recapMimeType?.startsWith('video/mp4') ? 'mp4' : 'webm'
   const hasClips = !!recapClips && recapClips.length > 0
 
@@ -181,14 +183,27 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
     onRetake()
   }
 
-  const btnBase = { background: '#1e1e1e', border: '1px solid #2a2a2a' }
+  const btnBase = {
+    background: tc('#1e1e1e', '#f0f0f0') === '#1e1e1e' ? '#1e1e1e' : '#f0f0f0',
+    border: `1px solid ${tc('#2a2a2a', '#d9d9d9') === '#2a2a2a' ? '#2a2a2a' : '#d9d9d9'}`,
+  }
+  const btnTextMuted = tc('#888', '#666') === '#888' ? '#888' : '#666'
+
+  const smallBtn = tc(
+    'bg-[#222] border border-[#333] text-[#aaa] hover:text-white hover:border-[#555] hover:bg-[#2a2a2a]',
+    'bg-[#f0f0f0] border border-[#d9d9d9] text-[#666] hover:text-black hover:border-[#999] hover:bg-[#e8e8e8]'
+  )
+  const dlBtn = tc(
+    'bg-[#0a0a0a] border border-[#333] text-[#aaa] hover:text-white hover:border-[#555] hover:bg-[#111]',
+    'bg-white border border-[#d9d9d9] text-[#666] hover:text-black hover:border-[#999] hover:bg-[#f5f5f5]'
+  )
 
   return (
     <Modal
       open={open}
       onCancel={onClose}
       title={
-        <span className="text-white font-semibold tracking-tight">
+        <span className={`font-semibold tracking-tight ${tc('text-white', 'text-black')}`}>
           {phase === 'uploading' && 'Đang tải lên...'}
           {phase === 'done' && 'Ảnh của bạn đã sẵn sàng'}
           {phase === 'error' && 'Có lỗi xảy ra'}
@@ -198,15 +213,15 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
       width={760}
       centered
       styles={{
-        body: { background: '#141414', padding: '20px' },
-        header: { background: '#141414', borderBottom: '1px solid #1f1f1f' },
+        body: { background: tc('#141414', '#ffffff') === '#141414' ? '#141414' : '#ffffff', padding: '20px' },
+        header: { background: tc('#141414', '#ffffff') === '#141414' ? '#141414' : '#ffffff', borderBottom: `1px solid ${tc('#1f1f1f', '#f0f0f0') === '#1f1f1f' ? '#1f1f1f' : '#f0f0f0'}` },
       }}
     >
       {/* ── LOADING ─────────────────────────────────────────────────────────── */}
       {phase === 'uploading' && (
         <div className="flex flex-col items-center gap-4 py-16">
           <Spin size="large" />
-          <p className="text-[#888] text-sm">Đang xử lý QR...</p>
+          <p className={`text-sm ${tc('text-[#888]', 'text-[#888]')}`}>Đang xử lý QR...</p>
         </div>
       )}
 
@@ -215,9 +230,9 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
         <div className="flex flex-col items-center gap-4 py-10 text-center">
           <p className="text-red-400 text-sm">{errorMsg}</p>
           <div className="flex gap-2 mt-2">
-            <Button onClick={onClose} style={{ ...btnBase, color: '#888' }}>Đóng</Button>
+            <Button onClick={onClose} style={{ ...btnBase, color: btnTextMuted }}>Đóng</Button>
             <Button onClick={handleStartUpload}
-              style={{ background: '#fff', color: '#000', border: 'none', fontWeight: 600 }}>
+              style={{ background: tc('#fff', '#000') === '#fff' ? '#fff' : '#000', color: tc('#000', '#fff') === '#000' ? '#000' : '#fff', border: 'none', fontWeight: 600 }}>
               Thử lại
             </Button>
           </div>
@@ -233,7 +248,7 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
               <img
                 src={finalWithQr || imageBlobUrl!}
                 alt="Final photo"
-                className="w-full max-h-[60vh] md:max-h-[520px] object-contain rounded-lg border border-[#2a2a2a]"
+                className={`w-full max-h-[60vh] md:max-h-[520px] object-contain rounded-lg border ${tc('border-[#2a2a2a]', 'border-[#d9d9d9]')}`}
               />
             </div>
             
@@ -241,16 +256,16 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
             <div className="w-full flex flex-col gap-2">
               <Button block icon={downloading ? <LoadingOutlined /> : <DownloadOutlined />} onClick={handleDownload}
                 disabled={downloading}
-                style={{ background: '#fff', color: '#000', border: 'none', fontWeight: 600, height: 40 }}>
+                style={{ background: tc('#fff', '#000') === '#fff' ? '#fff' : '#000', color: tc('#000', '#fff') === '#000' ? '#000' : '#fff', border: 'none', fontWeight: 600, height: 40 }}>
                 Tải về
               </Button>
               <div className="flex gap-2">
                 <Button icon={<PictureOutlined />} onClick={onChangeFrame}
-                  style={{ ...btnBase, color: '#888', flex: 1 }}>
+                  style={{ ...btnBase, color: btnTextMuted, flex: 1 }}>
                   Đổi khung
                 </Button>
                 <Button icon={<ReloadOutlined />} onClick={handleRetake}
-                  style={{ ...btnBase, color: '#888', flex: 1 }}>
+                  style={{ ...btnBase, color: btnTextMuted, flex: 1 }}>
                   Chụp lại
                 </Button>
               </div>
@@ -261,13 +276,13 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
           <div className="flex-1 w-full flex flex-col items-center gap-4">
             {sessionId ? (
               <>
-                <p className="text-[#666] text-[10px] uppercase tracking-widest self-start">Quét để xem &amp; chia sẻ</p>
+                <p className={`text-[10px] uppercase tracking-widest self-start ${tc('text-[#666]', 'text-[#999]')}`}>Quét để xem &amp; chia sẻ</p>
                 <div className="p-2 rounded-2xl">
                   <QRCode value={`${window.location.origin}/session/${sessionId}`} size={150} bordered={false} errorLevel="H" icon="/clublogo.png" iconSize={34} />
                 </div>
                 {/* URL link row */}
-                <div className="w-full flex items-center gap-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg p-1.5 pl-3">
-                  <span className="flex-1 text-[#888] text-[11px] truncate select-all">
+                <div className={`w-full flex items-center gap-2 rounded-lg p-1.5 pl-3 ${tc('bg-[#0a0a0a] border border-[#2a2a2a]', 'bg-[#f5f5f5] border border-[#d9d9d9]')}`}>
+                  <span className={`flex-1 text-[11px] truncate select-all ${tc('text-[#888]', 'text-[#666]')}`}>
                     {`${window.location.origin}/session/${sessionId}`}
                   </span>
                   <div className="flex items-center gap-1 shrink-0">
@@ -275,14 +290,14 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
                       href={`${window.location.origin}/session/${sessionId}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="px-2.5 py-1 rounded bg-[#222] border border-[#333] text-[#aaa] hover:text-white hover:border-[#555] hover:bg-[#2a2a2a] text-[10px] font-semibold uppercase tracking-wider transition-all flex items-center gap-1.5"
+                      className={`px-2.5 py-1 rounded text-[10px] font-semibold uppercase tracking-wider transition-all flex items-center gap-1.5 ${smallBtn}`}
                       title="Mở link sang tab mới"
                     >
                       Mở ↗
                     </a>
                     <button
                       onClick={handleCopyUrl}
-                      className="px-2.5 py-1 rounded bg-[#222] border border-[#333] text-[#aaa] hover:text-white hover:border-[#555] hover:bg-[#2a2a2a] text-[10px] font-semibold uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer"
+                      className={`px-2.5 py-1 rounded text-[10px] font-semibold uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer ${smallBtn}`}
                       title="Copy link"
                     >
                       {copied ? <CheckOutlined className="text-green-400" /> : <CopyOutlined />} Copy
@@ -293,7 +308,7 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
             ) : (
               <div className="flex-1 flex flex-col items-center justify-center py-6 text-center gap-3">
                 <Spin indicator={<LoadingOutlined style={{ fontSize: 24 }} spin />} />
-                <p className="text-[#555] text-xs">Đang cố gắng tạo mã QR...<br/>Bạn có thể tải ảnh local về trước.</p>
+                <p className={`text-xs ${tc('text-[#555]', 'text-[#999]')}`}>Đang cố gắng tạo mã QR...<br/>Bạn có thể tải ảnh local về trước.</p>
               </div>
             )}
 
@@ -303,9 +318,9 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
                 {/* Strip video */}
                 {(recapStripUrl || buildingStrip) && (
                   <div className="flex flex-col gap-1.5">
-                    <p className="text-[#666] text-[10px] uppercase tracking-widest flex items-center gap-1.5">
+                    <p className={`text-[10px] uppercase tracking-widest flex items-center gap-1.5 ${tc('text-[#666]', 'text-[#999]')}`}>
                       Strip Video
-                      {buildingStrip && !recapStripUrl && <LoadingOutlined className="text-[#555]" />}
+                      {buildingStrip && !recapStripUrl && <LoadingOutlined className={tc('text-[#555]', 'text-[#aaa]')} />}
                     </p>
                     {recapStripUrl ? (
                       <>
@@ -315,7 +330,7 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
                           autoPlay
                           loop
                           playsInline
-                          className="w-full rounded-lg border border-[#2a2a2a] bg-black object-contain max-h-44"
+                          className={`w-full rounded-lg border object-contain max-h-44 ${tc('border-[#2a2a2a] bg-black', 'border-[#d9d9d9] bg-white')}`}
                         />
                         <div className="flex items-center justify-center gap-2 mt-0.5">
                           <button 
@@ -329,14 +344,14 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
                                 setDownloading(false)
                               }
                             }}
-                            className="px-3 py-1.5 rounded-md bg-[#0a0a0a] border border-[#333] text-[#aaa] hover:text-white hover:border-[#555] hover:bg-[#111] text-[10px] font-semibold uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                            className={`px-3 py-1.5 rounded-md text-[10px] font-semibold uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${dlBtn}`}
                           >
                             {downloading ? <LoadingOutlined /> : <DownloadOutlined />} Tải về
                           </button>
                         </div>
                       </>
                     ) : (
-                      <div className="flex items-center justify-center gap-2 py-3 text-[#555] text-xs">
+                      <div className={`flex items-center justify-center gap-2 py-3 text-xs ${tc('text-[#555]', 'text-[#999]')}`}>
                         <LoadingOutlined /><span>Đang tạo strip video...</span>
                       </div>
                     )}
@@ -346,7 +361,7 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
                 {/* Individual clips */}
                 {hasClips && (
                   <div className="flex flex-col gap-1.5 mt-2">
-                    <p className="text-[#666] text-[10px] uppercase tracking-widest">
+                    <p className={`text-[10px] uppercase tracking-widest ${tc('text-[#666]', 'text-[#999]')}`}>
                       Clip đơn ({currentClipIdx + 1}&nbsp;/&nbsp;{recapClips!.length})
                     </p>
                     <video
@@ -356,14 +371,14 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
                       autoPlay
                       playsInline
                       onEnded={() => setCurrentClipIdx(i => (i + 1) % recapClips!.length)}
-                      className="w-full rounded-lg border border-[#2a2a2a] bg-black object-contain max-h-28"
+                      className={`w-full rounded-lg border object-contain max-h-28 ${tc('border-[#2a2a2a] bg-black', 'border-[#d9d9d9] bg-white')}`}
                     />
                     {recapClips!.length > 1 && (
                       <div className="flex gap-1.5 justify-center my-1.5">
                         {recapClips!.map((_, i) => (
                           <button key={i} onClick={() => setCurrentClipIdx(i)}
                             className={`w-2 h-2 rounded-full transition-colors ${
-                              i === currentClipIdx ? 'bg-white' : 'bg-[#444] hover:bg-[#666]'
+                              i === currentClipIdx ? tc('bg-white', 'bg-black') : tc('bg-[#444] hover:bg-[#666]', 'bg-[#ccc] hover:bg-[#999]')
                             }`}
                           />
                         ))}
@@ -381,7 +396,7 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
                             setDownloading(false)
                           }
                         }}
-                        className="px-3 py-1.5 rounded-md bg-[#0a0a0a] border border-[#333] text-[#aaa] hover:text-white hover:border-[#555] hover:bg-[#111] text-[10px] font-semibold uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                        className={`px-3 py-1.5 rounded-md text-[10px] font-semibold uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${dlBtn}`}
                       >
                         {downloading ? <LoadingOutlined /> : <DownloadOutlined />} Tải về
                       </button>

@@ -10,16 +10,109 @@ html {
     scroll-behavior: smooth;
 }
 
+/* ── Theme CSS Variables ── */
+:root,
+html.dark {
+    --bg-primary: #0a0a0a;
+    --bg-secondary: #111111;
+    --bg-elevated: #141414;
+    --bg-surface: #0d0d0d;
+    --bg-input: #0a0a0a;
+    --border-primary: #222222;
+    --border-secondary: #1e1e1e;
+    --border-subtle: #141414;
+    --border-dashed: #252525;
+    --border-hover: #444444;
+    --text-primary: #e5e5e5;
+    --text-secondary: #888888;
+    --text-tertiary: #555555;
+    --text-muted: #333333;
+    --text-label: #3a3a3a;
+    --text-heading: #ffffff;
+    --scrollbar-track: #0a0a0a;
+    --scrollbar-thumb: #2a2a2a;
+    --scrollbar-thumb-hover: #444444;
+    --switch-off: #2a2a2a;
+    --modal-bg: #050505;
+    --modal-border: #222222;
+    --modal-divider: #1e1e1e;
+    --modal-close: #555555;
+    --modal-close-hover-bg: #222222;
+    --modal-close-hover-color: #ffffff;
+    --focus-ring: rgba(255, 255, 255, 0.2);
+    --shadow-modal: rgba(0, 0, 0, 0.7);
+    --pill-off-border: #252525;
+    --pill-off-text: #888888;
+    --pill-off-hover-border: #444444;
+    --pill-off-hover-text: #dddddd;
+    --divider: #1e1e1e;
+    --btn-base-bg: #1e1e1e;
+    --btn-base-border: #2a2a2a;
+    --progress-track: #1e1e1e;
+    --accent-chip-border: #2a2a2a;
+    --accent-chip-hover-border: #444444;
+    --accent-chip-text: #5a5a5a;
+    --accent-chip-hover-text: #aaaaaa;
+    --slot-empty-bg: #141414;
+    color-scheme: dark;
+}
+
+html.light {
+    --bg-primary: #f5f5f5;
+    --bg-secondary: #ffffff;
+    --bg-elevated: #fafafa;
+    --bg-surface: #f0f0f0;
+    --bg-input: #ffffff;
+    --border-primary: #d9d9d9;
+    --border-secondary: #e8e8e8;
+    --border-subtle: #f0f0f0;
+    --border-dashed: #d0d0d0;
+    --border-hover: #999999;
+    --text-primary: #1a1a1a;
+    --text-secondary: #666666;
+    --text-tertiary: #888888;
+    --text-muted: #bbbbbb;
+    --text-label: #999999;
+    --text-heading: #000000;
+    --scrollbar-track: #f5f5f5;
+    --scrollbar-thumb: #cccccc;
+    --scrollbar-thumb-hover: #aaaaaa;
+    --switch-off: #d0d0d0;
+    --modal-bg: #ffffff;
+    --modal-border: #e0e0e0;
+    --modal-divider: #f0f0f0;
+    --modal-close: #aaaaaa;
+    --modal-close-hover-bg: #f0f0f0;
+    --modal-close-hover-color: #333333;
+    --focus-ring: rgba(0, 0, 0, 0.15);
+    --shadow-modal: rgba(0, 0, 0, 0.12);
+    --pill-off-border: #d0d0d0;
+    --pill-off-text: #777777;
+    --pill-off-hover-border: #999999;
+    --pill-off-hover-text: #333333;
+    --divider: #e8e8e8;
+    --btn-base-bg: #f0f0f0;
+    --btn-base-border: #d9d9d9;
+    --progress-track: #e0e0e0;
+    --accent-chip-border: #d0d0d0;
+    --accent-chip-hover-border: #999999;
+    --accent-chip-text: #777777;
+    --accent-chip-hover-text: #333333;
+    --slot-empty-bg: #eeeeee;
+    color-scheme: light;
+}
+
 body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background-color: #0a0a0a;
-    color: #e5e5e5;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
     font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
     font-size: 14px;
     line-height: 1.5;
     min-height: 100dvh;
     overflow-x: hidden;
+    transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 /* ── Scrollbar ── */
@@ -29,57 +122,57 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-    background: #0a0a0a;
+    background: var(--scrollbar-track);
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #2a2a2a;
+    background: var(--scrollbar-thumb);
     border-radius: 2px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: #444;
+    background: var(--scrollbar-thumb-hover);
 }
 
 /* ── AntD modal backdrop ── */
 .ant-modal-mask {
-    background: rgba(0, 0, 0, 0.7) !important;
+    background: var(--shadow-modal) !important;
 }
 
 /* ── AntD modal shell — ConfigProvider handles bg, but shadow/radius here ── */
 .ant-modal .ant-modal-content {
-    border: 1px solid #222;
-    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.7);
+    border: 1px solid var(--modal-border);
+    box-shadow: 0 24px 64px var(--shadow-modal);
 }
 
 /* ── AntD modal header/body/footer dividers ── */
 .ant-modal .ant-modal-header {
-    border-bottom: 1px solid #1e1e1e !important;
+    border-bottom: 1px solid var(--modal-divider) !important;
     padding-bottom: 12px;
 }
 
 .ant-modal .ant-modal-footer {
-    border-top: 1px solid #1e1e1e !important;
+    border-top: 1px solid var(--modal-divider) !important;
     padding-top: 12px;
 }
 
 /* ── AntD modal close button ── */
 .ant-modal .ant-modal-close {
-    color: #555;
+    color: var(--modal-close);
 }
 
 .ant-modal .ant-modal-close:hover {
-    color: #fff;
-    background: #222;
+    color: var(--modal-close-hover-color);
+    background: var(--modal-close-hover-bg);
 }
 
 /* ── Switch track color when off ── */
 .ant-switch {
-    background: #2a2a2a;
+    background: var(--switch-off);
 }
 
 /* ── Focus ring ── */
 *:focus-visible {
-    outline: 1px solid rgba(255, 255, 255, 0.2);
+    outline: 1px solid var(--focus-ring);
     outline-offset: 2px;
 }

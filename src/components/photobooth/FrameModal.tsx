@@ -4,6 +4,7 @@ import { fetchFrames, fetchCategories, frameImageUrl } from '@/lib/frameService'
 import type { FrameItem, FrameCategory } from '@/lib/frameService'
 import type { LayoutConfig } from '@/types/photobooth'
 import ContributeFrameModal from './ContributeFrameModal'
+import { useThemeClass } from '@/stores/themeStore'
 
 interface FrameModalProps {
   open: boolean
@@ -22,6 +23,7 @@ export default function FrameModal({
   onClear,
   onClose,
 }: FrameModalProps) {
+  const tc = useThemeClass()
   const [frames, setFrames] = useState<FrameItem[]>([])
   const [categories, setCategories] = useState<FrameCategory[]>([])
   const [loading, setLoading] = useState(false)
@@ -84,6 +86,16 @@ export default function FrameModal({
     setPreview(null)
   }
 
+  const chipActive = tc('bg-white text-black border-white font-semibold', 'bg-black text-white border-black font-semibold')
+  const chipInactive = tc(
+    'border-[#252525] text-[#5a5a5a] hover:border-[#3a3a3a] hover:text-[#bbb]',
+    'border-[#d0d0d0] text-[#888] hover:border-[#999] hover:text-[#333]'
+  )
+  const footerBtn = tc(
+    'border-[#2a2a2a] text-[#666] hover:text-[#aaa] hover:border-[#444]',
+    'border-[#d0d0d0] text-[#888] hover:text-[#555] hover:border-[#999]'
+  )
+
   return (
     <>
       {/* Frame selection modal */}
@@ -100,20 +112,20 @@ export default function FrameModal({
             <button
               onClick={() => { onClear(); onClose() }}
               disabled={!selectedFrame}
-              className="text-xs px-3 py-1.5 rounded-md border border-[#2a2a2a] text-[#666] hover:text-[#aaa] hover:border-[#444] disabled:opacity-30 disabled:cursor-not-allowed transition"
+              className={`text-xs px-3 py-1.5 rounded-md border disabled:opacity-30 disabled:cursor-not-allowed transition ${footerBtn}`}
             >
               Bỏ Khung
             </button>
             <div className="flex gap-2">
               <button
                 onClick={() => setContributeOpen(true)}
-                className="text-xs px-3 py-1.5 rounded-md border border-[#2a2a2a] text-[#666] hover:text-[#aaa] hover:border-[#444] transition"
+                className={`text-xs px-3 py-1.5 rounded-md border transition ${footerBtn}`}
               >
                 + Đóng góp khung
               </button>
               <button
                 onClick={onClose}
-                className="text-xs px-3 py-1.5 rounded-md border border-[#2a2a2a] text-[#666] hover:text-[#aaa] hover:border-[#444] transition"
+                className={`text-xs px-3 py-1.5 rounded-md border transition ${footerBtn}`}
               >
                 Huỷ
               </button>
@@ -124,15 +136,15 @@ export default function FrameModal({
         centered
       >
         <div className="px-4 pt-3 pb-2 flex items-center gap-2 flex-wrap">
-          <span className="text-[10px] text-white font-semibold uppercase tracking-[0.15em] shrink-0">Layout:</span>
+          <span className={`text-[10px] font-semibold uppercase tracking-[0.15em] shrink-0 ${tc('text-white', 'text-black')}`}>Layout:</span>
           {['Tất cả', ...availableLayouts].map(ly => (
             <button
               key={ly}
               onClick={() => { setLayoutFilter(ly === 'Tất cả' ? null : ly); setActiveCategoryName(null) }}
               className={`text-[11px] px-2.5 py-0.5 rounded-md border transition-all duration-150 ${
                 (layoutFilter === ly || (ly === 'Tất cả' && !layoutFilter))
-                  ? 'bg-white text-black border-white font-semibold'
-                  : 'border-[#252525] text-[#5a5a5a] hover:border-[#3a3a3a] hover:text-[#bbb]'
+                  ? chipActive
+                  : chipInactive
               }`}
             >
               {ly}
@@ -162,9 +174,7 @@ export default function FrameModal({
                 key={cat.id ?? 'all'}
                 onClick={() => setActiveCategoryName(cat.name === 'Tất cả' ? null : cat.name)}
                 className={`text-[11px] px-3 py-1 rounded-md border transition-all duration-150 ${
-                  active
-                    ? 'bg-white text-black border-white font-semibold'
-                    : 'border-[#252525] text-[#5a5a5a] hover:border-[#3a3a3a] hover:text-[#bbb]'
+                  active ? chipActive : chipInactive
                 }`}
               >
                 {cat.name}
@@ -193,10 +203,10 @@ export default function FrameModal({
                   <button
                     key={frame.id}
                     onClick={() => setPreview(frame)}
-                    className={`relative rounded-lg overflow-hidden border transition-all duration-150 aspect-3/4 bg-[#111] flex flex-col items-center ${
+                    className={`relative rounded-lg overflow-hidden border transition-all duration-150 aspect-3/4 flex flex-col items-center ${tc('bg-[#111]', 'bg-[#f5f5f5]')} ${
                       isActive
                         ? 'border-white shadow-[0_0_0_1px_rgba(255,255,255,0.2)]'
-                        : 'border-[#1e1e1e] hover:border-[#3a3a3a]'
+                        : tc('border-[#1e1e1e] hover:border-[#3a3a3a]', 'border-[#e0e0e0] hover:border-[#999]')
                     }`}
                   >
                     <img
@@ -233,13 +243,16 @@ export default function FrameModal({
           <div className="flex justify-end gap-2">
             <button
               onClick={() => setPreview(null)}
-              className="text-xs px-3 py-1.5 rounded-md border border-[#2a2a2a] text-[#666] hover:text-[#aaa] hover:border-[#444] transition"
+              className={`text-xs px-3 py-1.5 rounded-md border transition ${footerBtn}`}
             >
               Huỷ
             </button>
             <button
               onClick={handleConfirm}
-              className="text-xs px-4 py-1.5 rounded-md bg-white text-black font-semibold hover:bg-[#e8e8e8] active:scale-[0.98] transition"
+              className={`text-xs px-4 py-1.5 rounded-md font-semibold active:scale-[0.98] transition ${tc(
+                'bg-white text-black hover:bg-[#e8e8e8]',
+                'bg-black text-white hover:bg-[#222]'
+              )}`}
             >
               Áp dụng
             </button>
@@ -255,7 +268,7 @@ export default function FrameModal({
               alt={preview.name}
               className="w-44 object-contain rounded-md"
             />
-            <p className="text-[11px] text-[#555]">{preview.categoryName}</p>
+            <p className={`text-[11px] ${tc('text-[#555]', 'text-[#999]')}`}>{preview.categoryName}</p>
           </div>
         )}
       </Modal>

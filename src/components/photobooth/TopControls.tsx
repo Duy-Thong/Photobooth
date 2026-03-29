@@ -1,6 +1,7 @@
 import { CloseOutlined, SoundOutlined, MutedOutlined } from '@ant-design/icons'
 import { COUNTDOWN_OPTIONS } from '@/types/photobooth'
 import { frameImageUrl, type FrameItem } from '@/lib/frameService'
+import { useThemeClass } from '@/stores/themeStore'
 
 interface TopControlsProps {
   countdown: number
@@ -14,10 +15,6 @@ interface TopControlsProps {
   onToggleSound: () => void
 }
 
-const PILL = 'text-[13px] font-medium px-4 py-2 rounded-lg border transition-all duration-150'
-const PILL_ON = `${PILL} bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.15)]`
-const PILL_OFF = `${PILL} border-[#252525] text-[#888] hover:border-[#444] hover:text-[#ddd]`
-
 export default function TopControls({
   countdown,
   videoRecap,
@@ -29,18 +26,36 @@ export default function TopControls({
   onContributeFrame,
   onToggleSound,
 }: TopControlsProps) {
+  const tc = useThemeClass()
+
+  const PILL = 'text-[13px] font-medium px-4 py-2 rounded-lg border transition-all duration-150'
+  const PILL_ON = `${PILL} ${tc(
+    'bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.15)]',
+    'bg-black text-white border-black shadow-[0_0_15px_rgba(0,0,0,0.15)]'
+  )}`
+  const PILL_OFF = `${PILL} ${tc(
+    'border-[#252525] text-[#888] hover:border-[#444] hover:text-[#ddd]',
+    'border-[#d0d0d0] text-[#777] hover:border-[#999] hover:text-[#333]'
+  )}`
+
   return (
     <div className="flex items-center gap-8 flex-wrap">
       {/* Chọn Khung */}
       <div className="flex flex-col gap-2">
-        <span className="text-white text-[10px] font-bold uppercase tracking-[0.12em] opacity-50">Khung</span>
+        <span className={`text-[10px] font-bold uppercase tracking-[0.12em] opacity-50 ${tc('text-white', 'text-black')}`}>Khung</span>
         <div className="flex items-center gap-1.5">
           <button
             onClick={onChooseFrame}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-[13px] font-semibold transition-all duration-150 ${
               selectedFrame
-                ? 'border-white/20 text-white bg-[#0a0a0a] hover:bg-[#111]'
-                : 'border-dashed border-[#252525] text-[#c9c9c9] hover:border-[#383838] hover:text-white'
+                ? tc(
+                    'border-white/20 text-white bg-[#0a0a0a] hover:bg-[#111]',
+                    'border-black/20 text-black bg-white hover:bg-[#f5f5f5]'
+                  )
+                : tc(
+                    'border-dashed border-[#252525] text-[#c9c9c9] hover:border-[#383838] hover:text-white',
+                    'border-dashed border-[#d0d0d0] text-[#666] hover:border-[#999] hover:text-black'
+                  )
             }`}
           >
             {selectedFrame ? (
@@ -60,7 +75,10 @@ export default function TopControls({
             <button
               onClick={onClearFrame}
               title="Bỏ khung"
-              className="w-8 h-8 flex items-center justify-center rounded-lg border border-[#1e1e1e] text-white hover:text-red-400 hover:border-red-400/30 transition"
+              className={`w-8 h-8 flex items-center justify-center rounded-lg border transition ${tc(
+                'border-[#1e1e1e] text-white hover:text-red-400 hover:border-red-400/30',
+                'border-[#d9d9d9] text-black hover:text-red-500 hover:border-red-400/30'
+              )}`}
             >
               <CloseOutlined style={{ fontSize: 11 }} />
             </button>
@@ -68,18 +86,21 @@ export default function TopControls({
           <button
             onClick={onContributeFrame}
             title="Đóng góp khung ảnh của bạn"
-            className="text-[11px] px-3 py-2 rounded-lg border border-dashed border-[#252525] text-[#555] hover:border-[#444] hover:text-[#888] transition"
+            className={`text-[11px] px-3 py-2 rounded-lg border border-dashed transition ${tc(
+              'border-[#252525] text-[#555] hover:border-[#444] hover:text-[#888]',
+              'border-[#d0d0d0] text-[#999] hover:border-[#999] hover:text-[#555]'
+            )}`}
           >
             + Đóng góp
           </button>
         </div>
       </div>
 
-      <div className="w-px h-10 bg-[#1e1e1e] hidden sm:block" />
+      <div className={`w-px h-10 hidden sm:block ${tc('bg-[#1e1e1e]', 'bg-[#e0e0e0]')}`} />
 
       {/* Countdown pills */}
       <div className="flex flex-col gap-2">
-        <span className="text-white text-[10px] font-bold uppercase tracking-[0.12em] opacity-50">Đếm Ngược</span>
+        <span className={`text-[10px] font-bold uppercase tracking-[0.12em] opacity-50 ${tc('text-white', 'text-black')}`}>Đếm Ngược</span>
         <div className="flex gap-1.5">
           {COUNTDOWN_OPTIONS.map(n => {
             const isDisabled = n === 0 && videoRecap
@@ -99,18 +120,24 @@ export default function TopControls({
         </div>
       </div>
 
-      <div className="w-px h-10 bg-[#1e1e1e] hidden sm:block" />
+      <div className={`w-px h-10 hidden sm:block ${tc('bg-[#1e1e1e]', 'bg-[#e0e0e0]')}`} />
 
       {/* Sound toggle */}
       <div className="flex flex-col gap-2">
-        <span className="text-white text-[10px] font-bold uppercase tracking-[0.12em] opacity-50">Âm Thanh</span>
+        <span className={`text-[10px] font-bold uppercase tracking-[0.12em] opacity-50 ${tc('text-white', 'text-black')}`}>Âm Thanh</span>
         <button
           onClick={onToggleSound}
           title={soundEnabled ? 'Tắt âm thanh chụp' : 'Bật âm thanh chụp'}
           className={`w-9 h-9 flex items-center justify-center rounded-lg border transition-all duration-150 ${
             soundEnabled
-              ? 'border-white/20 bg-[#0a0a0a] text-white hover:bg-[#111]'
-              : 'border-[#252525] text-[#555] hover:border-[#444] hover:text-[#888]'
+              ? tc(
+                  'border-white/20 bg-[#0a0a0a] text-white hover:bg-[#111]',
+                  'border-black/20 bg-white text-black hover:bg-[#f5f5f5]'
+                )
+              : tc(
+                  'border-[#252525] text-[#555] hover:border-[#444] hover:text-[#888]',
+                  'border-[#d0d0d0] text-[#999] hover:border-[#999] hover:text-[#555]'
+                )
           }`}
         >
           {soundEnabled ? <SoundOutlined style={{ fontSize: 15 }} /> : <MutedOutlined style={{ fontSize: 15 }} />}

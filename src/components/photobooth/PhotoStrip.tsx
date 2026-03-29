@@ -3,6 +3,7 @@ import { DownloadOutlined, CloseOutlined } from '@ant-design/icons'
 import type { CapturedSlot, EffectType, LayoutConfig } from '@/types/photobooth'
 import { useStripPreview } from '@/hooks/useStripPreview'
 import type { FrameItem } from '@/lib/frameService'
+import { useThemeClass } from '@/stores/themeStore'
 
 interface PhotoStripProps {
   layout: LayoutConfig
@@ -28,6 +29,7 @@ function MiniSlot({
   onRemove: (i: number) => void
 }) {
   const inputRef = useRef<HTMLInputElement>(null)
+  const tc = useThemeClass()
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -58,9 +60,12 @@ function MiniSlot({
       ) : (
         <div
           onClick={() => inputRef.current?.click()}
-          className="w-10 h-10 rounded-lg border border-dashed border-[#1e1e1e] bg-[#0a0a0a] flex items-center justify-center cursor-pointer hover:border-[#383838] transition"
+          className={`w-10 h-10 rounded-lg border border-dashed flex items-center justify-center cursor-pointer transition ${tc(
+            'border-[#1e1e1e] bg-[#0a0a0a] hover:border-[#383838]',
+            'border-[#d0d0d0] bg-[#f5f5f5] hover:border-[#999]'
+          )}`}
         >
-          <span className="text-[#333] text-lg leading-none select-none">+</span>
+          <span className={`text-lg leading-none select-none ${tc('text-[#333]', 'text-[#ccc]')}`}>+</span>
         </div>
       )}
       <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
@@ -82,6 +87,7 @@ export default function PhotoStrip({
   onDownload,
   onBuildStrip,
 }: PhotoStripProps) {
+  const tc = useThemeClass()
   const filled = slots.filter(Boolean).length
   const allFilled = filled === layout.slots
   const nextTargetIndex = slots.findIndex(s => s === null)
@@ -98,7 +104,7 @@ export default function PhotoStrip({
     <div className="flex flex-col gap-2">
 
       {/* ── Live composite preview ── */}
-      <div className="relative bg-[#0d0d0d] rounded-xl border border-[#141414] overflow-hidden flex items-center justify-center p-0.5 shadow-2xl" 
+      <div className={`relative rounded-xl border overflow-hidden flex items-center justify-center p-0.5 shadow-2xl ${tc('bg-[#0d0d0d] border-[#141414]', 'bg-[#f0f0f0] border-[#e0e0e0]')}`} 
         style={{ aspectRatio: containerAspectRatio }}>
         
         {/* Layer 0: Individual Live Videos for each empty slot (positioned exactly in the holes) */}
@@ -159,7 +165,7 @@ export default function PhotoStrip({
                   {slot ? (
                     <img src={slot.dataUrl} alt="" className="w-full h-full object-cover rounded-lg" />
                   ) : (
-                    <span className="text-[#131313] text-lg font-bold select-none opacity-0">{i + 1}</span>
+                    <span className="text-lg font-bold select-none opacity-0">{i + 1}</span>
                   )}
                 </div>
               )
@@ -193,14 +199,17 @@ export default function PhotoStrip({
       {/* ── Status + actions ── */}
       <div className="flex flex-col gap-1.5">
         <div className="flex items-center justify-between px-1">
-          <span className="text-white text-[10px] font-bold uppercase tracking-[0.12em] opacity-40">Ảnh đã chụp</span>
-          <span className="text-white text-[13px] font-bold tabular-nums opacity-60">{filled} / {layout.slots}</span>
+          <span className={`text-[10px] font-bold uppercase tracking-[0.12em] opacity-40 ${tc('text-white', 'text-black')}`}>Ảnh đã chụp</span>
+          <span className={`text-[13px] font-bold tabular-nums opacity-60 ${tc('text-white', 'text-black')}`}>{filled} / {layout.slots}</span>
         </div>
 
         {allFilled && !finalImageUrl && (
           <button
             onClick={onBuildStrip}
-            className="w-full py-3 rounded-xl bg-white text-black text-[13px] font-bold tracking-wide hover:bg-[#e8e8e8] active:scale-[0.97] transition-all duration-150 shadow-lg"
+            className={`w-full py-3 rounded-xl text-[13px] font-bold tracking-wide active:scale-[0.97] transition-all duration-150 shadow-lg ${tc(
+              'bg-white text-black hover:bg-[#e8e8e8]',
+              'bg-black text-white hover:bg-[#222]'
+            )}`}
           >
             ✦ Tạo Ảnh Strip
           </button>
@@ -209,7 +218,10 @@ export default function PhotoStrip({
         {finalImageUrl && (
           <button
             onClick={onDownload}
-            className="w-full py-3 rounded-xl bg-white text-black text-[13px] font-bold tracking-wide hover:bg-[#e8e8e8] active:scale-[0.97] transition-all duration-150 flex items-center justify-center gap-2 shadow-lg"
+            className={`w-full py-3 rounded-xl text-[13px] font-bold tracking-wide active:scale-[0.97] transition-all duration-150 flex items-center justify-center gap-2 shadow-lg ${tc(
+              'bg-white text-black hover:bg-[#e8e8e8]',
+              'bg-black text-white hover:bg-[#222]'
+            )}`}
           >
             <DownloadOutlined style={{ fontSize: 16 }} /> Tải Về Máy
           </button>

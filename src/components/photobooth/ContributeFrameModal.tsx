@@ -3,6 +3,7 @@ import { Button, Input, Modal, Select, Spin } from 'antd'
 import { PictureOutlined } from '@ant-design/icons'
 import { detectFrameSlots } from '@/lib/imageProcessing'
 import { submitFrameRequest } from '@/lib/frameService'
+import { useThemeClass } from '@/stores/themeStore'
 
 interface Props {
   open: boolean
@@ -19,6 +20,7 @@ const FRAME_TYPE_OPTIONS = [
 ]
 
 export default function ContributeFrameModal({ open, onClose }: Props) {
+  const tc = useThemeClass()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [file, setFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
@@ -95,6 +97,12 @@ export default function ContributeFrameModal({ open, onClose }: Props) {
     }
   }
 
+  const inputStyle = {
+    background: tc('#111', '#fff') === '#111' ? '#111' : '#fff',
+    borderColor: tc('#2a2a2a', '#d9d9d9') === '#2a2a2a' ? '#2a2a2a' : '#d9d9d9',
+    color: tc('#e5e5e5', '#1a1a1a') === '#e5e5e5' ? '#e5e5e5' : '#1a1a1a',
+  }
+
   return (
     <Modal
       open={open}
@@ -130,14 +138,14 @@ export default function ContributeFrameModal({ open, onClose }: Props) {
       {done ? (
         <div className="flex flex-col items-center gap-3 py-8 text-center">
           <span className="text-3xl">🎉</span>
-          <p className="text-white font-semibold">Đề xuất đã được gửi!</p>
-          <p className="text-[#666] text-sm">Admin sẽ review và duyệt khung của bạn sớm nhất có thể.</p>
+          <p className={`font-semibold ${tc('text-white', 'text-black')}`}>Đề xuất đã được gửi!</p>
+          <p className={`text-sm ${tc('text-[#666]', 'text-[#999]')}`}>Admin sẽ review và duyệt khung của bạn sớm nhất có thể.</p>
         </div>
       ) : (
         <div className="flex flex-col gap-4 py-2">
           {/* File drop zone */}
           <div
-            className="border-2 border-dashed border-[#2a2a2a] rounded-xl overflow-hidden cursor-pointer hover:border-[#444] transition-colors"
+            className={`border-2 border-dashed rounded-xl overflow-hidden cursor-pointer transition-colors ${tc('border-[#2a2a2a] hover:border-[#444]', 'border-[#d0d0d0] hover:border-[#999]')}`}
             onClick={() => fileInputRef.current?.click()}
             onDragOver={e => e.preventDefault()}
             onDrop={e => {
@@ -147,7 +155,7 @@ export default function ContributeFrameModal({ open, onClose }: Props) {
             }}
           >
             {previewUrl ? (
-              <div className="relative flex items-center justify-center bg-[#111] p-2" style={{ minHeight: 140 }}>
+              <div className={`relative flex items-center justify-center p-2 ${tc('bg-[#111]', 'bg-[#f5f5f5]')}`} style={{ minHeight: 140 }}>
                 <img src={previewUrl} alt="preview" className="max-h-36 object-contain rounded" />
                 {detecting && (
                   <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center gap-2">
@@ -157,7 +165,7 @@ export default function ContributeFrameModal({ open, onClose }: Props) {
                 )}
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center gap-2 py-10 text-[#3a3a3a]">
+              <div className={`flex flex-col items-center justify-center gap-2 py-10 ${tc('text-[#3a3a3a]', 'text-[#bbb]')}`}>
                 <PictureOutlined style={{ fontSize: 36 }} />
                 <span className="text-xs">Kéo thả hoặc click để chọn file PNG</span>
               </div>
@@ -173,11 +181,11 @@ export default function ContributeFrameModal({ open, onClose }: Props) {
 
           {/* Slot info + adjust */}
           {file && !detecting && (
-            <div className="flex items-center gap-3 bg-[#111] rounded-lg px-3 py-2">
-              <span className="text-[#555] text-xs">Slot phát hiện:</span>
-              <span className="text-white text-xs font-bold">{slots}</span>
-              <span className="text-[#333] text-xs">·</span>
-              <span className="text-[#555] text-xs">Điều chỉnh nếu sai:</span>
+            <div className={`flex items-center gap-3 rounded-lg px-3 py-2 ${tc('bg-[#111]', 'bg-[#f5f5f5]')}`}>
+              <span className={`text-xs ${tc('text-[#555]', 'text-[#999]')}`}>Slot phát hiện:</span>
+              <span className={`text-xs font-bold ${tc('text-white', 'text-black')}`}>{slots}</span>
+              <span className={`text-xs ${tc('text-[#333]', 'text-[#ccc]')}`}>·</span>
+              <span className={`text-xs ${tc('text-[#555]', 'text-[#999]')}`}>Điều chỉnh nếu sai:</span>
               <Select
                 size="small"
                 value={slots}
@@ -190,24 +198,24 @@ export default function ContributeFrameModal({ open, onClose }: Props) {
 
           {/* Suggested name */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-[#888] text-xs">Tên Khung Đề Xuất *</label>
+            <label className={`text-xs ${tc('text-[#888]', 'text-[#888]')}`}>Tên Khung Đề Xuất *</label>
             <Input
               value={suggestedName}
               onChange={e => setSuggestedName(e.target.value)}
               placeholder="Ví dụ: HelloKitty, Y2K..."
-              style={{ background: '#111', borderColor: '#2a2a2a', color: '#e5e5e5' }}
+              style={inputStyle}
             />
           </div>
 
           {/* Category */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-[#888] text-xs">Danh Mục *</label>
+            <label className={`text-xs ${tc('text-[#888]', 'text-[#888]')}`}>Danh Mục *</label>
             <Input
               value={suggestedCategory}
               onChange={e => setSuggestedCategory(e.target.value)}
               placeholder="Ví dụ: Frame Basic, Frame Cartoon..."
               list="contribute-categories"
-              style={{ background: '#111', borderColor: '#2a2a2a', color: '#e5e5e5' }}
+              style={inputStyle}
             />
             <datalist id="contribute-categories">
               {KNOWN_CATEGORIES.map(c => <option key={c} value={c} />)}
@@ -216,47 +224,47 @@ export default function ContributeFrameModal({ open, onClose }: Props) {
 
           {/* Suggested Frame Type */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-[#888] text-xs">Loại khung đề xuất</label>
+            <label className={`text-xs ${tc('text-[#888]', 'text-[#888]')}`}>Loại khung đề xuất</label>
             <Select
               value={suggestedFrame}
               onChange={v => setSuggestedFrame(v)}
               options={FRAME_TYPE_OPTIONS}
-              style={{ background: '#111', color: '#e5e5e5' }}
+              style={{ background: inputStyle.background, color: inputStyle.color }}
               className="custom-select"
             />
           </div>
 
           {/* Submitter contact */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-[#888] text-xs">Email / Liên hệ *</label>
+            <label className={`text-xs ${tc('text-[#888]', 'text-[#888]')}`}>Email / Liên hệ *</label>
             <Input
               value={submitterContact}
               onChange={e => setSubmitterContact(e.target.value)}
               placeholder="email hoặc Facebook/Instagram..."
-              style={{ background: '#111', borderColor: '#2a2a2a', color: '#e5e5e5' }}
+              style={inputStyle}
             />
           </div>
 
           {/* Submitter name (optional) */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-[#888] text-xs">Tên của bạn (không bắt buộc)</label>
+            <label className={`text-xs ${tc('text-[#888]', 'text-[#888]')}`}>Tên của bạn (không bắt buộc)</label>
             <Input
               value={submitterName}
               onChange={e => setSubmitterName(e.target.value)}
               placeholder="Để trống nếu muốn ẩn danh"
-              style={{ background: '#111', borderColor: '#2a2a2a', color: '#e5e5e5' }}
+              style={inputStyle}
             />
           </div>
 
           {/* Note */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-[#888] text-xs">Ghi chú cho admin (không bắt buộc)</label>
+            <label className={`text-xs ${tc('text-[#888]', 'text-[#888]')}`}>Ghi chú cho admin (không bắt buộc)</label>
             <Input.TextArea
               value={note}
               onChange={e => setNote(e.target.value)}
               placeholder="Thông tin thêm, nguồn gốc thiết kế..."
               rows={2}
-              style={{ background: '#111', borderColor: '#2a2a2a', color: '#e5e5e5' }}
+              style={inputStyle}
             />
           </div>
           {submitError && (

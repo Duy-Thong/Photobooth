@@ -3,6 +3,7 @@ import { message } from 'antd'
 import { useCamera } from '@/hooks/useCamera'
 import { useVideoRecap } from '@/hooks/useVideoRecap'
 import { usePhotoboothStore } from '@/stores/photoboothStore'
+import { useThemeClass } from '@/stores/themeStore'
 import { buildStripImage, buildStripVideo, detectFrameSlots } from '@/lib/imageProcessing'
 import { LAYOUTS, FILTERS } from '@/types/photobooth'
 import CameraView from '@/components/photobooth/CameraView'
@@ -13,6 +14,7 @@ import FilterPanel from '@/components/photobooth/FilterPanel'
 import FrameModal from '@/components/photobooth/FrameModal'
 import ResultModal from '@/components/photobooth/ResultModal'
 import ContributeFrameModal from '@/components/photobooth/ContributeFrameModal'
+import ThemeToggle from '@/components/photobooth/ThemeToggle'
 
 export default function HomePage() {
   const { videoRef, stream, isMirrored, isReady, error, toggleMirror, captureFrame, selectDevice, retryCamera, devices, activeDeviceId, soundEnabled, toggleSound } = useCamera()
@@ -43,6 +45,7 @@ export default function HomePage() {
 
   const abortRef = useRef(false)
   const capturedCount = capturedSlots.filter(Boolean).length
+  const tc = useThemeClass()
 
   // Build the combined strip video once we have all clips + a frame
   useEffect(() => {
@@ -265,17 +268,22 @@ export default function HomePage() {
           setTimeout(() => setFrameModalOpen(true), 150)
         }}
       />
-      <div className="min-h-dvh bg-[#0a0a0a] flex flex-col">
+      <div className={`min-h-dvh flex flex-col ${tc('bg-[#0a0a0a]', 'bg-[#f5f5f5]')}`}>
         {/* Header */}
-        <header className="text-center pt-5 pb-4 border-b border-[#141414]">
-          <h1 className="text-2xl font-bold text-white" style={{ letterSpacing: '-0.03em' }}>
-            Sổ Media
-          </h1>
-          <p className="text-white text-[9px] tracking-[0.35em] uppercase mt-0.5 font-medium">Photobooth</p>
+        <header className={`pt-5 pb-4 border-b relative ${tc('border-[#141414]', 'border-[#e0e0e0]')}`}>
+          <div className="text-center">
+            <h1 className={`text-2xl font-bold ${tc('text-white', 'text-black')}`} style={{ letterSpacing: '-0.03em' }}>
+              Sổ Media
+            </h1>
+            <p className={`text-[9px] tracking-[0.35em] uppercase mt-0.5 font-medium ${tc('text-white', 'text-black')}`}>Photobooth</p>
+          </div>
+          <div className="absolute right-4 top-1/2 -translate-y-1/2">
+            <ThemeToggle />
+          </div>
         </header>
 
         {/* Top controls bar */}
-        <div className="border-b border-[#141414] px-4 py-2.5">
+        <div className={`border-b px-4 py-2.5 ${tc('border-[#141414]', 'border-[#e0e0e0]')}`}>
           <div className="max-w-5xl mx-auto">
             <TopControls
               countdown={countdown}

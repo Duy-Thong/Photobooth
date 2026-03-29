@@ -1,6 +1,7 @@
 import type { CameraDevice } from '@/hooks/useCamera'
 import { FILTERS } from '@/types/photobooth'
 import type { FilterType } from '@/types/photobooth'
+import { useThemeClass } from '@/stores/themeStore'
 
 interface CameraViewProps {
   videoRef: React.RefObject<HTMLVideoElement>
@@ -47,10 +48,11 @@ export default function CameraView({
   onToggleMirror,
   onRetry,
 }: CameraViewProps) {
+  const tc = useThemeClass()
   const filterCss = FILTERS.find(f => f.value === activeFilter)?.css ?? 'none'
 
   return (
-    <div className="relative w-full rounded-xl overflow-hidden bg-[#080808] border border-[#222] aspect-4/3">
+    <div className={`relative w-full rounded-xl overflow-hidden border aspect-4/3 ${tc('bg-[#080808] border-[#222]', 'bg-[#e8e8e8] border-[#d0d0d0]')}`}>
       <video
         ref={videoRef}
         autoPlay
@@ -66,17 +68,20 @@ export default function CameraView({
 
       {!isReady && !error && (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
-          <div className="w-6 h-6 border-2 border-white/5 border-t-white/40 rounded-full animate-spin" />
-          <span className="text-[11px] tracking-[0.15em] font-bold uppercase text-white/30">Khởi động camera...</span>
+          <div className={`w-6 h-6 border-2 rounded-full animate-spin ${tc('border-white/5 border-t-white/40', 'border-black/10 border-t-black/40')}`} />
+          <span className={`text-[11px] tracking-[0.15em] font-bold uppercase ${tc('text-white/30', 'text-black/30')}`}>Khởi động camera...</span>
         </div>
       )}
 
       {error && (
         <div className="absolute inset-0 flex flex-col items-center justify-center px-6 gap-3 text-center">
-          <p className="text-[#555] text-sm leading-relaxed">{error}</p>
+          <p className={`text-sm leading-relaxed ${tc('text-[#555]', 'text-[#888]')}`}>{error}</p>
           <button
             onClick={onRetry}
-            className="px-6 py-2.5 bg-white text-black text-[13px] font-bold rounded-xl hover:bg-[#e8e8e8] active:scale-95 transition shadow-xl"
+            className={`px-6 py-2.5 text-[13px] font-bold rounded-xl active:scale-95 transition shadow-xl ${tc(
+              'bg-white text-black hover:bg-[#e8e8e8]',
+              'bg-black text-white hover:bg-[#222]'
+            )}`}
           >
             Thử lại
           </button>
@@ -96,10 +101,10 @@ export default function CameraView({
           <select
             value={activeDeviceId ?? ''}
             onChange={e => onSelectDevice(e.target.value)}
-            className="h-10 max-w-48 px-3 rounded-xl bg-black/60 backdrop-blur-md text-white/90 text-xs font-bold border border-white/10 hover:bg-black/80 transition cursor-pointer outline-none shadow-lg"
+            className={`h-10 max-w-48 px-3 rounded-xl bg-black/60 backdrop-blur-md text-white/90 text-xs font-bold border border-white/10 hover:bg-black/80 transition cursor-pointer outline-none shadow-lg`}
           >
             {devices.map((d, i) => (
-              <option key={d.deviceId} value={d.deviceId} className="bg-[#0a0a0a] text-white">
+              <option key={d.deviceId} value={d.deviceId} className={tc('bg-[#0a0a0a] text-white', 'bg-white text-black')}>
                 {d.label.length > 28 ? d.label.slice(0, 26) + '…' : d.label || `Camera ${i + 1}`}
               </option>
             ))}

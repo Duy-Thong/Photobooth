@@ -4,8 +4,11 @@ import { Spin, Modal } from 'antd'
 import { LoadingOutlined, PrinterOutlined } from '@ant-design/icons'
 import { fetchSession, type SessionData } from '@/lib/sessionService'
 import { downloadMedia } from '@/lib/imageProcessing'
+import { useThemeClass } from '@/stores/themeStore'
+import ThemeToggle from '@/components/photobooth/ThemeToggle'
 
 export default function SessionPage() {
+  const tc = useThemeClass()
   const { id } = useParams<{ id: string }>()
   const [session, setSession] = useState<SessionData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -24,7 +27,7 @@ export default function SessionPage() {
 
   if (loading) {
     return (
-      <div className="min-h-dvh bg-[#0a0a0a] flex items-center justify-center">
+      <div className={`min-h-dvh flex items-center justify-center ${tc('bg-[#0a0a0a]', 'bg-[#f5f5f5]')}`}>
         <Spin size="large" />
       </div>
     )
@@ -32,11 +35,11 @@ export default function SessionPage() {
 
   if (error || !session) {
     return (
-      <div className="min-h-dvh bg-[#0a0a0a] flex flex-col items-center justify-center gap-3 text-center px-6">
+      <div className={`min-h-dvh flex flex-col items-center justify-center gap-3 text-center px-6 ${tc('bg-[#0a0a0a]', 'bg-[#f5f5f5]')}`}>
         <p className="text-4xl">📷</p>
-        <p className="text-white font-semibold text-lg">Không tìm thấy ảnh</p>
-        <p className="text-[#555] text-sm">Link này không tồn tại hoặc đã bị xoá.</p>
-        <a href="/" className="mt-4 text-xs text-[#444] hover:text-[#888] underline transition-colors">
+        <p className={`font-semibold text-lg ${tc('text-white', 'text-black')}`}>Không tìm thấy ảnh</p>
+        <p className={`text-sm ${tc('text-[#555]', 'text-[#999]')}`}>Link này không tồn tại hoặc đã bị xoá.</p>
+        <a href="/" className={`mt-4 text-xs underline transition-colors ${tc('text-[#444] hover:text-[#888]', 'text-[#bbb] hover:text-[#666]')}`}>
           Về trang chủ
         </a>
       </div>
@@ -113,14 +116,19 @@ export default function SessionPage() {
   }
 
   return (
-    <div className="min-h-dvh bg-[#0a0a0a] flex flex-col items-center py-10 px-4 gap-8">
+    <div className={`min-h-dvh flex flex-col items-center py-10 px-4 gap-8 ${tc('bg-[#0a0a0a]', 'bg-[#f5f5f5]')}`}>
+      {/* Theme toggle */}
+      <div className="fixed top-4 right-4 z-50">
+        <ThemeToggle />
+      </div>
+
       {/* Header */}
       <div className="flex flex-col items-center gap-1">
-        <a href="/" className="text-white font-bold text-xl tracking-tight" style={{ letterSpacing: '-0.04em' }}>
+        <a href="/" className={`font-bold text-xl tracking-tight ${tc('text-white', 'text-black')}`} style={{ letterSpacing: '-0.04em' }}>
           Sổ Media
         </a>
-        <p className="text-[#444] text-[10px] uppercase tracking-[0.2em]">Photobooth</p>
-        <p className="text-[#333] text-xs mt-2">{date}</p>
+        <p className={`text-[10px] uppercase tracking-[0.2em] ${tc('text-[#444]', 'text-[#bbb]')}`}>Photobooth</p>
+        <p className={`text-xs mt-2 ${tc('text-[#333]', 'text-[#ccc]')}`}>{date}</p>
       </div>
 
       {/* Strip image */}
@@ -128,7 +136,7 @@ export default function SessionPage() {
         <img
           src={session.imageUrl}
           alt="Photo strip"
-          className="w-full rounded-2xl shadow-2xl border border-[#222]"
+          className={`w-full rounded-2xl shadow-2xl border ${tc('border-[#222]', 'border-[#d9d9d9]')}`}
           crossOrigin="anonymous"
         />
       </div>
@@ -137,13 +145,19 @@ export default function SessionPage() {
         <button
           onClick={handleDownloadPhoto}
           disabled={downloadingPhoto}
-          className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-white text-black font-semibold text-sm hover:bg-[#eee] transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+          className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed ${tc(
+            'bg-white text-black hover:bg-[#eee]',
+            'bg-black text-white hover:bg-[#222]'
+          )}`}
         >
           {downloadingPhoto ? <LoadingOutlined /> : '↓ Tải ảnh'}
         </button>
         <button
           onClick={handlePrint}
-          className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-[#0a0a0a] text-white font-semibold text-sm hover:bg-[#111] transition-colors cursor-pointer border border-[#333]"
+          className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm transition-colors cursor-pointer border ${tc(
+            'bg-[#0a0a0a] text-white hover:bg-[#111] border-[#333]',
+            'bg-white text-black hover:bg-[#f5f5f5] border-[#d9d9d9]'
+          )}`}
         >
           <PrinterOutlined /> In ảnh
         </button>
@@ -152,26 +166,29 @@ export default function SessionPage() {
       {/* Strip video */}
       {session.videoUrl && (
         <div className="w-full max-w-xs flex flex-col gap-3">
-          <p className="text-[#555] text-[10px] uppercase tracking-[0.2em] text-center">Strip Video</p>
+          <p className={`text-[10px] uppercase tracking-[0.2em] text-center ${tc('text-[#555]', 'text-[#999]')}`}>Strip Video</p>
           <video
             src={session.videoUrl}
             controls
             autoPlay
             loop
             playsInline
-            className="w-full rounded-xl border border-[#222] bg-black"
+            className={`w-full rounded-xl border ${tc('border-[#222] bg-black', 'border-[#d9d9d9] bg-white')}`}
           />
           <button
             onClick={handleDownloadVideo}
             disabled={downloadingVideo}
-            className="w-full max-w-xs flex items-center justify-center gap-2 py-3 rounded-xl bg-white text-black font-semibold text-sm hover:bg-[#eee] transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+            className={`w-full max-w-xs flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed ${tc(
+              'bg-white text-black hover:bg-[#eee]',
+              'bg-black text-white hover:bg-[#222]'
+            )}`}
           >
             {downloadingVideo ? <LoadingOutlined /> : 'Tải video'}
           </button>
         </div>
       )}
 
-      <p className="text-[#2a2a2a] text-[10px] pb-6">somedia · photobooth</p>
+      <p className={`text-[10px] pb-6 ${tc('text-[#2a2a2a]', 'text-[#ccc]')}`}>somedia · photobooth</p>
     </div>
   )
 }

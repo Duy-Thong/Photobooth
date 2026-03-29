@@ -1,10 +1,12 @@
 import { Navigate } from 'react-router-dom'
 import { Button, Input, Form } from 'antd'
 import { useAdminAuth } from '@/hooks/useAdminAuth'
+import { useThemeClass } from '@/stores/themeStore'
 
 export default function AdminLoginPage() {
   const { user, login, loginError, loggingIn } = useAdminAuth()
   const [form] = Form.useForm()
+  const tc = useThemeClass()
 
   if (user) return <Navigate to="/admin" replace />
 
@@ -12,16 +14,22 @@ export default function AdminLoginPage() {
     login(email, password)
   }
 
+  const inputStyle = {
+    background: tc('#111', '#fff') === '#111' ? '#111' : '#fff',
+    border: `1px solid ${tc('#2a2a2a', '#d9d9d9') === '#2a2a2a' ? '#2a2a2a' : '#d9d9d9'}`,
+    color: tc('#e5e5e5', '#1a1a1a') === '#e5e5e5' ? '#e5e5e5' : '#1a1a1a',
+  }
+
   return (
-    <div className="min-h-dvh bg-[#111] flex items-center justify-center px-4">
+    <div className={`min-h-dvh flex items-center justify-center px-4 ${tc('bg-[#111]', 'bg-[#f5f5f5]')}`}>
       <div className="w-full max-w-sm">
         {/* Logo / brand */}
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-white" style={{ letterSpacing: '-0.03em' }}>Sổ Media</h1>
-          <p className="text-[#555] text-[10px] uppercase tracking-widest mt-1">Admin Panel</p>
+          <h1 className={`text-2xl font-bold ${tc('text-white', 'text-black')}`} style={{ letterSpacing: '-0.03em' }}>Sổ Media</h1>
+          <p className={`text-[10px] uppercase tracking-widest mt-1 ${tc('text-[#555]', 'text-[#999]')}`}>Admin Panel</p>
         </div>
 
-        <div className="bg-[#0a0a0a] border border-[#2a2a2a] rounded-2xl p-6">
+        <div className={`rounded-2xl p-6 border ${tc('bg-[#0a0a0a] border-[#2a2a2a]', 'bg-white border-[#d9d9d9]')}`}>
           <Form
             form={form}
             layout="vertical"
@@ -30,25 +38,25 @@ export default function AdminLoginPage() {
           >
             <Form.Item
               name="email"
-              label={<span className="text-[#aaa] text-sm">Email</span>}
+              label={<span className={`text-sm ${tc('text-[#aaa]', 'text-[#666]')}`}>Email</span>}
               rules={[{ required: true, message: 'Nhập email' }, { type: 'email', message: 'Email không hợp lệ' }]}
             >
               <Input
                 size="large"
                 placeholder="admin@example.com"
-                style={{ background: '#111', border: '1px solid #2a2a2a', color: '#e5e5e5' }}
+                style={inputStyle}
               />
             </Form.Item>
 
             <Form.Item
               name="password"
-              label={<span className="text-[#aaa] text-sm">Mật khẩu</span>}
+              label={<span className={`text-sm ${tc('text-[#aaa]', 'text-[#666]')}`}>Mật khẩu</span>}
               rules={[{ required: true, message: 'Nhập mật khẩu' }]}
             >
               <Input.Password
                 size="large"
                 placeholder="••••••••"
-                style={{ background: '#111', border: '1px solid #2a2a2a', color: '#e5e5e5' }}
+                style={inputStyle}
               />
             </Form.Item>
 
@@ -61,7 +69,13 @@ export default function AdminLoginPage() {
               size="large"
               htmlType="submit"
               loading={loggingIn}
-              style={{ background: '#fff', color: '#000', border: 'none', fontWeight: 600, height: 44 }}
+              style={{
+                background: tc('#fff', '#000') === '#fff' ? '#fff' : '#000',
+                color: tc('#000', '#fff') === '#000' ? '#000' : '#fff',
+                border: 'none',
+                fontWeight: 600,
+                height: 44,
+              }}
             >
               Đăng nhập
             </Button>
