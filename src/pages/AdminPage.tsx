@@ -4,7 +4,7 @@ import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth'
 import { firebaseConfig } from '@/lib/firebase'
 import { ref, listAll, getDownloadURL, deleteObject, getMetadata } from 'firebase/storage'
 import { storage } from '@/lib/firebase'
-import { fetchSessions, deleteSession } from '@/lib/sessionService'
+import { fetchSessions, deleteSession, markSessionPrinted } from '@/lib/sessionService'
 import { useAdminAuth } from '@/hooks/useAdminAuth'
 import {
   fetchCustomFrames as fetchCustomFramesService,
@@ -84,6 +84,7 @@ export default function AdminPage() {
   const [deletingPath, setDeletingPath] = useState<string | null>(null)
   const [bulkDeleting, setBulkDeleting] = useState(false)
   const [previewItem, setPreviewItem] = useState<MediaItem | null>(null)
+  const [printedPaths, setPrintedPaths] = useState<Set<string>>(new Set())
   
   const availableTabs = useMemo(() => {
     if (!permissions) return []
@@ -315,6 +316,14 @@ export default function AdminPage() {
           sessionId: s.id,
         })
 
+        if (s.printedAt) {
+          setPrintedPaths(prev => {
+            const next = new Set(prev)
+            next.add(getPathFromUrl(s.imageUrl) || `sessions/${s.id}/strip.jpg`)
+            return next
+          })
+        }
+
         if (s.videoUrl) {
           const ext = s.videoUrl.includes('.mp4') ? 'mp4' : 'webm'
           sessionVideos.push({
@@ -384,6 +393,17 @@ export default function AdminPage() {
 
       setPhotos(allPhotos)
       setVideos(allVideos)
+
+      // Init printed state from localStorage for legacy photos
+      const stored = localStorage.getItem('printed_paths')
+      if (stored) {
+        const legacy: string[] = JSON.parse(stored)
+        setPrintedPaths(prev => {
+          const next = new Set(prev)
+          legacy.forEach(p => next.add(p))
+          return next
+        })
+      }
     } finally {
       setLoading(false)
     }
@@ -655,7 +675,21 @@ export default function AdminPage() {
       window.removeEventListener('afterprint', cleanup)
     }
     window.addEventListener('afterprint', cleanup)
-    const doPrint = () => window.print()
+    const doPrint = () => {
+      window.print()
+      setPrintedPaths(prev => new Set(prev).add(item.fullPath))
+      if (item.sessionId) {
+        markSessionPrinted(item.sessionId).catch(() => {})
+      } else {
+        // Legacy photo — persist in localStorage
+        const stored = localStorage.getItem('printed_paths')
+        const list: string[] = stored ? JSON.parse(stored) : []
+        if (!list.includes(item.fullPath)) {
+          list.push(item.fullPath)
+          localStorage.setItem('printed_paths', JSON.stringify(list))
+        }
+      }
+    }
     if (img.complete && img.naturalWidth > 0) {
       doPrint()
     } else {
@@ -1357,6 +1391,13 @@ export default function AdminPage() {
                   >
                     {selectedPaths.has(item.fullPath) && <CheckOutlined className="text-white text-[10px]" />}
                   </div>
+
+                  {/* Printed badge */}
+                  {printedPaths.has(item.fullPath) && (
+                    <div className="absolute bottom-2 left-2 bg-green-600/90 text-white text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded">
+                      Đã in
+                    </div>
+                  )}
                 </div>
 
                 {/* Info */}
@@ -1520,40 +1561,60 @@ export default function AdminPage() {
         onCancel={() => setPreviewItem(null)}
         footer={null}
         centered
-        width={previewItem ? (previewItem.type === 'video' ? 720 : 420) : 420}
+        width="min(90vw, 700px)"
         styles={{
           body: { background: '#111', padding: 0 },
           header: { background: '#111', borderBottom: '1px solid #1f1f1f' },
-
         }}
         title={<span className="text-[#aaa] text-sm font-normal truncate">{previewItem?.name}</span>}
       >
         {previewItem?.type === 'photo' ? (
-          <img src={previewItem.url} alt={previewItem.name} className="w-full" />
+          <img
+            src={previewItem.url}
+            alt={previewItem.name}
+            className="w-full"
+            style={{ maxHeight: '80vh', objectFit: 'contain', display: 'block' }}
+          />
         ) : previewItem?.type === 'video' ? (
-          <video src={previewItem.url} controls autoPlay className="w-full" />
+          <video src={previewItem.url} controls autoPlay className="w-full" style={{ maxHeight: '80vh' }} />
         ) : null}
-        <div className="p-3 flex justify-between items-center">
+        <div className="p-3 flex justify-between items-center flex-wrap gap-2">
           <span className="text-[#555] text-xs">{previewItem ? formatDate(previewItem.timeCreated) : ''} · {previewItem ? formatBytes(previewItem.size) : ''}</span>
-          <div className="flex gap-2 items-center">
+          <div className="flex gap-2 items-center flex-wrap">
             {previewItem?.sessionId && (
-              <a href={`/session/${previewItem.sessionId}`} target="_blank" rel="noopener noreferrer"
-                className="text-[#4da6ff] hover:text-white text-xs underline transition-colors"
-              >
-                Trang Session ↗
+              <a href={`/session/${previewItem.sessionId}`} target="_blank" rel="noopener noreferrer">
+                <Button style={{ background: '#1a2a3a', borderColor: '#1e4a7a', color: '#4da6ff' }}>
+                  Trang Session ↗
+                </Button>
               </a>
             )}
-            <a href={previewItem?.url} target="_blank" rel="noopener noreferrer"
-              className="text-[#555] hover:text-white text-xs underline transition-colors border-l border-[#333] pl-2 ml-1"
+            <Button style={{ background: '#1e1e1e', borderColor: '#2a2a2a', color: '#aaa' }}
+              onClick={async () => {
+                if (!previewItem) return
+                const res = await fetch(previewItem.url)
+                const blob = await res.blob()
+                const a = document.createElement('a')
+                a.href = URL.createObjectURL(blob)
+                a.download = previewItem.name || 'photo'
+                a.click()
+                URL.revokeObjectURL(a.href)
+              }}
             >
-              File gốc ↗
-            </a>
-            <button
+              Tải ảnh ↓
+            </Button>
+            {previewItem?.type === 'photo' && (
+              <Button style={{ background: '#1a3a1a', borderColor: '#27ae60', color: '#27ae60' }}
+                onClick={() => { if (previewItem) handlePrint(previewItem) }}
+                icon={<PictureOutlined />}
+              >
+                In ảnh
+              </Button>
+            )}
+            <Button danger
               onClick={() => { if (previewItem) handleDelete(previewItem); setPreviewItem(null) }}
-              className="text-red-500 hover:text-red-400 text-xs transition-colors border-l border-[#333] pl-2 ml-1"
             >
               Xóa
-            </button>
+            </Button>
           </div>
         </div>
       </Modal>

@@ -1,4 +1,4 @@
-import { collection, doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore'
+import { collection, doc, setDoc, getDoc, serverTimestamp, updateDoc } from 'firebase/firestore'
 import { db } from './firebase'
 
 export interface SessionData {
@@ -6,6 +6,7 @@ export interface SessionData {
   imageUrl: string        // Firebase Storage URL for strip image (with QR)
   videoUrl: string | null // Firebase Storage URL for strip video
   createdAt: string       // ISO string
+  printedAt?: string | null // ISO string, null if not printed
 }
 
 const SESSIONS_COLLECTION = 'sessions'
@@ -48,7 +49,15 @@ export async function fetchSessions(): Promise<SessionData[]> {
       imageUrl: d.imageUrl,
       videoUrl: d.videoUrl ?? null,
       createdAt: d.createdAt?.toDate?.()?.toISOString() ?? new Date().toISOString(),
+      printedAt: d.printedAt?.toDate?.()?.toISOString() ?? null,
     }
+  })
+}
+
+/** Mark a session as printed. */
+export async function markSessionPrinted(id: string): Promise<void> {
+  await updateDoc(doc(db, SESSIONS_COLLECTION, id), {
+    printedAt: serverTimestamp(),
   })
 }
 

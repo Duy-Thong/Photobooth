@@ -14,10 +14,10 @@ service cloud.firestore {
       allow write: if request.auth != null && (get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.permissions.canManageAdmins == true || (request.auth.uid == uid && !exists(/databases/$(database)/documents/admins/$(uid))));
     }
 
-    // Sessions: Đọc public theo ID, tạo public, chỉ Admin có thể xóa/list
+    // Sessions: Đọc public theo ID, tạo public, chỉ Admin có thể xóa/list/update
     match /sessions/{id} {
       allow create, get: if true;
-      allow list, delete: if request.auth != null;
+      allow list, delete, update: if request.auth != null;
     }
 
     // Frames: Ai cũng có thể đọc, chỉ Admin có thể viết
