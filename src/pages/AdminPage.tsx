@@ -701,6 +701,92 @@ export default function AdminPage() {
     }
   }
 
+  const handlePrintMultiple = (items: MediaItem[]) => {
+    if (items.length === 0) return
+
+    const style = document.createElement('style')
+    style.innerHTML = `
+      @page { size: 4in 6in portrait; margin: 3mm; }
+      @media print {
+        body > *:not(#__print_frame) { display: none !important; }
+        #__print_frame {
+          display: block !important;
+        }
+        .print-page {
+          width: 100%;
+          height: 100vh;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          page-break-after: always;
+          background: white;
+        }
+        .print-page:last-child { page-break-after: avoid; }
+        .print-page img { max-width: 100%; max-height: 100%; object-fit: contain; }
+      }
+    `
+    const frame = document.createElement('div')
+    frame.id = '__print_frame'
+    frame.style.display = 'none'
+
+    items.forEach(item => {
+      const page = document.createElement('div')
+      page.className = 'print-page'
+      const img = document.createElement('img')
+      img.src = item.url
+      page.appendChild(img)
+      frame.appendChild(page)
+    })
+
+    document.head.appendChild(style)
+    document.body.appendChild(frame)
+
+    const cleanup = () => {
+      style.remove(); frame.remove()
+      window.removeEventListener('afterprint', cleanup)
+    }
+    window.addEventListener('afterprint', cleanup)
+
+    const markPrinted = () => {
+      setPrintedPaths(prev => {
+        const next = new Set(prev)
+        items.forEach(item => next.add(item.fullPath))
+        return next
+      })
+      items.forEach(item => {
+        if (item.sessionId) {
+          markSessionPrinted(item.sessionId).catch(() => {})
+        } else {
+          const stored = localStorage.getItem('printed_paths')
+          const list: string[] = stored ? JSON.parse(stored) : []
+          if (!list.includes(item.fullPath)) list.push(item.fullPath)
+          localStorage.setItem('printed_paths', JSON.stringify(list))
+        }
+      })
+    }
+
+    // Wait for all images to load before printing
+    const imgs = Array.from(frame.querySelectorAll('img')) as HTMLImageElement[]
+    const pending = imgs.filter(img => !img.complete || img.naturalWidth === 0)
+    if (pending.length === 0) {
+      window.print()
+      markPrinted()
+    } else {
+      let loaded = 0
+      pending.forEach(img => {
+        const done = () => {
+          loaded++
+          if (loaded === pending.length) {
+            window.print()
+            markPrinted()
+          }
+        }
+        img.onload = done
+        img.onerror = done
+      })
+    }
+  }
+
   const handlePrintSelected = () => {
     if (selectedPaths.size === 0) return
     const toPrint = photos.filter(i => selectedPaths.has(i.fullPath))
@@ -709,12 +795,12 @@ export default function AdminPage() {
     if (toPrint.length > 5) {
       Modal.confirm({
         title: `In ${toPrint.length} ảnh?`,
-        content: 'Bạn đang yêu cầu in số lượng lớn ảnh cùng lúc. Điều này sẽ mở nhiều hộp thoại in. Tiếp tục?',
-        onOk: () => toPrint.forEach(item => handlePrint(item)),
+        content: `Sẽ in ${toPrint.length} ảnh trong 1 lần, mỗi ảnh trên 1 trang. Tiếp tục?`,
+        onOk: () => handlePrintMultiple(toPrint),
         centered: true
       })
     } else {
-      toPrint.forEach(item => handlePrint(item))
+      handlePrintMultiple(toPrint)
     }
   }
 
