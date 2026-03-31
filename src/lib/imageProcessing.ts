@@ -477,28 +477,31 @@ export async function buildStripVideo(
 
 /**
  * Robust download for any media type (image, video, etc).
- * Fetches the URL as a blob to bypass cross-origin restrictions on the 'download' attribute.
+ * On mobile, uses Web Share API to allow "Save to Gallery".
+ * Fallback to traditional download on desktop.
  */
 export async function downloadMedia(url: string, filename: string) {
   try {
-    // If it's already a local blob/data URL, just download it directly
-    if (url.startsWith('blob:') || url.startsWith('data:')) {
-      const a = document.createElement('a')
-      a.href = url
-      a.download = filename
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      return
+    const res = await fetch(url)
+    const blob = await res.blob()
+    const file = new File([blob], filename, { type: blob.type })
+
+    // Try Web Share API first (Native Mobile Experience)
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({
+          files: [file],
+          title: 'Sổ Media Photobooth',
+        })
+        return // Successfully shared/saved
+      } catch (err) {
+        // If user cancelled, don't trigger fallback
+        if (err instanceof Error && err.name === 'AbortError') return
+      }
     }
 
-    // For external URLs, fetch as blob first
-    const res = await fetch(url)
-    if (!res.ok) throw new Error(`Failed to fetch media: ${res.statusText}`)
-    
-    const blob = await res.blob()
-    const blobUrl = URL.createObjectURL(blob)
-    
+    // Fallback: Traditional A-tag download
+    const blobUrl = url.startsWith('blob:') ? url : URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = blobUrl
     a.download = filename
@@ -507,15 +510,13 @@ export async function downloadMedia(url: string, filename: string) {
     document.body.removeChild(a)
     
     // Clean up
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 100)
+    if (!url.startsWith('blob:')) {
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 200)
+    }
   } catch (err) {
     console.error('Download failed:', err)
-    // Fallback: open in new tab if blob download fails
-    const a = document.createElement('a')
-    a.href = url
-    a.target = '_blank'
-    a.rel = 'noopener noreferrer'
-    a.click()
+    // Absolute fallback: open in new tab
+    window.open(url, '_blank')
   }
 }
 

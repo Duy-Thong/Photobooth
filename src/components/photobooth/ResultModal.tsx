@@ -269,6 +269,9 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
                   Chụp lại
                 </Button>
               </div>
+              <p className={`text-[10px] text-center mt-1 opacity-50 ${tc('text-gray-400', 'text-gray-500')}`}>
+                Mẹo: Nhấn giữ ảnh hoặc nút Tải về để lưu vào thư viện.
+              </p>
             </div>
           </div>
 

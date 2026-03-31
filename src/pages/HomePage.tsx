@@ -10,7 +10,7 @@ import CameraView from '@/components/photobooth/CameraView'
 import PhotoStrip from '@/components/photobooth/PhotoStrip'
 import TopControls from '@/components/photobooth/TopControls'
 import CaptureControls from '@/components/photobooth/CaptureControls'
-import FilterPanel from '@/components/photobooth/FilterPanel'
+// import FilterPanel from '@/components/photobooth/FilterPanel'
 import FrameModal from '@/components/photobooth/FrameModal'
 import ResultModal from '@/components/photobooth/ResultModal'
 import ContributeFrameModal from '@/components/photobooth/ContributeFrameModal'
@@ -21,7 +21,7 @@ export default function HomePage() {
 
   const {
     layout, countdown, setCountdown,
-    activeFilter, activeEffects, setFilter, toggleEffect,
+    activeFilter, activeEffects, /* setFilter, toggleEffect, */
     capturedSlots, addPhoto, replaceSlot, resetPhotos,
     isCapturing, setIsCapturing,
     finalImageUrl, setFinalImageUrl,

@@ -208,6 +208,9 @@ export default function SessionPage() {
         >
           <PrinterOutlined /> In ảnh
         </button>
+        <p className={`text-[10px] text-center mt-1 opacity-50 ${tc('text-[#555]', 'text-[#999]')}`}>
+          Mẹo: Nhấn giữ ảnh hoặc nút Tải về để lưu vào thư viện.
+        </p>
       </div>
 
       {/* Strip video */}
