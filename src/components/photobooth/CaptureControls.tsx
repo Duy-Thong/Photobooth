@@ -52,7 +52,7 @@ export default function CaptureControls({
   }
 
   return (
-    <div className={`rounded-xl border px-4 py-3 flex flex-col gap-3 ${tc('bg-[#111] border-[#1e1e1e]', 'bg-white border-[#e0e0e0]')}`}>
+    <div id="tour-capture-controls" className={`rounded-xl border px-4 py-3 flex flex-col gap-3 ${tc('bg-[#111] border-[#1e1e1e]', 'bg-white border-[#e0e0e0]')}`}>
       {/* Progress bar */}
       <div className={`w-full h-px relative overflow-hidden rounded-full ${tc('bg-[#1e1e1e]', 'bg-[#e0e0e0]')}`}>
         <div
@@ -66,6 +66,7 @@ export default function CaptureControls({
         
         {/* Toggle Video Recap */}
         <label
+          id="tour-video-btn"
           className={`flex flex-col items-center gap-1.5 select-none ${countdown === 0 ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
           title={countdown === 0 ? "Không hỗ trợ quay video khi chụp 0s" : "Quay video"}
         >
@@ -84,6 +85,7 @@ export default function CaptureControls({
         {/* X2 Duplication (only for vertical strips) */}
         {layout.cols === 1 && layout.slots > 1 && (
           <button
+            id="tour-double-btn"
             onClick={() => onToggleX2(!isX2)}
             title="Nhân đôi strip (side-by-side)"
             className="flex flex-col items-center gap-1.5"
@@ -103,6 +105,7 @@ export default function CaptureControls({
 
         {/* Manual capture */}
         <button
+          id="tour-manual-btn"
           onClick={onManualCapture}
           disabled={disabled || allDone}
           title="Chụp một ảnh"
@@ -124,6 +127,7 @@ export default function CaptureControls({
 
         {/* AUTO */}
         <button
+          id="tour-auto-btn"
           onClick={onAutoCapture}
           disabled={disabled || allDone}
           title="Tự động chụp hết"
@@ -153,6 +157,7 @@ export default function CaptureControls({
 
         {/* Retake */}
         <button
+          id="tour-retake-btn"
           onClick={onRetake}
           disabled={capturedCount === 0}
           title="Chụp lại từ đầu"
@@ -174,6 +179,7 @@ export default function CaptureControls({
 
         {/* Upload File */}
         <button
+          id="tour-upload-btn"
           onClick={() => uploadRef.current?.click()}
           title="Tải ảnh lên thay vì chụp"
           className="flex flex-col items-center gap-1.5 group"

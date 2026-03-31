@@ -101,7 +101,7 @@ export default function PhotoStrip({
       : (layout.cols === 2 ? '2/3.1' : '1/3')
 
   return (
-    <div className="flex flex-col gap-2">
+    <div id="tour-photo-strip" className="flex flex-col gap-2">
 
       {/* ── Live composite preview ── */}
       <div className={`relative rounded-xl border overflow-hidden flex items-center justify-center p-0.5 shadow-2xl ${tc('bg-[#0d0d0d] border-[#141414]', 'bg-[#f0f0f0] border-[#e0e0e0]')}`} 

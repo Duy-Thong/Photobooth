@@ -45,6 +45,7 @@ export default function TopControls({
         <span className={`text-[10px] font-bold uppercase tracking-[0.12em] opacity-50 ${tc('text-white', 'text-black')}`}>Khung</span>
         <div className="flex items-center gap-1.5">
           <button
+            id="tour-frame-button"
             onClick={onChooseFrame}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-[13px] font-semibold transition-all duration-150 ${
               selectedFrame
@@ -126,6 +127,7 @@ export default function TopControls({
       <div className="flex flex-col gap-2">
         <span className={`text-[10px] font-bold uppercase tracking-[0.12em] opacity-50 ${tc('text-white', 'text-black')}`}>Âm Thanh</span>
         <button
+          id="tour-sound-button"
           onClick={onToggleSound}
           title={soundEnabled ? 'Tắt âm thanh chụp' : 'Bật âm thanh chụp'}
           className={`w-9 h-9 flex items-center justify-center rounded-lg border transition-all duration-150 ${

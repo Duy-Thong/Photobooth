@@ -52,7 +52,7 @@ export default function CameraView({
   const filterCss = FILTERS.find(f => f.value === activeFilter)?.css ?? 'none'
 
   return (
-    <div className={`relative w-full rounded-xl overflow-hidden border aspect-4/3 ${tc('bg-[#080808] border-[#222]', 'bg-[#e8e8e8] border-[#d0d0d0]')}`}>
+    <div id="tour-camera-view" className={`relative w-full rounded-xl overflow-hidden border aspect-4/3 ${tc('bg-[#080808] border-[#222]', 'bg-[#e8e8e8] border-[#d0d0d0]')}`}>
       <video
         ref={videoRef}
         autoPlay

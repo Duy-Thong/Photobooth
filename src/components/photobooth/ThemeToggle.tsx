@@ -6,6 +6,7 @@ export default function ThemeToggle() {
 
   return (
     <button
+      id="tour-theme-button"
       onClick={toggleTheme}
       title={isDark ? 'Chuyển sang chế độ sáng' : 'Chuyển sang chế độ tối'}
       className="w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95"

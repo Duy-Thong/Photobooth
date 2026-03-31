@@ -22,7 +22,7 @@ export default function FilterPanel({
   const OFF = `${PILL} ${tc('border-[#222] text-[#5a5a5a] hover:border-[#333] hover:text-[#aaa]', 'border-[#d0d0d0] text-[#888] hover:border-[#999] hover:text-[#333]')}`
 
   return (
-    <div className={`rounded-xl border px-4 py-3 flex flex-col gap-3 ${tc('bg-[#111] border-[#1e1e1e]', 'bg-white border-[#e0e0e0]')}`}>
+    <div id="tour-filter-panel" className={`rounded-xl border px-4 py-3 flex flex-col gap-3 ${tc('bg-[#111] border-[#1e1e1e]', 'bg-white border-[#e0e0e0]')}`}>
       <div>
         <p className={`text-[9px] font-semibold uppercase tracking-[0.18em] mb-2 ${tc('text-[#3a3a3a]', 'text-[#aaa]')}`}>Bộ lọc màu</p>
         <div className="flex gap-1.5 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden">
