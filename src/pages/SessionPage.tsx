@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { Spin, Modal } from 'antd'
+import { Spin, Modal, Tour, type TourProps } from 'antd'
 import { LoadingOutlined, PrinterOutlined } from '@ant-design/icons'
 import { fetchSession, type SessionData } from '@/lib/sessionService'
 import { downloadMedia } from '@/lib/imageProcessing'
@@ -17,6 +17,8 @@ export default function SessionPage() {
   const [downloadingPhoto, setDownloadingPhoto] = useState(false)
   const [downloadingVideo, setDownloadingVideo] = useState(false)
 
+  const [tourOpen, setTourOpen] = useState(false)
+
   useEffect(() => {
     if (!id) return
     fetchSession(id)
@@ -24,6 +26,48 @@ export default function SessionPage() {
       .catch(() => setError(true))
       .finally(() => setLoading(false))
   }, [id])
+
+  useEffect(() => {
+    if (!loading && session) {
+      const seen = localStorage.getItem('photobooth-session-tour-seen')
+      if (!seen) {
+        setTourOpen(true)
+      }
+    }
+  }, [loading, session])
+
+  const tourSteps: TourProps['steps'] = [
+    {
+      title: 'Chào mừng 🎉',
+      description: 'Đây là trang nhận ảnh của bạn. Tại đây bạn có thể xem lại và lưu giữ những khoảnh khắc vừa chụp.',
+      target: null,
+    },
+    {
+      title: 'Dải ảnh của bạn',
+      description: 'Đây là bộ ảnh hoàn chỉnh đã được ghép khung. Bạn có thể nhấn giữ để lưu hoặc chia sẻ link này.',
+      target: () => document.getElementById('tour-session-photo')!,
+    },
+    {
+      title: 'Tải ảnh',
+      description: 'Nhấn vào đây để tải ảnh chất lượng cao về máy.',
+      target: () => document.getElementById('tour-session-download-photo')!,
+    },
+    {
+      title: 'In ảnh',
+      description: 'Nếu có máy in kết nối, bạn có thể in ảnh ngay tại đây.',
+      target: () => document.getElementById('tour-session-print-photo')!,
+    },
+    ...(session?.videoUrl ? [{
+      title: 'Strip Video',
+      description: 'Đây là đoạn clip ngắn ghi lại quá trình chụp ảnh của bạn. Một món quà nhỏ từ chúng mình!',
+      target: () => document.getElementById('tour-session-video')!,
+    },
+    {
+      title: 'Tải video',
+      description: 'Bạn cũng có thể tải đoạn video này về để làm kỷ niệm nhé.',
+      target: () => document.getElementById('tour-session-download-video')!,
+    }] : []),
+  ]
 
   if (loading) {
     return (
@@ -134,6 +178,7 @@ export default function SessionPage() {
       {/* Strip image */}
       <div className="w-full max-w-xs">
         <img
+          id="tour-session-photo"
           src={session.imageUrl}
           alt="Photo strip"
           className={`w-full rounded-2xl shadow-2xl border ${tc('border-[#222]', 'border-[#d9d9d9]')}`}
@@ -143,6 +188,7 @@ export default function SessionPage() {
 
       <div className="w-full max-w-xs flex flex-col gap-2">
         <button
+          id="tour-session-download-photo"
           onClick={handleDownloadPhoto}
           disabled={downloadingPhoto}
           className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed ${tc(
@@ -153,6 +199,7 @@ export default function SessionPage() {
           {downloadingPhoto ? <LoadingOutlined /> : '↓ Tải ảnh'}
         </button>
         <button
+          id="tour-session-print-photo"
           onClick={handlePrint}
           className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm transition-colors cursor-pointer border ${tc(
             'bg-[#0a0a0a] text-white hover:bg-[#111] border-[#333]',
@@ -165,7 +212,7 @@ export default function SessionPage() {
 
       {/* Strip video */}
       {session.videoUrl && (
-        <div className="w-full max-w-xs flex flex-col gap-3">
+        <div id="tour-session-video" className="w-full max-w-xs flex flex-col gap-3">
           <p className={`text-[10px] uppercase tracking-[0.2em] text-center ${tc('text-[#555]', 'text-[#999]')}`}>Strip Video</p>
           <video
             src={session.videoUrl}
@@ -176,6 +223,7 @@ export default function SessionPage() {
             className={`w-full rounded-xl border ${tc('border-[#222] bg-black', 'border-[#d9d9d9] bg-white')}`}
           />
           <button
+            id="tour-session-download-video"
             onClick={handleDownloadVideo}
             disabled={downloadingVideo}
             className={`w-full max-w-xs flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed ${tc(
@@ -189,6 +237,16 @@ export default function SessionPage() {
       )}
 
       <p className={`text-[10px] pb-6 ${tc('text-[#2a2a2a]', 'text-[#ccc]')}`}>somedia · photobooth</p>
+
+      <Tour
+        open={tourOpen}
+        onClose={() => {
+          setTourOpen(false)
+          localStorage.setItem('photobooth-session-tour-seen', 'true')
+        }}
+        steps={tourSteps}
+        getPopupContainer={() => document.body}
+      />
     </div>
   )
 }

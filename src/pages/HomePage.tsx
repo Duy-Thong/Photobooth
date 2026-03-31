@@ -48,6 +48,7 @@ export default function HomePage() {
   const tc = useThemeClass()
 
   const [tourOpen, setTourOpen] = useState(false)
+  const [completionTourOpen, setCompletionTourOpen] = useState(false)
 
   useEffect(() => {
     const isSeen = localStorage.getItem('photobooth-tour-seen')
@@ -56,7 +57,16 @@ export default function HomePage() {
     }
   }, [])
 
-  const tourSteps: TourProps['steps'] = [
+  useEffect(() => {
+    if (capturedCount === layout.slots && !isCapturing) {
+      const isSeenCompletion = localStorage.getItem('photobooth-completion-seen')
+      if (!isSeenCompletion) {
+        setCompletionTourOpen(true)
+      }
+    }
+  }, [capturedCount, layout.slots, isCapturing])
+
+  const introTourSteps: TourProps['steps'] = [
     {
       title: 'Chào mừng 🎉',
       description: 'Chào mừng bạn đến với Sổ Media Photobooth! Hãy để mình hướng dẫn bạn cách tạo ra một bộ ảnh thật xịn nhé.',
@@ -111,16 +121,24 @@ export default function HomePage() {
       title: 'Tải Ảnh Lên',
       description: 'Bạn có ảnh sẵn trong máy? Hãy nhấn vào đây để tải ảnh lên thay vì dùng camera nhé.',
       target: () => document.getElementById('tour-upload-btn')!,
-    },
+    }
+  ]
+
+  const completionTourSteps: TourProps['steps'] = [
     {
-      title: 'Bộ Lọc & Hiệu Ứng',
-      description: 'Đừng quên thử các bộ lọc màu và hiệu ứng thú vị để bức ảnh thêm lung linh.',
-      target: () => document.getElementById('tour-filter-panel')!,
-    },
-    {
-      title: 'Xem Preview & Tải Về',
-      description: 'Sau khi chụp đủ ảnh, bạn có thể xem lại dải ảnh (photo strip) và tải về máy tại đây.',
+      title: 'Xem Preview',
+      description: 'Tại đây bạn có thể xem lại dải ảnh (photo strip) sơ bộ của mình trước khi hoàn thiện.',
       target: () => document.getElementById('tour-photo-strip')!,
+    },
+    {
+      title: 'Ghép Khung',
+      description: 'Sau khi đã chụp đủ ảnh, nhấn nút này để chúng mình hoàn thiện dải ảnh chính thức cho bạn nhé.',
+      target: () => document.getElementById('tour-build-button')!,
+    },
+    {
+      title: 'Lưu Ảnh',
+      description: 'Ảnh đã sẵn sàng! Bạn có thể tải về máy ngay hoặc nhấn tiếp tục để lấy link chia sẻ.',
+      target: () => document.getElementById('tour-download-button')!,
     },
   ]
 
@@ -416,12 +434,12 @@ export default function HomePage() {
                 onToggleX2={setIsX2}
                 layout={layout}
               />
-              <FilterPanel
+              {/* <FilterPanel
                 activeFilter={activeFilter}
                 activeEffects={activeEffects}
                 onFilterChange={setFilter}
                 onEffectToggle={toggleEffect}
-              />
+              /> */}
             </div>
 
             {/* Right: photo strip — width depends on layout cols, self-start so it doesn't grow to camera height */}
@@ -449,7 +467,16 @@ export default function HomePage() {
           setTourOpen(false)
           localStorage.setItem('photobooth-tour-seen', 'true')
         }}
-        steps={tourSteps}
+        steps={introTourSteps}
+        getPopupContainer={() => document.body}
+      />
+      <Tour
+        open={completionTourOpen}
+        onClose={() => {
+          setCompletionTourOpen(false)
+          localStorage.setItem('photobooth-completion-seen', 'true')
+        }}
+        steps={completionTourSteps}
         getPopupContainer={() => document.body}
       />
     </>

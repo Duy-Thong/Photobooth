@@ -53,6 +53,7 @@ export function useStripPreview(
   const [frameCacheKey, setFrameCacheKey] = useState<string | null>(null)
   const runIdRef = useRef(0)
   const prevUrlRef = useRef<string | null>(null)
+  const prevRunKeyRef = useRef<string | null>(null)
 
   // ── Load frame image + detect transparent slots when frameUrl changes ────────
   useEffect(() => {
@@ -112,6 +113,17 @@ export function useStripPreview(
 
     // Frame selected but still loading — wait for frameCacheKey to update
     if (hasFrame && !frameReady) return
+
+    // Skip if nothing changed to avoid flickering during parent re-renders (e.g. countdown)
+    const slotsKey = JSON.stringify(slots.map(s => s?.dataUrl || 'null'))
+    const effectsKey = JSON.stringify(effects)
+    const currentKey = `${slotsKey}-${effectsKey}-${frameCacheKey}`
+    
+    if (prevRunKeyRef.current === currentKey && previewUrl) {
+      setRendering(false)
+      return
+    }
+    prevRunKeyRef.current = currentKey
 
     const runId = ++runIdRef.current
     setRendering(true)
@@ -241,7 +253,7 @@ export function useStripPreview(
       })
       .catch(console.error)
       .finally(() => { if (runId === runIdRef.current) setRendering(false) })
-  }, [slots, frameCacheKey, frameUrl, layout])
+  }, [slots, frameCacheKey, frameUrl, layout, effects])
 
   return { previewUrl, rendering, detectedSlots, dimensions }
 }

@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useRef, memo, useEffect } from 'react'
 import { DownloadOutlined, CloseOutlined } from '@ant-design/icons'
 import type { CapturedSlot, EffectType, LayoutConfig } from '@/types/photobooth'
 import { useStripPreview } from '@/hooks/useStripPreview'
@@ -17,6 +17,31 @@ interface PhotoStripProps {
   onRemoveSlot: (index: number) => void
   onDownload: () => void
   onBuildStrip: () => void
+}
+
+/** 
+ * Separate component for the live video slot to ensure the stream 
+ * is attached only once properly and doesn't flicker on parent re-renders.
+ */
+function LiveSlotVideo({ stream, isMirrored }: { stream: MediaStream; isMirrored: boolean }) {
+  const videoRef = useRef<HTMLVideoElement>(null)
+  
+  useEffect(() => {
+    if (videoRef.current && stream) {
+      videoRef.current.srcObject = stream
+    }
+  }, [stream])
+
+  return (
+    <video
+      ref={videoRef}
+      autoPlay
+      playsInline
+      muted
+      className="w-full h-full object-cover"
+      style={{ transform: isMirrored ? 'scaleX(-1)' : 'none' }}
+    />
+  )
 }
 
 // ── Mini slot thumbnail ──────────────────────────────────────────────────────
@@ -74,7 +99,7 @@ function MiniSlot({
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
-export default function PhotoStrip({
+export const PhotoStrip = memo(function PhotoStrip({
   layout,
   slots,
   finalImageUrl,
@@ -91,7 +116,7 @@ export default function PhotoStrip({
   const filled = slots.filter(Boolean).length
   const allFilled = filled === layout.slots
   const nextTargetIndex = slots.findIndex(s => s === null)
-  const { previewUrl, rendering, detectedSlots, dimensions } = useStripPreview(slots, selectedFrame, layout, activeEffects)
+  const { previewUrl, rendering, dimensions, detectedSlots } = useStripPreview(slots, selectedFrame, layout, activeEffects)
 
   // Use the frame's metadata dimensions first, then fall back to loaded image dimensions, then layout default
   const containerAspectRatio = selectedFrame?.width && selectedFrame?.height
@@ -130,14 +155,7 @@ export default function PhotoStrip({
                     height: `${height}%` 
                   }}
                 >
-                  <video
-                    autoPlay
-                    playsInline
-                    muted
-                    ref={(el) => { if (el && stream) el.srcObject = stream }}
-                    className="w-full h-full object-cover"
-                    style={{ transform: isMirrored ? 'scaleX(-1)' : 'none' }}
-                  />
+                  <LiveSlotVideo stream={stream} isMirrored={isMirrored} />
                 </div>
               )
             })}
@@ -205,6 +223,7 @@ export default function PhotoStrip({
 
         {allFilled && !finalImageUrl && (
           <button
+            id="tour-build-button"
             onClick={onBuildStrip}
             className={`w-full py-3 rounded-xl text-[13px] font-bold tracking-wide active:scale-[0.97] transition-all duration-150 shadow-lg ${tc(
               'bg-white text-black hover:bg-[#e8e8e8]',
@@ -217,6 +236,7 @@ export default function PhotoStrip({
 
         {finalImageUrl && (
           <button
+            id="tour-download-button"
             onClick={onDownload}
             className={`w-full py-3 rounded-xl text-[13px] font-bold tracking-wide active:scale-[0.97] transition-all duration-150 flex items-center justify-center gap-2 shadow-lg ${tc(
               'bg-white text-black hover:bg-[#e8e8e8]',
@@ -229,4 +249,6 @@ export default function PhotoStrip({
       </div>
     </div>
   )
-}
+})
+
+export default PhotoStrip
