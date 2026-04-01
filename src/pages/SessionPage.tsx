@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom'
 import { Spin, Modal, Tour, type TourProps } from 'antd'
 import { LoadingOutlined, PrinterOutlined } from '@ant-design/icons'
 import { fetchSession, type SessionData } from '@/lib/sessionService'
-import { downloadMedia } from '@/lib/imageProcessing'
+import { downloadMedia, isMobileDevice } from '@/lib/imageProcessing'
 import { useThemeClass } from '@/stores/themeStore'
 import ThemeToggle from '@/components/photobooth/ThemeToggle'
 
@@ -208,9 +208,11 @@ export default function SessionPage() {
         >
           <PrinterOutlined /> In ảnh
         </button>
-        <p className={`text-[10px] text-center mt-1 opacity-50 ${tc('text-[#555]', 'text-[#999]')}`}>
-          Mẹo: Nhấn giữ ảnh hoặc nút Tải về để lưu vào thư viện.
-        </p>
+        {isMobileDevice() && (
+          <p className={`text-[10px] text-center mt-1 opacity-50 ${tc('text-[#555]', 'text-[#999]')}`}>
+            Mẹo: Nhấn giữ ảnh hoặc nút Tải về để lưu vào thư viện.
+          </p>
+        )}
       </div>
 
       {/* Strip video */}

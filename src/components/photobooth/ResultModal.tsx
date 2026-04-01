@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { Modal, QRCode, Spin, Button, message } from 'antd'
 import { DownloadOutlined, ReloadOutlined, PictureOutlined, LoadingOutlined, CopyOutlined, CheckOutlined } from '@ant-design/icons'
 import { uploadSession } from '@/lib/uploadService'
-import { downloadImage, downloadMedia } from '@/lib/imageProcessing'
+import { downloadImage, downloadMedia, isMobileDevice } from '@/lib/imageProcessing'
 import { useThemeClass } from '@/stores/themeStore'
 
 type Phase = 'uploading' | 'done' | 'error'
@@ -269,9 +269,11 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
                   Chụp lại
                 </Button>
               </div>
-              <p className={`text-[10px] text-center mt-1 opacity-50 ${tc('text-gray-400', 'text-gray-500')}`}>
-                Mẹo: Nhấn giữ ảnh hoặc nút Tải về để lưu vào thư viện.
-              </p>
+              {isMobileDevice() && (
+                <p className={`text-[10px] text-center mt-1 opacity-50 ${tc('text-gray-400', 'text-gray-500')}`}>
+                  Mẹo: Nhấn giữ ảnh hoặc nút Tải về để lưu vào thư viện.
+                </p>
+              )}
             </div>
           </div>
 

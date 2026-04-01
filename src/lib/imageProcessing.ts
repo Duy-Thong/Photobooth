@@ -476,6 +476,13 @@ export async function buildStripVideo(
 }
 
 /**
+ * Simple mobile device detection based on user agent.
+ */
+export function isMobileDevice() {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+}
+
+/**
  * Robust download for any media type (image, video, etc).
  * On mobile, uses Web Share API to allow "Save to Gallery".
  * Fallback to traditional download on desktop.
@@ -486,8 +493,8 @@ export async function downloadMedia(url: string, filename: string) {
     const blob = await res.blob()
     const file = new File([blob], filename, { type: blob.type })
 
-    // Try Web Share API first (Native Mobile Experience)
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    // Try Web Share API first (Native Mobile Experience) - ONLY on mobile
+    if (isMobileDevice() && navigator.canShare && navigator.canShare({ files: [file] })) {
       try {
         await navigator.share({
           files: [file],
