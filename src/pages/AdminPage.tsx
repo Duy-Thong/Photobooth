@@ -2,9 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { initializeApp, getApps } from 'firebase/app'
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth'
 import { firebaseConfig } from '@/lib/firebase'
-import { ref, listAll, getDownloadURL, deleteObject, getMetadata } from 'firebase/storage'
+import { ref, deleteObject, getMetadata } from 'firebase/storage'
 import { storage } from '@/lib/firebase'
-import { fetchSessions, deleteSession, markSessionPrinted } from '@/lib/sessionService'
+import { listenToSessions, deleteSession, markSessionPrinted } from '@/lib/sessionService'
 import { useAdminAuth } from '@/hooks/useAdminAuth'
 import {
   fetchCustomFrames as fetchCustomFramesService,
@@ -109,6 +109,9 @@ export default function AdminPage() {
 
   const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set())
   const [brokenPaths, setBrokenPaths] = useState<Set<string>>(new Set())
+  
+  // Real-time state
+  const [sessionItems, setSessionItems] = useState<{ photos: MediaItem[], videos: MediaItem[], printed: Set<string> }>({ photos: [], videos: [], printed: new Set() })
 
   // ── Admin Management state ──────────────────────────────────────────────────
   const [admins, setAdmins] = useState<AdminUser[]>([])
@@ -297,36 +300,30 @@ export default function AdminPage() {
     })
   }
 
-  const fetchAll = useCallback(async () => {
+  // 1. Real-time Session Listener
+  useEffect(() => {
     setLoading(true)
-    try {
-      const sessions = await fetchSessions()
-      let sessionPhotos: MediaItem[] = []
-      let sessionVideos: MediaItem[] = []
-      
+    const unsubscribe = listenToSessions((sessions: any[]) => {
+      const sPhotos: MediaItem[] = []
+      const sVideos: MediaItem[] = []
+      const sPrinted = new Set<string>()
+
       for (const s of sessions) {
-        // ... (collect all first, filter later or separately)
-        sessionPhotos.push({
+        const pPath = getPathFromUrl(s.imageUrl) || `sessions/${s.id}/strip.jpg`
+        sPhotos.push({
           name: `Session ${s.id.slice(0, 8)}`,
-          fullPath: getPathFromUrl(s.imageUrl) || `sessions/${s.id}/strip.jpg`,
+          fullPath: pPath,
           url: s.imageUrl,
           timeCreated: s.createdAt,
           size: 0,
           type: 'photo',
           sessionId: s.id,
         })
-
-        if (s.printedAt) {
-          setPrintedPaths(prev => {
-            const next = new Set(prev)
-            next.add(getPathFromUrl(s.imageUrl) || `sessions/${s.id}/strip.jpg`)
-            return next
-          })
-        }
+        if (s.printedAt) sPrinted.add(pPath)
 
         if (s.videoUrl) {
           const ext = s.videoUrl.includes('.mp4') ? 'mp4' : 'webm'
-          sessionVideos.push({
+          sVideos.push({
             name: `Session Recap ${s.id.slice(0, 8)}`,
             fullPath: getPathFromUrl(s.videoUrl) || `sessions/${s.id}/strip.${ext}`,
             url: s.videoUrl,
@@ -337,79 +334,43 @@ export default function AdminPage() {
           })
         }
       }
-
-      // 2. Fetch legacy from Storage (slow)
-      const [photoList, videoList] = await Promise.all([
-        listAll(ref(storage, 'photobooth')),
-        listAll(ref(storage, 'recap')),
-      ])
-
-      const toItems = async (refs: typeof photoList.items, type: 'photo' | 'video'): Promise<MediaItem[]> => {
-        const settled = await Promise.allSettled(
-          refs.map(async (r) => {
-            const [url, meta] = await Promise.all([getDownloadURL(r), getMetadata(r)])
-            return {
-              name: r.name,
-              fullPath: r.fullPath,
-              url,
-              timeCreated: meta.timeCreated,
-              size: meta.size,
-              type,
-            } satisfies MediaItem
-          }),
-        )
-        return (settled.filter(r => r.status === 'fulfilled') as PromiseFulfilledResult<MediaItem>[])
-          .map(r => r.value)
-      }
-
-      const [legacyP, legacyV] = await Promise.all([
-        toItems(photoList.items, 'photo'),
-        toItems(videoList.items, 'video')
-      ])
-
-      let allPhotos = [...sessionPhotos, ...legacyP]
-      let allVideos = [...sessionVideos, ...legacyV]
-
-      // APPLY FILTERS UNIFORMALLY
-      if (permissions?.photoDateRange) {
-        const start = new Date(permissions.photoDateRange.start).getTime()
-        const end = new Date(permissions.photoDateRange.end).getTime()
-        allPhotos = allPhotos.filter(p => {
-          const t = new Date(p.timeCreated).getTime()
-          return t >= start && t <= end
-        })
-      }
-      if (permissions?.videoDateRange) {
-        const start = new Date(permissions.videoDateRange.start).getTime()
-        const end = new Date(permissions.videoDateRange.end).getTime()
-        allVideos = allVideos.filter(v => {
-          const t = new Date(v.timeCreated).getTime()
-          return t >= start && t <= end
-        })
-      }
-
-      allPhotos.sort((a, b) => new Date(b.timeCreated).getTime() - new Date(a.timeCreated).getTime())
-      allVideos.sort((a, b) => new Date(b.timeCreated).getTime() - new Date(a.timeCreated).getTime())
-
-      setPhotos(allPhotos)
-      setVideos(allVideos)
-
-      // Init printed state from localStorage for legacy photos
-      const stored = localStorage.getItem('printed_paths')
-      if (stored) {
-        const legacy: string[] = JSON.parse(stored)
-        setPrintedPaths(prev => {
-          const next = new Set(prev)
-          legacy.forEach(p => next.add(p))
-          return next
-        })
-      }
-    } finally {
+      setSessionItems({ photos: sPhotos, videos: sVideos, printed: sPrinted })
       setLoading(false)
-    }
-  }, [permissions])
+    })
+    
+    return () => unsubscribe()
+  }, [])
 
-  useEffect(() => { fetchAll() }, [fetchAll])
+  // 2. Compute final lists with filters
+  useEffect(() => {
+    let allP = [...sessionItems.photos]
+    let allV = [...sessionItems.videos]
+
+    if (permissions?.photoDateRange) {
+      const start = new Date(permissions.photoDateRange.start).getTime()
+      const end = new Date(permissions.photoDateRange.end).getTime()
+      allP = allP.filter(p => {
+        const t = new Date(p.timeCreated).getTime()
+        return t >= start && t <= end
+      })
+    }
+    if (permissions?.videoDateRange) {
+      const start = new Date(permissions.videoDateRange.start).getTime()
+      const end = new Date(permissions.videoDateRange.end).getTime()
+      allV = allV.filter(v => {
+        const t = new Date(v.timeCreated).getTime()
+        return t >= start && t <= end
+      })
+    }
+
+    allP.sort((a, b) => new Date(b.timeCreated).getTime() - new Date(a.timeCreated).getTime())
+    allV.sort((a, b) => new Date(b.timeCreated).getTime() - new Date(a.timeCreated).getTime())
+
+    setPhotos(allP)
+    setVideos(allV)
+    setPrintedPaths(sessionItems.printed)
+    
+  }, [sessionItems, permissions])
 
   const loadCustomFrames = useCallback(async () => {
     setFramesLoading(true)
@@ -595,8 +556,7 @@ export default function AdminPage() {
         setBulkDeleting(true)
         try {
           let cleaned = 0
-          // Refresh list first to ensure we have latest IDs
-          await fetchAll()
+          // No need to refresh list as listener handles it automatically
           
           const allItems = [...photos, ...videos]
           const sessionsWithId = allItems.filter(i => i.sessionId)
@@ -633,10 +593,9 @@ export default function AdminPage() {
           
           Modal.success({ 
             title: 'Hoàn tất dọn dẹp', 
-            content: `Đã dọn dẹp xong. Hệ thống đã xóa ${cleaned} bản ghi lỗi. Danh sách sẽ được tải lại ngay bây giờ.`, 
+            content: `Đã dọn dẹp xong. Hệ thống đã xóa ${cleaned} bản ghi lỗi. Dữ liệu sẽ được cập nhật tự động.`, 
             centered: true 
           })
-          fetchAll()
         } catch (e) {
           console.error('[Cleanup] Fatal Error:', e)
           Modal.error({ title: 'Dọn dẹp thất bại', centered: true })
@@ -1003,7 +962,7 @@ export default function AdminPage() {
             </div>
           )}
 
-          <Button size="small" icon={<ReloadOutlined />} onClick={fetchAll} disabled={bulkDeleting}
+          <Button size="small" icon={<ReloadOutlined />} onClick={() => window.location.reload()} disabled={bulkDeleting}
             style={{ background: '#1e1e1e', border: '1px solid #2a2a2a', color: '#888' }}>
             Tải lại
           </Button>

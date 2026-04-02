@@ -1,4 +1,4 @@
-import { collection, doc, setDoc, getDoc, serverTimestamp, updateDoc } from 'firebase/firestore'
+import { collection, doc, setDoc, getDoc, serverTimestamp, updateDoc, query, orderBy, onSnapshot, deleteDoc, getDocs } from 'firebase/firestore'
 import { db } from './firebase'
 
 export interface SessionData {
@@ -39,7 +39,6 @@ export function generateSessionId(): string {
 
 /** Fetch all sessions from Firestore, ordered by createdAt descending. */
 export async function fetchSessions(): Promise<SessionData[]> {
-  const { query, orderBy, getDocs } = await import('firebase/firestore')
   const q = query(collection(db, SESSIONS_COLLECTION), orderBy('createdAt', 'desc'))
   const snap = await getDocs(q)
   return snap.docs.map(doc => {
@@ -63,6 +62,24 @@ export async function markSessionPrinted(id: string): Promise<void> {
 
 /** Delete a session document from Firestore. */
 export async function deleteSession(id: string): Promise<void> {
-  const { deleteDoc } = await import('firebase/firestore')
   await deleteDoc(doc(db, SESSIONS_COLLECTION, id))
+}
+
+/** Listen to real-time session updates from Firestore. */
+export function listenToSessions(callback: (sessions: SessionData[]) => void): () => void {
+  const q = query(collection(db, SESSIONS_COLLECTION), orderBy('createdAt', 'desc'))
+  
+  return onSnapshot(q, (snap: any) => {
+    const sessions = snap.docs.map((doc: any) => {
+      const d = doc.data()
+      return {
+        id: doc.id,
+        imageUrl: d.imageUrl,
+        videoUrl: d.videoUrl ?? null,
+        createdAt: d.createdAt?.toDate?.()?.toISOString() ?? new Date().toISOString(),
+        printedAt: d.printedAt?.toDate?.()?.toISOString() ?? null,
+      }
+    })
+    callback(sessions)
+  })
 }
