@@ -9,8 +9,8 @@ const darkTokens = {
   colorBgBase: '#000000',
   colorBgContainer: '#050505',
   colorBgElevated: '#0a0a0a',
-  colorBorder: '#222222',
-  colorBorderSecondary: '#111111',
+  colorBorder: '#1a1a1a',
+  colorBorderSecondary: '#141414',
   colorText: '#e5e5e5',
   colorTextSecondary: '#888888',
   colorTextTertiary: '#555555',
@@ -23,9 +23,9 @@ const darkTokens = {
 
 const darkComponents = {
   Modal: {
-    contentBg: '#050505',
-    headerBg: '#050505',
-    footerBg: '#050505',
+    contentBg: '#0a0a0a',
+    headerBg: '#0a0a0a',
+    footerBg: '#0a0a0a',
     titleColor: '#e5e5e5',
   },
   Input: {

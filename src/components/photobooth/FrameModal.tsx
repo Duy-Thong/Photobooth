@@ -30,14 +30,11 @@ export default function FrameModal({
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [activeCategoryName, setActiveCategoryName] = useState<string | null>(null)
-  const [layoutFilter, setLayoutFilter] = useState<string | null>(currentLayout.type)
+  const [layoutFilter, setLayoutFilter] = useState<string | null>(null)
   const [preview, setPreview] = useState<FrameItem | null>(null)
   const [contributeOpen, setContributeOpen] = useState(false)
 
-  // Sync slotFilter when modal opens (layout may have changed outside)
-  useEffect(() => {
-    if (open) setLayoutFilter(currentLayout.type)
-  }, [open, currentLayout.type])
+
 
   // Load data when modal opens — wait for Firebase, no static preload
   useEffect(() => {
@@ -140,7 +137,7 @@ export default function FrameModal({
           {['Tất cả', ...availableLayouts].map(ly => (
             <button
               key={ly}
-              onClick={() => { setLayoutFilter(ly === 'Tất cả' ? null : ly); setActiveCategoryName(null) }}
+              onClick={() => { setLayoutFilter(ly === 'Tất cả' ? null : ly) }}
               className={`text-[11px] px-2.5 py-0.5 rounded-md border transition-all duration-150 ${
                 (layoutFilter === ly || (ly === 'Tất cả' && !layoutFilter))
                   ? chipActive

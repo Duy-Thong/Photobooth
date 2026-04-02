@@ -98,9 +98,9 @@ export default function ContributeFrameModal({ open, onClose }: Props) {
   }
 
   const inputStyle = {
-    background: tc('#111', '#fff') === '#111' ? '#111' : '#fff',
-    borderColor: tc('#2a2a2a', '#d9d9d9') === '#2a2a2a' ? '#2a2a2a' : '#d9d9d9',
-    color: tc('#e5e5e5', '#1a1a1a') === '#e5e5e5' ? '#e5e5e5' : '#1a1a1a',
+    background: 'var(--bg-input, #0a0a0a)',
+    borderColor: 'var(--border-primary, #2a2a2a)',
+    color: 'var(--text-primary, #e5e5e5)',
   }
 
   return (
@@ -155,8 +155,8 @@ export default function ContributeFrameModal({ open, onClose }: Props) {
             }}
           >
             {previewUrl ? (
-              <div className={`relative flex items-center justify-center p-2 ${tc('bg-[#111]', 'bg-[#f5f5f5]')}`} style={{ minHeight: 140 }}>
-                <img src={previewUrl} alt="preview" className="max-h-36 object-contain rounded" />
+              <div className="relative flex items-center justify-center p-2 bg-black/20" style={{ minHeight: 140 }}>
+                <img src={previewUrl} alt="preview" className="max-h-36 object-contain rounded shadow-lg" />
                 {detecting && (
                   <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center gap-2">
                     <Spin size="small" />
@@ -181,7 +181,7 @@ export default function ContributeFrameModal({ open, onClose }: Props) {
 
           {/* Slot info + adjust */}
           {file && !detecting && (
-            <div className={`flex items-center gap-3 rounded-lg px-3 py-2 ${tc('bg-[#111]', 'bg-[#f5f5f5]')}`}>
+            <div className={`flex items-center gap-3 rounded-lg px-3 py-2 bg-white/5 border border-white/5`}>
               <span className={`text-xs ${tc('text-[#555]', 'text-[#999]')}`}>Slot phát hiện:</span>
               <span className={`text-xs font-bold ${tc('text-white', 'text-black')}`}>{slots}</span>
               <span className={`text-xs ${tc('text-[#333]', 'text-[#ccc]')}`}>·</span>

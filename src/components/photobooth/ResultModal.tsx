@@ -213,8 +213,8 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
       width={760}
       centered
       styles={{
-        body: { background: tc('#141414', '#ffffff') === '#141414' ? '#141414' : '#ffffff', padding: '20px' },
-        header: { background: tc('#141414', '#ffffff') === '#141414' ? '#141414' : '#ffffff', borderBottom: `1px solid ${tc('#1f1f1f', '#f0f0f0') === '#1f1f1f' ? '#1f1f1f' : '#f0f0f0'}` },
+        body: { background: 'var(--modal-bg)', padding: '20px' },
+        header: { background: 'var(--modal-bg)', borderBottom: '1px solid var(--modal-divider)' },
       }}
     >
       {/* ── LOADING ─────────────────────────────────────────────────────────── */}

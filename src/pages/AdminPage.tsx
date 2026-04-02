@@ -1608,8 +1608,8 @@ export default function AdminPage() {
         centered
         width="min(90vw, 700px)"
         styles={{
-          body: { background: '#111', padding: 0 },
-          header: { background: '#111', borderBottom: '1px solid #1f1f1f' },
+          body: { background: 'var(--modal-bg)', padding: 0 },
+          header: { background: 'var(--modal-bg)', borderBottom: '1px solid var(--modal-divider)', padding: '12px 24px' },
         }}
         title={<span className="text-[#aaa] text-sm font-normal truncate">{previewItem?.name}</span>}
       >
