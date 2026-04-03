@@ -7,6 +7,9 @@ import AdminPage from '@/pages/AdminPage'
 import StudioGalleryPage from '@/pages/StudioGalleryPage'
 import SessionPage from '@/pages/SessionPage'
 import ProtectedRoute from '@/components/admin/ProtectedRoute'
+import StudioLayout from '@/layouts/StudioLayout'
+import StudioDashboard from '@/pages/studio/StudioDashboard'
+import FrameManager from '@/components/admin/FrameManager'
 
 export const router = createBrowserRouter([
   {
@@ -45,12 +48,25 @@ export const router = createBrowserRouter([
     ),
   },
   {
-    // Studio gallery — scoped to their own sessions
-    path: '/studio/gallery',
+    path: '/studio',
     element: (
       <ProtectedRoute require="studio">
-        <StudioGalleryPage />
+        <StudioLayout />
       </ProtectedRoute>
     ),
+    children: [
+      {
+        path: 'dashboard',
+        element: <StudioDashboard />
+      },
+      {
+        path: 'gallery',
+        element: <StudioGalleryPage />
+      },
+      {
+        path: 'frames',
+        element: <FrameManager />
+      }
+    ]
   },
 ])

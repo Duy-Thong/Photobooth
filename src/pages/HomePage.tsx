@@ -7,7 +7,7 @@ import { useAdminAuth } from '@/hooks/useAdminAuth'
 import { usePhotoboothStore } from '@/stores/photoboothStore'
 import { useThemeClass } from '@/stores/themeStore'
 import { buildStripImage, buildStripVideo, detectFrameSlots } from '@/lib/imageProcessing'
-import { LAYOUTS, FILTERS } from '@/types/photobooth'
+import { LAYOUTS, FILTERS, type CapturedSlot } from '@/types/photobooth'
 import CameraView from '@/components/photobooth/CameraView'
 import PhotoStrip from '@/components/photobooth/PhotoStrip'
 import TopControls from '@/components/photobooth/TopControls'
@@ -17,57 +17,9 @@ import FrameModal from '@/components/photobooth/FrameModal'
 import ResultModal from '@/components/photobooth/ResultModal'
 import ContributeFrameModal from '@/components/photobooth/ContributeFrameModal'
 import ThemeToggle from '@/components/photobooth/ThemeToggle'
+import { LogoutOutlined } from '@ant-design/icons'
 
-/** Staff-only menu — gear icon reveals Gallery + Logout, không để lộ ra cho khách */
-function StaffMenu({ tc, onGallery, onLogout }: {
-  tc: (dark: string, light: string) => string
-  onGallery: () => void
-  onLogout: () => void
-}) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    if (!open) return
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [open])
-
-  return (
-    <div ref={ref} className="relative">
-      <button
-        onClick={() => setOpen(v => !v)}
-        title="Menu nhân viên"
-        className={`w-8 h-8 flex items-center justify-center rounded-lg border transition-all text-base ${tc(
-          'border-[#252525] text-[#444] hover:border-[#444] hover:text-[#888]',
-          'border-[#e0e0e0] text-[#bbb] hover:border-[#bbb] hover:text-[#666]'
-        )}`}
-      >
-        ⚙
-      </button>
-      {open && (
-        <div className={`absolute left-0 top-10 z-50 rounded-xl border shadow-2xl flex flex-col overflow-hidden min-w-35 ${tc('bg-[#111] border-[#2a2a2a]', 'bg-white border-[#e0e0e0]')}`}>
-          <button
-            onClick={() => { setOpen(false); onGallery() }}
-            className={`text-left px-4 py-3 text-xs font-semibold uppercase tracking-widest transition-colors ${tc('text-[#aaa] hover:bg-[#1a1a1a] hover:text-white', 'text-[#666] hover:bg-[#f5f5f5] hover:text-black')}`}
-          >
-            📁 Gallery
-          </button>
-          <div className={`h-px ${tc('bg-[#2a2a2a]', 'bg-[#e8e8e8]')}`} />
-          <button
-            onClick={() => { setOpen(false); onLogout() }}
-            className={`text-left px-4 py-3 text-xs font-semibold uppercase tracking-widest transition-colors ${tc('text-red-500/70 hover:bg-[#1a1a1a] hover:text-red-400', 'text-red-400 hover:bg-[#fff5f5] hover:text-red-600')}`}
-          >
-            ⏻ Đăng xuất
-          </button>
-        </div>
-      )}
-    </div>
-  )
-}
 
 export default function HomePage() {
   const { videoRef, stream, isMirrored, isReady, error, toggleMirror, captureFrame, selectDevice, retryCamera, devices, activeDeviceId, soundEnabled, toggleSound } = useCamera()
@@ -98,6 +50,23 @@ export default function HomePage() {
   const [resultModalOpen, setResultModalOpen] = useState(false)
   const [contributeOpen, setContributeOpen] = useState(false)
   const [messageApi, contextHolder] = message.useMessage()
+
+  const [staffModalOpen, setStaffModalOpen] = useState(false)
+  const [, setTapCount] = useState(0)
+  const tapTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  const handleLogoTap = useCallback(() => {
+    setTapCount(c => {
+      const newCount = c + 1
+      if (newCount >= 5) {
+        setStaffModalOpen(true)
+        return 0
+      }
+      if (tapTimeoutRef.current) clearTimeout(tapTimeoutRef.current)
+      tapTimeoutRef.current = setTimeout(() => setTapCount(0), 1000)
+      return newCount
+    })
+  }, [navigate, role, logout])
 
   const abortRef = useRef(false)
   const capturedCount = capturedSlots.filter(Boolean).length
@@ -310,23 +279,7 @@ export default function HomePage() {
     } catch {
       messageApi.error('Tạo ảnh thất bại, thử lại nhé!')
     }
-  }, [capturedSlots, layout, activeEffects, selectedFrame, setFinalImageUrl, messageApi])
-
-  // ---------- Toggle X2 inside ResultModal (rebuild without re-capturing) ----------
-  const handleToggleX2InResult = useCallback(async () => {
-    const newX2 = !isX2
-    setIsX2(newX2)
-    setIsRebuildingImage(true)
-    try {
-      const fUrl = selectedFrame ? (selectedFrame.storageUrl ?? `/frames/${selectedFrame.filename}`) : null
-      const url = await buildStripImage(capturedSlots, layout, activeEffects, fUrl, selectedFrame?.slots_data, newX2)
-      setFinalImageUrl(url)
-    } catch {
-      messageApi.error('Tạo ảnh thất bại!')
-    } finally {
-      setIsRebuildingImage(false)
-    }
-  }, [isX2, setIsX2, capturedSlots, layout, activeEffects, selectedFrame, setFinalImageUrl, messageApi])
+  }, [capturedSlots, layout, activeEffects, selectedFrame, setFinalImageUrl, messageApi, videoRecap, isX2])
 
   // ---------- Download / Show Result ----------
   const handleDownload = useCallback(() => {
@@ -358,8 +311,8 @@ export default function HomePage() {
       <ContributeFrameModal open={contributeOpen} onClose={() => setContributeOpen(false)} />
       <FrameModal
         open={frameModalOpen}
-        currentLayout={layout}
         selectedFrame={selectedFrame}
+        studioId={studioId ?? undefined}
         onSelect={async (url, frameItem) => {
           // Use pre-calculated slots if available, otherwise detect
           let detectedSlots = frameItem.slots_data ? frameItem.slots_data.length : 0
@@ -418,31 +371,89 @@ export default function HomePage() {
         }}
         onClose={() => setFrameModalOpen(false)}
       />
+      <Modal
+        open={staffModalOpen}
+        onCancel={() => setStaffModalOpen(false)}
+        title={<span className="text-[11px] font-bold uppercase tracking-[0.2em] opacity-40">Nhân Viên</span>}
+        footer={null}
+        width={280}
+        centered
+        closable={false}
+        className="dark-modal"
+      >
+        <div className="flex flex-col gap-2 py-2">
+          <button
+            onClick={() => { setStaffModalOpen(false); navigate(role === 'superadmin' ? '/admin' : '/studio/dashboard') }}
+            className={`flex items-center justify-between px-4 py-3 rounded-xl border text-xs font-semibold tracking-wide transition-all ${tc(
+              'bg-[#111] border-[#222] text-[#888] hover:border-[#444] hover:text-white',
+              'bg-white border-[#e0e0e0] text-[#666] hover:border-[#999] hover:text-black'
+            )}`}
+          >
+            Quay về Dashboard
+            <span className="opacity-40">→</span>
+          </button>
+          
+          <button
+            onClick={() => {
+              setStaffModalOpen(false)
+              Modal.confirm({
+                title: 'Đăng xuất?',
+                content: 'Bạn sẽ được đăng xuất khỏi thiết bị này.',
+                okText: 'Đăng xuất',
+                cancelText: 'Hủy',
+                centered: true,
+                okButtonProps: { danger: true },
+                onOk: () => { logout?.(); navigate('/login') },
+              })
+            }}
+            className={`flex items-center justify-between px-4 py-3 rounded-xl border text-xs font-semibold tracking-wide transition-all ${tc(
+              'border-red-500/10 text-red-500/60 hover:bg-red-500/5 hover:text-red-500',
+              'border-red-100 text-red-400 hover:bg-red-50/50 hover:text-red-600'
+            )}`}
+          >
+            Đăng xuất
+            <LogoutOutlined className="text-[14px]" />
+          </button>
+          
+          <button
+            onClick={() => setStaffModalOpen(false)}
+            className={`mt-2 py-2 text-[10px] uppercase font-bold tracking-widest text-center opacity-30 hover:opacity-100 transition-opacity ${tc('text-white', 'text-black')}`}
+          >
+            Quay lại
+          </button>
+        </div>
+      </Modal>
+
       <ResultModal
         open={resultModalOpen}
         imageBlobUrl={finalImageUrl}
-        recapClips={recapClips}
+        recapClips={capturedSlots.filter((s): s is CapturedSlot => s !== null).map(s => s.dataUrl)}
         recapMimeType={recapMimeType}
         recapStripUrl={recapStripUrl}
         buildingStrip={buildingStrip}
         isX2={isX2}
-        onToggleX2={handleToggleX2InResult}
+        onToggleX2={() => setIsX2(!isX2)}
         isRebuildingImage={isRebuildingImage}
-        studioId={studioId ?? undefined}
-        onClose={() => setResultModalOpen(false)}
-        onRetake={() => {
-          handleRetake()
+        studioId={studioId || undefined}
+        frameId={selectedFrame?.id?.toString() || selectedFrame?.firestoreId}
+        frameName={selectedFrame?.name}
+        onClose={() => {
           setResultModalOpen(false)
+          resetPhotos()
+        }}
+        onRetake={() => {
+          setResultModalOpen(false)
+          resetPhotos()
         }}
         onChangeFrame={() => {
           setResultModalOpen(false)
-          setTimeout(() => setFrameModalOpen(true), 150)
+          setFrameModalOpen(true)
         }}
       />
       <div className={`min-h-dvh flex flex-col ${tc('bg-[#0a0a0a]', 'bg-[#f5f5f5]')}`}>
         {/* Header */}
         <header className={`pt-5 pb-4 border-b relative ${tc('border-[#141414]', 'border-[#e0e0e0]')}`}>
-          <div className="text-center">
+          <div className="text-center cursor-pointer select-none" onClick={handleLogoTap}>
             <h1 className={`text-2xl font-bold ${tc('text-white', 'text-black')}`} style={{ letterSpacing: '-0.03em' }}>
               Sổ Media
             </h1>
@@ -451,25 +462,7 @@ export default function HomePage() {
               <p className={`text-[9px] tracking-widest mt-0.5 ${tc('text-[#555]', 'text-[#aaa]')}`}>{studioName}</p>
             )}
           </div>
-          {/* Left: staff-only menu — hidden from casual users behind gear icon */}
-          {role && (
-            <div className="absolute left-4 top-1/2 -translate-y-1/2">
-              <StaffMenu
-                tc={tc}
-                onGallery={() => navigate(role === 'superadmin' ? '/admin' : '/studio/gallery')}
-                onLogout={() => {
-                  Modal.confirm({
-                    title: 'Đăng xuất?',
-                    content: 'Phiên làm việc hiện tại sẽ kết thúc.',
-                    okText: 'Đăng xuất',
-                    cancelText: 'Hủy',
-                    centered: true,
-                    onOk: logout,
-                  })
-                }}
-              />
-            </div>
-          )}
+
           <div className="absolute right-4 top-1/2 -translate-y-1/2">
             <ThemeToggle />
           </div>

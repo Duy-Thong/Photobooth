@@ -22,6 +22,7 @@ import { fetchFeedbacks, deleteFeedback } from '@/lib/feedbackService'
 import type { Feedback } from '@/types/feedback'
 import { detectFrameSlots, getLayoutFromSlots } from '@/lib/imageProcessing'
 import FrameSlotEditor from '@/components/admin/FrameSlotEditor'
+import FrameEditModal from '@/components/admin/FrameEditModal'
 import { type SlotRect } from '@/types/photobooth'
 import { Button, Input, Modal, Select, Spin, Empty, Tooltip, Table, Tag, Checkbox, Form, DatePicker } from 'antd'
 import dayjs from 'dayjs'
@@ -208,6 +209,10 @@ export default function AdminPage() {
     } finally {
       setEditSaving(false)
     }
+  }
+
+  const handleFrameSaved = (updated: FrameItem) => {
+    setCustomFrames(prev => prev.map(f => f.firestoreId === updated.firestoreId ? updated : f))
   }
 
   // ── Requests tab state ───────────────────────────────────────────────────────
@@ -1707,91 +1712,11 @@ export default function AdminPage() {
         </div>
       </Modal>
 
-      {/* Edit frame modal */}
-      <Modal
-        open={!!editingFrame}
-        onCancel={() => setEditingFrame(null)}
-        title={<span className="text-[#aaa] text-sm font-medium">Chỉnh Sửa Khung</span>}
-        footer={
-          <div className="flex justify-end gap-2">
-            <Button onClick={() => setEditingFrame(null)} style={{ background: '#1e1e1e', border: '1px solid #2a2a2a', color: '#888' }}>
-              Hủy
-            </Button>
-            <Button
-              type="primary"
-              onClick={handleSaveEdit}
-              loading={editSaving}
-              disabled={!editName.trim() || !editCategory.trim()}
-            >
-              Lưu
-            </Button>
-          </div>
-        }
-        centered
-        width={940}
-      >
-        <div className="flex flex-col md:flex-row gap-6 py-2">
-          {/* Left - Slot Editor */}
-          <div className="flex-1 min-w-0">
-            {editingFrame && (
-              <FrameSlotEditor 
-                imageUrl={frameImageUrl(editingFrame.filename, editingFrame.storageUrl)} 
-                slots={editSlotsData} 
-                onChange={setEditSlotsData} 
-              />
-            )}
-          </div>
-
-          {/* Right - Form */}
-          <div className="w-80 flex flex-col gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[#888] text-xs font-semibold uppercase tracking-wider">Tên Khung</label>
-              <Input value={editName} onChange={e => setEditName(e.target.value)}
-                placeholder="Ví dụ: 1x4, 2x2..." />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[#888] text-xs font-semibold uppercase tracking-wider">Danh Mục</label>
-              <Input value={editCategory} onChange={e => setEditCategory(e.target.value)}
-                list="edit-categories"
-                placeholder="Ví dụ: 1x4, 2x2..." />
-              <datalist id="edit-categories">
-                <option value="Frame Basic" />
-                <option value="Frame Cartoon" />
-                <option value="Frame Amazing ⭐️" />
-                <option value="Frame IDOL Hoạt Họa" />
-              </datalist>
-            </div>
-            {/* Layout */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[#888] text-xs font-semibold uppercase tracking-wider">Layout (Bố cục)</label>
-              <Select
-                value={editLayout}
-                onChange={v => setEditLayout(v)}
-                placeholder="Chọn bố cục..."
-                options={LAYOUT_OPTIONS}
-                showSearch
-              />
-            </div>
-
-            {/* Frame Type */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[#888] text-xs font-semibold uppercase tracking-wider">Loại khung</label>
-              <Select
-                value={editFrameType}
-                onChange={v => setEditFrameType(v)}
-                options={FRAME_TYPE_OPTIONS}
-              />
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[#888] text-xs font-semibold uppercase tracking-wider">Số Slot</label>
-              <div className="bg-[#050505] border border-[#222] rounded px-3 py-1.5 text-white font-bold h-8 flex items-center">
-                {editSlotsData.length}
-              </div>
-            </div>
-          </div>
-        </div>
-      </Modal>
+      <FrameEditModal
+        frame={editingFrame}
+        onClose={() => setEditingFrame(null)}
+        onSaved={handleFrameSaved}
+      />
 
       {/* Request preview modal */}
       <Modal

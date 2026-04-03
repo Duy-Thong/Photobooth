@@ -27,12 +27,18 @@ interface ResultModalProps {
   isRebuildingImage?: boolean
   /** Studio UID to scope the upload (undefined = legacy/no auth) */
   studioId?: string
+  frameId?: string
+  frameName?: string
   onClose: () => void
   onRetake: () => void
   onChangeFrame: () => void
 }
 
-export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeType, recapStripUrl, buildingStrip, isX2, onToggleX2, isRebuildingImage, studioId, onClose, onRetake, onChangeFrame }: ResultModalProps) {
+export default function ResultModal({ 
+  open, imageBlobUrl, recapClips, recapMimeType, recapStripUrl, buildingStrip, 
+  isX2, onToggleX2, isRebuildingImage, studioId, frameId, frameName,
+  onClose, onRetake, onChangeFrame 
+}: ResultModalProps) {
   const tc = useThemeClass()
   const recapExt = recapMimeType?.startsWith('video/mp4') ? 'mp4' : 'webm'
   const hasClips = !!recapClips && recapClips.length > 0
@@ -135,6 +141,8 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
           recapStripUrl ?? null,
           recapMimeType ?? undefined,
           studioId,
+          frameId,
+          frameName,
         )
         if (cancelled) return
         clearTimeout(timeout)

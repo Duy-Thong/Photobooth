@@ -1,31 +1,29 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Modal, Input, Spin, Empty } from 'antd'
-import { fetchFrames, fetchCategories, frameImageUrl } from '@/lib/frameService'
-import type { FrameItem, FrameCategory } from '@/lib/frameService'
-import type { LayoutConfig } from '@/types/photobooth'
+import { fetchFrames, frameImageUrl } from '@/lib/frameService'
+import type { FrameItem } from '@/lib/frameService'
 import ContributeFrameModal from './ContributeFrameModal'
 import { useThemeClass } from '@/stores/themeStore'
 
 interface FrameModalProps {
   open: boolean
-  currentLayout: LayoutConfig
   selectedFrame: FrameItem | null
   onSelect: (url: string, frame: FrameItem) => void
   onClear: () => void
   onClose: () => void
+  studioId?: string
 }
 
 export default function FrameModal({
   open,
-  currentLayout,
   selectedFrame,
   onSelect,
   onClear,
   onClose,
+  studioId,
 }: FrameModalProps) {
   const tc = useThemeClass()
   const [frames, setFrames] = useState<FrameItem[]>([])
-  const [categories, setCategories] = useState<FrameCategory[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
@@ -42,11 +40,11 @@ export default function FrameModal({
     if (frames.length > 0) return // already loaded (cached)
     setLoading(true)
     setError(null)
-    Promise.all([fetchFrames(), fetchCategories()])
-      .then(([f, c]) => { setFrames(f); setCategories(c) })
+    fetchFrames(studioId)
+      .then((f) => { setFrames(f); })
       .catch(() => setError('Không tải được danh sách khung. Kiểm tra kết nối mạng.'))
       .finally(() => setLoading(false))
-  }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [open, studioId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const filtered = useMemo(() => {
     let list = layoutFilter
@@ -61,6 +59,17 @@ export default function FrameModal({
     }
     return list
   }, [frames, layoutFilter, activeCategoryName, search])
+
+  // Categories derived from frames
+  const categories = useMemo(() => {
+    const map = new Map<string, number>()
+    for (const f of frames) {
+      if (!map.has(f.categoryName)) {
+        map.set(f.categoryName, f.categoryId)
+      }
+    }
+    return Array.from(map.entries()).map(([name, id]) => ({ id, name }))
+  }, [frames])
 
   // Categories available for current slot filter
   const availableCategories = useMemo(() => {

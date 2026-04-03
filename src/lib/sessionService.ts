@@ -8,6 +8,8 @@ export interface SessionData {
   createdAt: string       // ISO string
   printedAt?: string | null // ISO string, null if not printed
   studioId?: string       // UID of the studio that captured this session
+  frameId?: string        // ID of the frame used
+  frameName?: string      // Name of the frame used
 }
 
 const SESSIONS_COLLECTION = 'sessions'
@@ -56,6 +58,8 @@ export async function fetchSessions(studioId?: string): Promise<SessionData[]> {
       createdAt: d.createdAt?.toDate?.()?.toISOString() ?? new Date().toISOString(),
       printedAt: d.printedAt?.toDate?.()?.toISOString() ?? null,
       studioId: d.studioId ?? undefined,
+      frameId: d.frameId ?? undefined,
+      frameName: d.frameName ?? undefined,
     }
   })
 }
@@ -96,12 +100,14 @@ export function listenToSessions(
         createdAt: d.createdAt?.toDate?.()?.toISOString() ?? new Date().toISOString(),
         printedAt: d.printedAt?.toDate?.()?.toISOString() ?? null,
         studioId: d.studioId ?? undefined,
+        frameId: d.frameId ?? undefined,
+        frameName: d.frameName ?? undefined,
       }
     })
     callback(sessions)
   }, (err) => {
     console.error('[Sessions] onSnapshot error:', err)
     if (onError) onError(err)
-    else callback([]) // fallback: resolve spinner with empty list
+    else callback([]) // fallback: resolve spinner only if no error handler
   })
 }

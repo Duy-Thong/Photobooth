@@ -26,6 +26,8 @@ export async function uploadSession(
   videoUrl?: string | null,
   videoMimeType?: string,
   studioId?: string,
+  frameId?: string,
+  frameName?: string,
 ): Promise<{ sessionId: string; stampedBlobUrl: string }> {
   const bucket = import.meta.env.VITE_FIREBASE_STORAGE_BUCKET as string
   const sessionId = generateSessionId()
@@ -60,7 +62,7 @@ export async function uploadSession(
   await Promise.all(uploadTasks)
 
   // Save session metadata to Firestore, including studioId when present
-  await createSession({ id: sessionId, imageUrl: imageStorageUrl, videoUrl: videoStorageUrl, studioId })
+  await createSession({ id: sessionId, imageUrl: imageStorageUrl, videoUrl: videoStorageUrl, studioId, frameId, frameName })
 
   return { sessionId, stampedBlobUrl }
 }

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { Spin, Modal, Tour, type TourProps } from 'antd'
+import { Spin, Modal } from 'antd'
 import { LoadingOutlined, PrinterOutlined } from '@ant-design/icons'
 import { fetchSession, type SessionData } from '@/lib/sessionService'
 import { downloadMedia, isMobileDevice } from '@/lib/imageProcessing'
@@ -17,8 +17,6 @@ export default function SessionPage() {
   const [downloadingPhoto, setDownloadingPhoto] = useState(false)
   const [downloadingVideo, setDownloadingVideo] = useState(false)
 
-  const [tourOpen, setTourOpen] = useState(false)
-
   useEffect(() => {
     if (!id) return
     fetchSession(id)
@@ -26,48 +24,6 @@ export default function SessionPage() {
       .catch(() => setError(true))
       .finally(() => setLoading(false))
   }, [id])
-
-  useEffect(() => {
-    if (!loading && session) {
-      const seen = localStorage.getItem('photobooth-session-tour-seen')
-      if (!seen) {
-        setTourOpen(true)
-      }
-    }
-  }, [loading, session])
-
-  const tourSteps: TourProps['steps'] = [
-    {
-      title: 'Chào mừng 🎉',
-      description: 'Đây là trang nhận ảnh của bạn. Tại đây bạn có thể xem lại và lưu giữ những khoảnh khắc vừa chụp.',
-      target: null,
-    },
-    {
-      title: 'Dải ảnh của bạn',
-      description: 'Đây là bộ ảnh hoàn chỉnh đã được ghép khung. Bạn có thể nhấn giữ để lưu hoặc chia sẻ link này.',
-      target: () => document.getElementById('tour-session-photo')!,
-    },
-    {
-      title: 'Tải ảnh',
-      description: 'Nhấn vào đây để tải ảnh chất lượng cao về máy.',
-      target: () => document.getElementById('tour-session-download-photo')!,
-    },
-    {
-      title: 'In ảnh',
-      description: 'Nếu có máy in kết nối, bạn có thể in ảnh ngay tại đây.',
-      target: () => document.getElementById('tour-session-print-photo')!,
-    },
-    ...(session?.videoUrl ? [{
-      title: 'Strip Video',
-      description: 'Đây là đoạn clip ngắn ghi lại quá trình chụp ảnh của bạn. Một món quà nhỏ từ chúng mình!',
-      target: () => document.getElementById('tour-session-video')!,
-    },
-    {
-      title: 'Tải video',
-      description: 'Bạn cũng có thể tải đoạn video này về để làm kỷ niệm nhé.',
-      target: () => document.getElementById('tour-session-download-video')!,
-    }] : []),
-  ]
 
   if (loading) {
     return (
@@ -242,16 +198,6 @@ export default function SessionPage() {
       )}
 
       <p className={`text-[10px] pb-6 ${tc('text-[#2a2a2a]', 'text-[#ccc]')}`}>somedia · photobooth</p>
-
-      <Tour
-        open={tourOpen}
-        onClose={() => {
-          setTourOpen(false)
-          localStorage.setItem('photobooth-session-tour-seen', 'true')
-        }}
-        steps={tourSteps}
-        getPopupContainer={() => document.body}
-      />
     </div>
   )
 }

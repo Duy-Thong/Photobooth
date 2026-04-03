@@ -5,10 +5,10 @@ import { ref, deleteObject } from 'firebase/storage'
 import { storage } from '@/lib/firebase'
 import { listenToSessions, deleteSession, markSessionPrinted } from '@/lib/sessionService'
 import { useAdminAuth } from '@/hooks/useAdminAuth'
-import { Button, Modal, Spin, Empty, Tooltip } from 'antd'
+import { Button, Modal, Spin, Empty, Tooltip, Dropdown, Space, Alert } from 'antd'
 import {
-  DeleteOutlined, ReloadOutlined, LogoutOutlined, PlayCircleOutlined,
-  DeleteFilled, PictureOutlined, CheckOutlined, CloseOutlined, ArrowLeftOutlined,
+  DeleteOutlined, ReloadOutlined, PlayCircleOutlined,
+  DeleteFilled, PictureOutlined, CheckOutlined, CloseOutlined, DownOutlined
 } from '@ant-design/icons'
 
 interface MediaItem {
@@ -34,7 +34,7 @@ function formatDate(iso: string) {
 }
 
 export default function StudioGalleryPage() {
-  const { logout, permissions, role, studioId, studioName, isAdminLoading } = useAdminAuth()
+  const { permissions, role, studioId, isAdminLoading } = useAdminAuth()
   const navigate = useNavigate()
 
   const [photos, setPhotos] = useState<MediaItem[]>([])
@@ -47,15 +47,18 @@ export default function StudioGalleryPage() {
   const [printedPaths, setPrintedPaths] = useState<Set<string>>(new Set())
   const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set())
   const [brokenPaths, setBrokenPaths] = useState<Set<string>>(new Set())
+  const [error, setError] = useState<Error | null>(null)
 
   useEffect(() => {
     if (!studioId) return
     setLoading(true)
+    setError(null)
     const unsub = listenToSessions((sessions) => {
       const sPhotos: MediaItem[] = []
       const sVideos: MediaItem[] = []
       const sPrinted = new Set<string>()
       for (const s of sessions) {
+        // ... build items ...
         const pPath = getPathFromUrl(s.imageUrl) || `sessions/${s.studioId}/${s.id}/strip.jpg`
         sPhotos.push({
           name: `Session ${s.id.slice(0, 8)}`,
@@ -99,7 +102,11 @@ export default function StudioGalleryPage() {
       setVideos(allV)
       setPrintedPaths(sPrinted)
       setLoading(false)
-    }, studioId, () => setLoading(false))
+      setError(null)
+    }, studioId, (err) => {
+      setError(err)
+      setLoading(false)
+    })
     return () => unsub()
   // permissions is stable; studioId won't change after login
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -188,37 +195,15 @@ export default function StudioGalleryPage() {
     printRef.current = style
   }
 
-  const handleLogout = () => Modal.confirm({
-    title: 'Đăng xuất?',
-    content: 'Phiên làm việc hiện tại sẽ kết thúc.',
-    okText: 'Đăng xuất', cancelText: 'Hủy', centered: true,
-    onOk: logout,
-  })
+
 
   return (
-    <div className="min-h-dvh bg-[#111] flex flex-col">
-      {/* Header */}
-      <header className="border-b border-[#1f1f1f] px-6 py-4 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <Button
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate('/')}
-            size="small"
-            style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#888' }}
-          >
-            Photobooth
-          </Button>
-          <div>
-            <h1 className="text-white font-bold text-base" style={{ letterSpacing: '-0.02em' }}>
-              {studioName ?? 'Studio Gallery'}
-            </h1>
-            <p className="text-[#555] text-[10px] uppercase tracking-widest">Gallery của tôi</p>
-          </div>
-        </div>
-
+    <div className="h-full bg-[#0a0a0a] flex flex-col">
+      {/* Top Actions */}
+      <div className="px-6 py-4 flex items-center justify-between gap-4 border-b border-[#1f1f1f]">
         <div className="flex items-center gap-2">
           {selectedPaths.size > 0 && (
-            <div className="flex items-center gap-2 bg-[#0a0a0a] border border-blue-900/50 rounded-lg px-2 py-1">
+            <div className="flex items-center gap-2 bg-[#111] border border-blue-900/50 rounded-lg px-2 py-1">
               <span className="text-blue-400 text-[10px] font-bold px-1 uppercase tracking-wider">Đã chọn {selectedPaths.size}</span>
               {tab === 'photos' && (
                 <Button size="small" type="primary" icon={<PictureOutlined />}
@@ -235,7 +220,8 @@ export default function StudioGalleryPage() {
               </Button>
             </div>
           )}
-
+        </div>
+        <div className="flex items-center gap-2">
           <Button size="small" icon={<ReloadOutlined />} onClick={() => window.location.reload()}
             style={{ background: '#1e1e1e', border: '1px solid #2a2a2a', color: '#888' }}>
             Tải lại
@@ -248,16 +234,35 @@ export default function StudioGalleryPage() {
               {selectedPaths.size === items.length ? 'Bỏ chọn hết' : 'Chọn tất cả'}
             </Button>
           )}
-
-          <Button size="small" icon={<LogoutOutlined />} onClick={handleLogout}
-            style={{ background: '#1e1e1e', border: '1px solid #2a2a2a', color: '#888' }}>
-            Đăng xuất
-          </Button>
         </div>
-      </header>
+      </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-[#1f1f1f] px-6">
+        {error && (
+          <div className="mb-6">
+            <Alert
+              message="Lỗi kết nối hoặc thiếu cấu hình dữ liệu"
+              description={
+                <div className="mt-2 text-xs">
+                  <p>Hệ thống không thể tải ảnh lên. Nguyên nhân có thể do Firestore đang thiếu Index hoặc kết nối mạng không ổn định.</p>
+                  <p className="mt-1 opacity-70">Lỗi chi tiết: {error.message}</p>
+                  <div className="mt-3">
+                    <Button size="small" type="primary" 
+                      onClick={() => window.location.reload()}
+                      icon={<ReloadOutlined />}>
+                      Tải lại trang
+                    </Button>
+                  </div>
+                </div>
+              }
+              type="error"
+              showIcon
+              style={{ background: '#1a1111', border: '1px solid #3d1a1a' }}
+            />
+          </div>
+        )}
+
+        <div className="flex border-b border-[#141414] mb-8">
         {(['photos', 'videos'] as const).map(t => (
           <button key={t}
             onClick={() => { setTab(t); setSelectedPaths(new Set()) }}

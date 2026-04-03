@@ -1,4 +1,4 @@
-import { collection, getDocs, addDoc, deleteDoc, doc, query, orderBy, updateDoc } from 'firebase/firestore'
+import { collection, getDocs, addDoc, deleteDoc, doc, query, orderBy, updateDoc, where } from 'firebase/firestore'
 import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
 import { db, storage } from './firebase'
 import { STATIC_FRAMES } from './frames-static'
@@ -25,6 +25,8 @@ export interface FrameItem {
   /** Frame image dimensions from Firestore metadata */
   width?: number
   height?: number
+  /** Belong to studio or shared */
+  studioId?: string
 }
 
 export interface FrameCategory {
@@ -39,31 +41,56 @@ export function frameImageUrl(filename: string, storageUrl?: string): string {
   return storageUrl ?? `/frames/${filename}`
 }
 
-// In-memory cache — survives modal open/close within the same page session
+// In-memory cache
 let _framesCache: FrameItem[] | null = null
 let _framesFetch: Promise<FrameItem[]> | null = null
+let _lastParamsStr = ''
 
 /** Load only admin-uploaded frames from Firestore. */
-export async function fetchCustomFrames(): Promise<FrameItem[]> {
-  const snap = await getDocs(query(collection(db, FRAMES_COLLECTION), orderBy('id')))
-  return snap.docs.map(d => ({
-    ...(d.data() as Omit<FrameItem, 'firestoreId'>),
-    firestoreId: d.id,
-  }))
+export async function fetchCustomFrames(studioId?: string, isSuperAdmin = false): Promise<FrameItem[]> {
+  if (isSuperAdmin) {
+    // Superadmin: fetch ALL frames
+    const snap = await getDocs(query(collection(db, FRAMES_COLLECTION), orderBy('id')))
+    return snap.docs.map(d => ({ ...(d.data() as Omit<FrameItem, 'firestoreId'>), firestoreId: d.id }))
+  }
+
+  // Not superadmin: fetch ONLY 'shared' and 'studioId' frames
+  // Because we don't have a composite index for 'in', we fetch them separately and merge
+  const sharedSnap = await getDocs(query(collection(db, FRAMES_COLLECTION), where('studioId', '==', 'shared')))
+  
+  let ownSnap = { docs: [] as any[] }
+  if (studioId && studioId !== 'shared') {
+    ownSnap = await getDocs(query(collection(db, FRAMES_COLLECTION), where('studioId', '==', studioId)))
+  }
+
+  const map = new Map<string, FrameItem>()
+  const processSnap = (snap: any) => {
+    snap.docs.forEach((d: any) => {
+      const item = { ...(d.data() as Omit<FrameItem, 'firestoreId'>), firestoreId: d.id }
+      map.set(item.firestoreId!, item)
+    })
+  }
+
+  processSnap(sharedSnap)
+  processSnap(ownSnap)
+
+  return Array.from(map.values()).sort((a, b) => a.id - b.id)
 }
 
 /**
  * Load all frames: static (built-in) + admin-uploaded (Firestore).
  * Firestore frames with the same filename override their static counterpart
  * so that migrated frames use Storage URLs instead of /frames/.
- * Cached in memory — Firestore is only called once per page load.
  */
-export async function fetchFrames(): Promise<FrameItem[]> {
-  if (_framesCache) return _framesCache
-  if (_framesFetch) return _framesFetch
+export async function fetchFrames(studioId?: string, isSuperAdmin = false): Promise<FrameItem[]> {
+  const currentParams = `${studioId || ''}_${isSuperAdmin}`
+  if (_framesCache && _lastParamsStr === currentParams) return _framesCache
+  if (_framesFetch && _lastParamsStr === currentParams) return _framesFetch
+
+  _lastParamsStr = currentParams
   _framesFetch = (async () => {
     try {
-      const firestoreFrames = await fetchCustomFrames()
+      const firestoreFrames = await fetchCustomFrames(studioId, isSuperAdmin)
       const firestoreFilenames = new Set(firestoreFrames.map(f => f.filename))
       const staticOnly = STATIC_FRAMES.filter(f => !firestoreFilenames.has(f.filename))
       _framesCache = [...staticOnly, ...firestoreFrames]
@@ -95,7 +122,7 @@ export function deriveCategoryId(name: string): number {
  */
 export async function uploadFrame(
   file: File,
-  meta: { name: string; categoryName: string; slots: number; slots_data?: SlotRect[]; layout?: string; frame?: string },
+  meta: { name: string; categoryName: string; slots: number; slots_data?: SlotRect[]; layout?: string; frame?: string; studioId: string },
 ): Promise<FrameItem> {
   const ext = file.name.split('.').pop()?.toLowerCase() ?? 'png'
   const filename = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
@@ -114,6 +141,7 @@ export async function uploadFrame(
     slots_data: meta.slots_data,
     layout: meta.layout,
     frame: meta.frame,
+    studioId: meta.studioId, // Map to either specific studio or 'shared'
   }
   const docRef = await addDoc(collection(db, FRAMES_COLLECTION), frameDoc)
   return { ...frameDoc, firestoreId: docRef.id }
@@ -127,8 +155,8 @@ export async function deleteCustomFrame(firestoreId: string, filename: string): 
   ])
 }
 
-export async function fetchCategories(): Promise<FrameCategory[]> {
-  const frames = await fetchFrames()
+export async function fetchCategories(studioId?: string, isSuperAdmin = false): Promise<FrameCategory[]> {
+  const frames = await fetchFrames(studioId, isSuperAdmin)
   const nameToId = new Map<string, number>()
   for (const f of frames) {
     if (!nameToId.has(f.categoryName)) {
@@ -142,7 +170,7 @@ export async function fetchCategories(): Promise<FrameCategory[]> {
 
 export async function updateFrame(
   firestoreId: string,
-  patch: Partial<Pick<FrameItem, 'name' | 'categoryName' | 'slots' | 'slots_data' | 'layout' | 'frame'>>,
+  patch: Partial<Pick<FrameItem, 'name' | 'categoryName' | 'slots' | 'slots_data' | 'layout' | 'frame' | 'studioId'>>,
 ): Promise<void> {
   const updates: Record<string, string | number> = {}
   if (patch.name !== undefined) updates.name = patch.name
@@ -154,7 +182,20 @@ export async function updateFrame(
   if (patch.slots_data !== undefined) (updates as any).slots_data = patch.slots_data
   if (patch.layout !== undefined) updates.layout = patch.layout
   if (patch.frame !== undefined) updates.frame = patch.frame
+  if (patch.studioId !== undefined) updates.studioId = patch.studioId
   await updateDoc(doc(db, FRAMES_COLLECTION, firestoreId), updates)
+}
+
+export async function migrateFramesService(): Promise<number> {
+  const snap = await getDocs(collection(db, FRAMES_COLLECTION))
+  let count = 0
+  for (const d of snap.docs) {
+    if (d.data().studioId === undefined) {
+      await updateDoc(doc(db, FRAMES_COLLECTION, d.id), { studioId: 'shared' })
+      count++
+    }
+  }
+  return count
 }
 
 // ─── Frame contribution requests ──────────────────────────────────────────────
@@ -231,6 +272,7 @@ export async function approveFrameRequest(request: FrameRequest): Promise<void> 
     slots: request.slots,
     storageUrl: request.storageUrl,
     frame: request.suggestedFrame,
+    studioId: 'shared', // Approvals default to shared
   }
   await Promise.all([
     addDoc(collection(db, FRAMES_COLLECTION), frameDoc),
@@ -242,4 +284,3 @@ export async function approveFrameRequest(request: FrameRequest): Promise<void> 
 export async function rejectFrameRequest(firestoreId: string): Promise<void> {
   await updateDoc(doc(db, REQUESTS_COLLECTION, firestoreId), { status: 'rejected' })
 }
-

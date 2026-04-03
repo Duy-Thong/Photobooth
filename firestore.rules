@@ -42,10 +42,13 @@ service cloud.firestore {
         && (resource.data.studioId == request.auth.uid || isSuperAdmin());
     }
 
-    // Frames: Ai cũng đọc; chỉ superadmin mới ghi
+    // Frames: Ai cũng đọc; Studio chỉ ghi đc khung của mình, superadmin ghi tất cả
     match /frames/{id} {
       allow read: if true;
-      allow write: if isSuperAdmin();
+      allow write: if isSuperAdmin() 
+        || (isStudio() 
+            && request.resource.data.studioId == request.auth.uid 
+            && (!exists(resource.path) || resource.data.studioId == request.auth.uid));
     }
 
     // Frame Requests: Ai cũng tạo; chỉ superadmin quản lý
