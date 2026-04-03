@@ -38,6 +38,7 @@ export default function HomePage() {
   const [recapMimeType, setRecapMimeType] = useState<string>('video/webm')
   const [recapStripUrl, setRecapStripUrl] = useState<string | null>(null)
   const [buildingStrip, setBuildingStrip] = useState(false)
+  const [isRebuildingImage, setIsRebuildingImage] = useState(false)
   const [frameModalOpen, setFrameModalOpen] = useState(false)
   const [resultModalOpen, setResultModalOpen] = useState(false)
   const [contributeOpen, setContributeOpen] = useState(false)
@@ -256,6 +257,22 @@ export default function HomePage() {
     }
   }, [capturedSlots, layout, activeEffects, selectedFrame, setFinalImageUrl, messageApi])
 
+  // ---------- Toggle X2 inside ResultModal (rebuild without re-capturing) ----------
+  const handleToggleX2InResult = useCallback(async () => {
+    const newX2 = !isX2
+    setIsX2(newX2)
+    setIsRebuildingImage(true)
+    try {
+      const fUrl = selectedFrame ? (selectedFrame.storageUrl ?? `/frames/${selectedFrame.filename}`) : null
+      const url = await buildStripImage(capturedSlots, layout, activeEffects, fUrl, selectedFrame?.slots_data, newX2)
+      setFinalImageUrl(url)
+    } catch {
+      messageApi.error('Tạo ảnh thất bại!')
+    } finally {
+      setIsRebuildingImage(false)
+    }
+  }, [isX2, setIsX2, capturedSlots, layout, activeEffects, selectedFrame, setFinalImageUrl, messageApi])
+
   // ---------- Download / Show Result ----------
   const handleDownload = useCallback(() => {
     if (finalImageUrl) setResultModalOpen(true)
@@ -353,6 +370,9 @@ export default function HomePage() {
         recapMimeType={recapMimeType}
         recapStripUrl={recapStripUrl}
         buildingStrip={buildingStrip}
+        isX2={isX2}
+        onToggleX2={layout.cols === 1 && layout.slots > 1 ? handleToggleX2InResult : undefined}
+        isRebuildingImage={isRebuildingImage}
         onClose={() => setResultModalOpen(false)}
         onRetake={() => {
           handleRetake()

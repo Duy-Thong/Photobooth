@@ -19,12 +19,18 @@ interface ResultModalProps {
   recapStripUrl?: string | null
   /** True while buildStripVideo is still running */
   buildingStrip?: boolean
+  /** Current x2 double state */
+  isX2?: boolean
+  /** Toggle x2 double – parent handles rebuild + state update */
+  onToggleX2?: () => void
+  /** True while the strip image is being rebuilt after toggling x2 */
+  isRebuildingImage?: boolean
   onClose: () => void
   onRetake: () => void
   onChangeFrame: () => void
 }
 
-export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeType, recapStripUrl, buildingStrip, onClose, onRetake, onChangeFrame }: ResultModalProps) {
+export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeType, recapStripUrl, buildingStrip, isX2, onToggleX2, isRebuildingImage, onClose, onRetake, onChangeFrame }: ResultModalProps) {
   const tc = useThemeClass()
   const recapExt = recapMimeType?.startsWith('video/mp4') ? 'mp4' : 'webm'
   const hasClips = !!recapClips && recapClips.length > 0
@@ -269,6 +275,21 @@ export default function ResultModal({ open, imageBlobUrl, recapClips, recapMimeT
                   Chụp lại
                 </Button>
               </div>
+              {onToggleX2 && (
+                <Button
+                  block
+                  loading={isRebuildingImage}
+                  onClick={onToggleX2}
+                  style={{
+                    ...btnBase,
+                    color: isX2 ? '#ff9f4d' : btnTextMuted,
+                    borderColor: isX2 ? '#ff9f4d' : undefined,
+                    fontWeight: isX2 ? 700 : 400,
+                  }}
+                >
+                  {isX2 ? 'x2 Double ✓' : 'x2 Double'}
+                </Button>
+              )}
               {isMobileDevice() && (
                 <p className={`text-[10px] text-center mt-1 opacity-50 ${tc('text-gray-400', 'text-gray-500')}`}>
                   Mẹo: Nhấn giữ ảnh hoặc nút Tải về để lưu vào thư viện.
