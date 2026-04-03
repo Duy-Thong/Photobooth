@@ -11,7 +11,7 @@ import { doc, setDoc } from 'firebase/firestore';
 async function bootstrapAdmin(uid, email) {
   await setDoc(doc(db, "admins", uid), {
     email: email,
-    uid: uid,
+    role: "superadmin",
     permissions: {
       canViewPhotos: true,
       canViewVideos: true,

@@ -1,6 +1,6 @@
 import { doc, getDoc, setDoc, collection, getDocs } from 'firebase/firestore'
 import { db } from './firebase'
-import type { AdminUser, AdminPermissions } from '@/types/admin'
+import type { AdminUser, AdminPermissions, StudioPermissions } from '@/types/admin'
 
 const ADMINS_COLLECTION = 'admins'
 
@@ -19,6 +19,7 @@ export async function fetchAllAdmins(): Promise<AdminUser[]> {
   return snap.docs.map(d => ({ uid: d.id, ...(d.data() as Omit<AdminUser, 'uid'>) }))
 }
 
+/** Permissions mặc định khi chưa có record (fallback an toàn — không có quyền gì) */
 export const DEFAULT_PERMISSIONS: AdminPermissions = {
   canViewPhotos: false,
   canViewVideos: false,
@@ -30,6 +31,7 @@ export const DEFAULT_PERMISSIONS: AdminPermissions = {
   videoDateRange: null,
 }
 
+/** Permissions đầy đủ khi tạo superadmin */
 export const SUPER_ADMIN_PERMISSIONS: AdminPermissions = {
   canViewPhotos: true,
   canViewVideos: true,
@@ -41,13 +43,30 @@ export const SUPER_ADMIN_PERMISSIONS: AdminPermissions = {
   videoDateRange: null,
 }
 
-export const STUDIO_PERMISSIONS: AdminPermissions = {
+/** Permissions mặc định khi tạo studio mới */
+export const DEFAULT_STUDIO_PERMISSIONS: StudioPermissions = {
   canViewPhotos: true,
   canViewVideos: true,
-  canManageFrames: false,
-  canManageRequests: false,
-  canManageFeedback: false,
-  canManageAdmins: false,
   photoDateRange: null,
   videoDateRange: null,
 }
+
+/**
+ * Build AdminPermissions từ StudioPermissions.
+ * Các trường canManage* luôn là false với studio — không bao giờ được ghi true.
+ */
+export function buildStudioAdminPermissions(p: StudioPermissions): AdminPermissions {
+  return {
+    canViewPhotos: p.canViewPhotos,
+    canViewVideos: p.canViewVideos,
+    canManageFrames: false,
+    canManageRequests: false,
+    canManageFeedback: false,
+    canManageAdmins: false,
+    photoDateRange: p.photoDateRange,
+    videoDateRange: p.videoDateRange,
+  }
+}
+
+/** @deprecated Use DEFAULT_STUDIO_PERMISSIONS + buildStudioAdminPermissions */
+export const STUDIO_PERMISSIONS: AdminPermissions = buildStudioAdminPermissions(DEFAULT_STUDIO_PERMISSIONS)

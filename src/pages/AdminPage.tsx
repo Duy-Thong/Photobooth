@@ -27,7 +27,7 @@ import { Button, Input, Modal, Select, Spin, Empty, Tooltip, Table, Tag, Checkbo
 import dayjs from 'dayjs'
 import { DeleteOutlined, ReloadOutlined, LogoutOutlined, PlayCircleOutlined, DeleteFilled, ClockCircleOutlined, UploadOutlined, PictureOutlined, EditOutlined, CheckOutlined, CloseOutlined, UserOutlined } from '@ant-design/icons'
 import type { AdminUser } from '@/types/admin'
-import { fetchAllAdmins, createOrUpdateAdmin, STUDIO_PERMISSIONS } from '@/lib/adminService'
+import { fetchAllAdmins, createOrUpdateAdmin, DEFAULT_STUDIO_PERMISSIONS, buildStudioAdminPermissions } from '@/lib/adminService'
 const LAYOUT_OPTIONS = [
   { value: '1x1', label: '1x1' },
   { value: '1x2', label: '1x2' },
@@ -869,23 +869,34 @@ export default function AdminPage() {
     if (!editingAdmin) return
     setAdminSaving(true)
     try {
-      // Build clean permissions — only extract known permission keys
-      const permissions = {
-        canViewPhotos: !!values.canViewPhotos,
-        canViewVideos: !!values.canViewVideos,
-        canManageFrames: !!values.canManageFrames,
-        canManageRequests: !!values.canManageRequests,
-        canManageFeedback: !!values.canManageFeedback,
-        canManageAdmins: !!values.canManageAdmins,
-        photoDateRange: values.photoDateRange ? {
-          start: values.photoDateRange[0].startOf('day').toISOString(),
-          end: values.photoDateRange[1].endOf('day').toISOString()
-        } : null,
-        videoDateRange: values.videoDateRange ? {
-          start: values.videoDateRange[0].startOf('day').toISOString(),
-          end: values.videoDateRange[1].endOf('day').toISOString()
-        } : null,
+      const dateRange = (v: any) => v ? {
+        start: v[0].startOf('day').toISOString(),
+        end: v[1].endOf('day').toISOString(),
+      } : null
+
+      let permissions: AdminUser['permissions']
+      if (editingAdmin.role === 'superadmin') {
+        // Superadmin: preserve all canManage* from form
+        permissions = {
+          canViewPhotos: !!values.canViewPhotos,
+          canViewVideos: !!values.canViewVideos,
+          canManageFrames: !!values.canManageFrames,
+          canManageRequests: !!values.canManageRequests,
+          canManageFeedback: !!values.canManageFeedback,
+          canManageAdmins: !!values.canManageAdmins,
+          photoDateRange: dateRange(values.photoDateRange),
+          videoDateRange: dateRange(values.videoDateRange),
+        }
+      } else {
+        // Studio: canManage* fields are always false — never write true
+        permissions = buildStudioAdminPermissions({
+          canViewPhotos: !!values.canViewPhotos,
+          canViewVideos: !!values.canViewVideos,
+          photoDateRange: dateRange(values.photoDateRange),
+          videoDateRange: dateRange(values.videoDateRange),
+        })
       }
+
       const updated: AdminUser = {
         ...editingAdmin,
         studioName: values.studioName?.trim() || editingAdmin.studioName,
@@ -914,14 +925,10 @@ export default function AdminPage() {
       
       const { user: newUser } = await createUserWithEmailAndPassword(secondaryAuth, values.email, values.password)
 
-      // Build a clean permissions object — only extract known permission keys
-      const permissions = {
+      // Studio accounts: canManage* always false — use buildStudioAdminPermissions
+      const permissions = buildStudioAdminPermissions({
         canViewPhotos: !!values.canViewPhotos,
         canViewVideos: !!values.canViewVideos,
-        canManageFrames: !!values.canManageFrames,
-        canManageRequests: !!values.canManageRequests,
-        canManageFeedback: !!values.canManageFeedback,
-        canManageAdmins: !!values.canManageAdmins,
         photoDateRange: values.photoDateRange ? {
           start: values.photoDateRange[0].startOf('day').toISOString(),
           end: values.photoDateRange[1].endOf('day').toISOString()
@@ -930,7 +937,7 @@ export default function AdminPage() {
           start: values.videoDateRange[0].startOf('day').toISOString(),
           end: values.videoDateRange[1].endOf('day').toISOString()
         } : null,
-      }
+      })
 
       const newAdmin: AdminUser = {
         uid: newUser.uid,
@@ -1851,12 +1858,17 @@ export default function AdminPage() {
           <Form
             layout="vertical"
             initialValues={{
+              studioName: editingAdmin.studioName,
               ...editingAdmin.permissions,
               photoDateRange: editingAdmin.permissions.photoDateRange ? [dayjs(editingAdmin.permissions.photoDateRange.start), dayjs(editingAdmin.permissions.photoDateRange.end)] : null,
               videoDateRange: editingAdmin.permissions.videoDateRange ? [dayjs(editingAdmin.permissions.videoDateRange.start), dayjs(editingAdmin.permissions.videoDateRange.end)] : null,
             }}
             onFinish={handleSaveAdmin}
           >
+            <Form.Item name="studioName" label="Tên Studio">
+              <Input placeholder="Studio ABC" />
+            </Form.Item>
+
             <div className="grid grid-cols-2 gap-4">
               <Form.Item name="canViewPhotos" valuePropName="checked">
                 <Checkbox>Xem ảnh</Checkbox>
@@ -1864,18 +1876,22 @@ export default function AdminPage() {
               <Form.Item name="canViewVideos" valuePropName="checked">
                 <Checkbox>Xem video</Checkbox>
               </Form.Item>
-              <Form.Item name="canManageFrames" valuePropName="checked">
-                <Checkbox>Quản lý khung</Checkbox>
-              </Form.Item>
-              <Form.Item name="canManageRequests" valuePropName="checked">
-                <Checkbox>Duyệt đề xuất</Checkbox>
-              </Form.Item>
-              <Form.Item name="canManageFeedback" valuePropName="checked">
-                <Checkbox>Góp ý</Checkbox>
-              </Form.Item>
-              <Form.Item name="canManageAdmins" valuePropName="checked">
-                <Checkbox>Quản lý Admin</Checkbox>
-              </Form.Item>
+              {editingAdmin.role === 'superadmin' && (
+                <>
+                  <Form.Item name="canManageFrames" valuePropName="checked">
+                    <Checkbox>Quản lý khung</Checkbox>
+                  </Form.Item>
+                  <Form.Item name="canManageRequests" valuePropName="checked">
+                    <Checkbox>Duyệt đề xuất</Checkbox>
+                  </Form.Item>
+                  <Form.Item name="canManageFeedback" valuePropName="checked">
+                    <Checkbox>Góp ý</Checkbox>
+                  </Form.Item>
+                  <Form.Item name="canManageAdmins" valuePropName="checked">
+                    <Checkbox>Quản lý Admin</Checkbox>
+                  </Form.Item>
+                </>
+              )}
             </div>
 
             <div className="mt-4 border-t border-[#333] pt-4">
@@ -1908,7 +1924,7 @@ export default function AdminPage() {
         <Form
           layout="vertical"
           onFinish={handleCreateAdmin}
-          initialValues={{ ...STUDIO_PERMISSIONS }}
+          initialValues={{ ...DEFAULT_STUDIO_PERMISSIONS }}
         >
           <Form.Item name="email" label="Email" rules={[{ required: true, type: 'email' }]}>
             <Input placeholder="studio@example.com" />
@@ -1926,18 +1942,6 @@ export default function AdminPage() {
             </Form.Item>
             <Form.Item name="canViewVideos" valuePropName="checked" className="mb-0">
               <Checkbox>Xem video</Checkbox>
-            </Form.Item>
-            <Form.Item name="canManageFrames" valuePropName="checked" className="mb-0">
-              <Checkbox>Quản lý khung</Checkbox>
-            </Form.Item>
-            <Form.Item name="canManageRequests" valuePropName="checked" className="mb-0">
-              <Checkbox>Duyệt đề xuất</Checkbox>
-            </Form.Item>
-            <Form.Item name="canManageFeedback" valuePropName="checked" className="mb-0">
-              <Checkbox>Góp ý</Checkbox>
-            </Form.Item>
-            <Form.Item name="canManageAdmins" valuePropName="checked" className="mb-0">
-              <Checkbox>Quản lý Admin</Checkbox>
             </Form.Item>
           </div>
 

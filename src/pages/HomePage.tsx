@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { message, Tour, type TourProps } from 'antd'
+import { message, Tour, type TourProps, Modal } from 'antd'
 import { useCamera } from '@/hooks/useCamera'
 import { useVideoRecap } from '@/hooks/useVideoRecap'
 import { useAdminAuth } from '@/hooks/useAdminAuth'
@@ -17,6 +17,57 @@ import FrameModal from '@/components/photobooth/FrameModal'
 import ResultModal from '@/components/photobooth/ResultModal'
 import ContributeFrameModal from '@/components/photobooth/ContributeFrameModal'
 import ThemeToggle from '@/components/photobooth/ThemeToggle'
+
+/** Staff-only menu — gear icon reveals Gallery + Logout, không để lộ ra cho khách */
+function StaffMenu({ tc, onGallery, onLogout }: {
+  tc: (dark: string, light: string) => string
+  onGallery: () => void
+  onLogout: () => void
+}) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen(v => !v)}
+        title="Menu nhân viên"
+        className={`w-8 h-8 flex items-center justify-center rounded-lg border transition-all text-base ${tc(
+          'border-[#252525] text-[#444] hover:border-[#444] hover:text-[#888]',
+          'border-[#e0e0e0] text-[#bbb] hover:border-[#bbb] hover:text-[#666]'
+        )}`}
+      >
+        ⚙
+      </button>
+      {open && (
+        <div className={`absolute left-0 top-10 z-50 rounded-xl border shadow-2xl flex flex-col overflow-hidden min-w-35 ${tc('bg-[#111] border-[#2a2a2a]', 'bg-white border-[#e0e0e0]')}`}>
+          <button
+            onClick={() => { setOpen(false); onGallery() }}
+            className={`text-left px-4 py-3 text-xs font-semibold uppercase tracking-widest transition-colors ${tc('text-[#aaa] hover:bg-[#1a1a1a] hover:text-white', 'text-[#666] hover:bg-[#f5f5f5] hover:text-black')}`}
+          >
+            📁 Gallery
+          </button>
+          <div className={`h-px ${tc('bg-[#2a2a2a]', 'bg-[#e8e8e8]')}`} />
+          <button
+            onClick={() => { setOpen(false); onLogout() }}
+            className={`text-left px-4 py-3 text-xs font-semibold uppercase tracking-widest transition-colors ${tc('text-red-500/70 hover:bg-[#1a1a1a] hover:text-red-400', 'text-red-400 hover:bg-[#fff5f5] hover:text-red-600')}`}
+          >
+            ⏻ Đăng xuất
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function HomePage() {
   const { videoRef, stream, isMirrored, isReady, error, toggleMirror, captureFrame, selectDevice, retryCamera, devices, activeDeviceId, soundEnabled, toggleSound } = useCamera()
@@ -400,25 +451,25 @@ export default function HomePage() {
               <p className={`text-[9px] tracking-widest mt-0.5 ${tc('text-[#555]', 'text-[#aaa]')}`}>{studioName}</p>
             )}
           </div>
-          {/* Left: gallery link (studio users) */}
-          <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
-            <button
-              onClick={() => navigate('/admin')}
-              title="Xem ảnh đã chụp"
-              className={`text-[10px] font-semibold uppercase tracking-widest px-3 py-1.5 rounded-lg border transition-all ${tc('border-[#252525] text-[#666] hover:border-[#444] hover:text-[#ccc]', 'border-[#d9d9d9] text-[#999] hover:border-[#999] hover:text-[#333]')}`}
-            >
-              Gallery
-            </button>
-            {role && (
-              <button
-                onClick={logout}
-                title="Đăng xuất"
-                className={`text-[10px] font-semibold uppercase tracking-widest px-3 py-1.5 rounded-lg border transition-all ${tc('border-[#252525] text-[#666] hover:border-[#c00] hover:text-[#f55]', 'border-[#d9d9d9] text-[#999] hover:border-[#f55] hover:text-[#c00]')}`}
-              >
-                Logout
-              </button>
-            )}
-          </div>
+          {/* Left: staff-only menu — hidden from casual users behind gear icon */}
+          {role && (
+            <div className="absolute left-4 top-1/2 -translate-y-1/2">
+              <StaffMenu
+                tc={tc}
+                onGallery={() => navigate('/admin')}
+                onLogout={() => {
+                  Modal.confirm({
+                    title: 'Đăng xuất?',
+                    content: 'Phiên làm việc hiện tại sẽ kết thúc.',
+                    okText: 'Đăng xuất',
+                    cancelText: 'Hủy',
+                    centered: true,
+                    onOk: logout,
+                  })
+                }}
+              />
+            </div>
+          )}
           <div className="absolute right-4 top-1/2 -translate-y-1/2">
             <ThemeToggle />
           </div>

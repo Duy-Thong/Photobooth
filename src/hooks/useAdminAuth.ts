@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut, type User } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
-import { fetchAdminUser, createOrUpdateAdmin, DEFAULT_PERMISSIONS, SUPER_ADMIN_PERMISSIONS } from '@/lib/adminService'
+import { fetchAdminUser, DEFAULT_PERMISSIONS } from '@/lib/adminService'
 import type { AdminPermissions } from '@/types/admin'
 
 export function useAdminAuth() {
@@ -20,19 +20,9 @@ export function useAdminAuth() {
       if (u) {
         setIsAdminLoading(true)
         try {
-          let admin = await fetchAdminUser(u.uid)
-          // If this is the main admin (from env) and no record exists, bootstrap it as superadmin
-          const superAdminEmail = import.meta.env.VITE_ADMIN_EMAIL || 'duythong.ptit@gmail.com'
-          if (!admin && u.email === superAdminEmail) {
-            const newAdmin = {
-              email: u.email!,
-              role: 'superadmin' as const,
-              permissions: SUPER_ADMIN_PERMISSIONS,
-              createdAt: new Date().toISOString()
-            }
-            await createOrUpdateAdmin(u.uid, newAdmin)
-            admin = { uid: u.uid, ...newAdmin }
-          }
+          const admin = await fetchAdminUser(u.uid)
+          // Role is determined purely from Firestore admins/{uid}.role
+          // Initial superadmin must be seeded via initAdminInfo script or Firebase Console
           setPermissions(admin?.permissions ?? DEFAULT_PERMISSIONS)
           setRole(admin?.role ?? null)
           setStudioId(admin ? u.uid : null)
