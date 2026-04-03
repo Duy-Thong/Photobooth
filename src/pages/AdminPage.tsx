@@ -10,7 +10,6 @@ import {
   fetchCustomFrames as fetchCustomFramesService,
   uploadFrame as uploadFrameService,
   deleteCustomFrame as deleteCustomFrameService,
-  updateFrame as updateFrameService,
   fetchFrameRequests as fetchFrameRequestsService,
   approveFrameRequest as approveFrameRequestService,
   rejectFrameRequest as rejectFrameRequestService,
@@ -78,7 +77,7 @@ const getPathFromUrl = (url: string) => {
 }
 
 export default function AdminPage() {
-  const { logout, permissions, user } = useAdminAuth()
+  const { logout, permissions, user, role, studioId } = useAdminAuth()
   const [photos, setPhotos] = useState<MediaItem[]>([])
   const [videos, setVideos] = useState<MediaItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -169,46 +168,16 @@ export default function AdminPage() {
 
   // ── Edit frame state ─────────────────────────────────────────────────────────
   const [editingFrame, setEditingFrame] = useState<FrameItem | null>(null)
-  const [editName, setEditName] = useState('')
-  const [editCategory, setEditCategory] = useState('')
-  const [editSlotsData, setEditSlotsData] = useState<SlotRect[]>([])
-  const [editLayout, setEditLayout] = useState('')
-  const [editFrameType, setEditFrameType] = useState('')
 
   const openEditFrame = (frame: FrameItem) => {
     setEditingFrame(frame)
-    setEditName(frame.name)
-    setEditCategory(frame.categoryName)
-    setEditSlotsData(frame.slots_data || [])
-    setEditLayout(frame.layout || (frame.slots_data ? getLayoutFromSlots(frame.slots_data) : ''))
-    setEditFrameType(frame.frame || 'vertical')
   }
 
-  const handleSaveEdit = async () => {
-    if (!editingFrame?.firestoreId) return
-    setEditSaving(true)
-    try {
-      const newLayout = editLayout || getLayoutFromSlots(editSlotsData)
-      await updateFrameService(editingFrame.firestoreId, {
-        name: editName.trim(),
-        categoryName: editCategory.trim(),
-        slots: editSlotsData.length,
-        slots_data: editSlotsData,
-        layout: newLayout,
-        frame: editFrameType,
-      })
-      setCustomFrames(prev => prev.map(f =>
-        f.firestoreId === editingFrame.firestoreId
-          ? { ...f, name: editName.trim(), categoryName: editCategory.trim(), slots: editSlotsData.length, slots_data: editSlotsData, layout: newLayout, frame: editFrameType }
-          : f
-      ))
-      setEditingFrame(null)
-    } catch {
-      Modal.error({ title: 'Lưu thất bại', centered: true })
-    } finally {
-      setEditSaving(false)
-    }
-  }
+  const allCategories = useMemo(() => 
+    [...new Set(customFrames.map(f => f.categoryName))].sort((a, b) => a.localeCompare(b, 'vi'))
+  , [customFrames])
+
+
 
   const handleFrameSaved = (updated: FrameItem) => {
     setCustomFrames(prev => prev.map(f => f.firestoreId === updated.firestoreId ? updated : f))
@@ -815,6 +784,7 @@ export default function AdminPage() {
         slots_data: uploadSlotsData,
         layout: uploadLayout || getLayoutFromSlots(uploadSlotsData),
         frame: uploadFrameType,
+        studioId: role === 'superadmin' ? 'shared' : (studioId || 'shared'),
       })
       setCustomFrames(prev => [...prev, frame].sort((a, b) => a.name.localeCompare(b.name, 'vi')))
       handleCloseUploadModal()
@@ -1713,6 +1683,7 @@ export default function AdminPage() {
 
       <FrameEditModal
         frame={editingFrame}
+        categories={allCategories}
         onClose={() => setEditingFrame(null)}
         onSaved={handleFrameSaved}
       />
