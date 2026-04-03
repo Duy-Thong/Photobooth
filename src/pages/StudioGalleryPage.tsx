@@ -1,14 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { Navigate } from 'react-router-dom'
 import { ref, deleteObject } from 'firebase/storage'
 import { storage } from '@/lib/firebase'
 import { listenToSessions, deleteSession, markSessionPrinted } from '@/lib/sessionService'
 import { useAdminAuth } from '@/hooks/useAdminAuth'
-import { Button, Modal, Spin, Empty, Tooltip, Dropdown, Space, Alert } from 'antd'
+import { Button, Modal, Spin, Empty, Tooltip, Alert } from 'antd'
 import {
   DeleteOutlined, ReloadOutlined, PlayCircleOutlined,
-  DeleteFilled, PictureOutlined, CheckOutlined, CloseOutlined, DownOutlined
+  DeleteFilled, PictureOutlined, CheckOutlined, CloseOutlined
 } from '@ant-design/icons'
 
 interface MediaItem {
@@ -35,7 +34,6 @@ function formatDate(iso: string) {
 
 export default function StudioGalleryPage() {
   const { permissions, role, studioId, isAdminLoading } = useAdminAuth()
-  const navigate = useNavigate()
 
   const [photos, setPhotos] = useState<MediaItem[]>([])
   const [videos, setVideos] = useState<MediaItem[]>([])
