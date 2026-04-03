@@ -70,3 +70,22 @@ export function buildStudioAdminPermissions(p: StudioPermissions): AdminPermissi
 
 /** @deprecated Use DEFAULT_STUDIO_PERMISSIONS + buildStudioAdminPermissions */
 export const STUDIO_PERMISSIONS: AdminPermissions = buildStudioAdminPermissions(DEFAULT_STUDIO_PERMISSIONS)
+export async function deleteAdmin(uid: string): Promise<void> {
+  const { deleteDoc, doc } = await import('firebase/firestore')
+  await deleteDoc(doc(db, ADMINS_COLLECTION, uid))
+}
+
+export async function uploadStudioLogo(uid: string, file: File): Promise<string> {
+  const { ref, uploadBytes, getDownloadURL } = await import('firebase/storage')
+  const { storage } = await import('./firebase')
+  
+  const ext = file.name.split('.').pop()?.toLowerCase() || 'png'
+  const filename = `${uid}_logo_${Date.now()}.${ext}`
+  const sRef = ref(storage, `studios/${uid}/${filename}`)
+  
+  await uploadBytes(sRef, file)
+  const url = await getDownloadURL(sRef)
+  
+  await createOrUpdateAdmin(uid, { logoUrl: url })
+  return url
+}

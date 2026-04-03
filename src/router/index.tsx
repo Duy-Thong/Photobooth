@@ -9,6 +9,7 @@ import SessionPage from '@/pages/SessionPage'
 import ProtectedRoute from '@/components/admin/ProtectedRoute'
 import StudioLayout from '@/layouts/StudioLayout'
 import StudioDashboard from '@/pages/studio/StudioDashboard'
+import StudioAccountPage from '@/pages/studio/StudioAccountPage'
 import FrameManager from '@/components/admin/FrameManager'
 
 export const router = createBrowserRouter([
@@ -66,6 +67,10 @@ export const router = createBrowserRouter([
       {
         path: 'frames',
         element: <FrameManager />
+      },
+      {
+        path: 'account',
+        element: <StudioAccountPage />
       }
     ]
   },

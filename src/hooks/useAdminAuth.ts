@@ -10,6 +10,7 @@ export function useAdminAuth() {
   const [role, setRole] = useState<'superadmin' | 'studio' | null>(null)
   const [studioId, setStudioId] = useState<string | null>(null)
   const [studioName, setStudioName] = useState<string | null>(null)
+  const [logoUrl, setLogoUrl] = useState<string | null>(null)
   const [isAdminLoading, setIsAdminLoading] = useState(true)
   const [loginError, setLoginError] = useState<string | null>(null)
   const [loggingIn, setLoggingIn] = useState(false)
@@ -27,12 +28,14 @@ export function useAdminAuth() {
           setRole(admin?.role ?? null)
           setStudioId(admin ? u.uid : null)
           setStudioName(admin?.studioName ?? null)
+          setLogoUrl(admin?.logoUrl ?? null)
         } catch (err) {
           console.error('Error fetching admin permissions:', err)
           setPermissions(null)
           setRole(null)
           setStudioId(null)
           setStudioName(null)
+          setLogoUrl(null)
         } finally {
           setIsAdminLoading(false)
         }
@@ -41,6 +44,7 @@ export function useAdminAuth() {
         setRole(null)
         setStudioId(null)
         setStudioName(null)
+        setLogoUrl(null)
         setIsAdminLoading(false)
       }
     })
@@ -66,5 +70,5 @@ export function useAdminAuth() {
 
   const logout = () => signOut(auth)
 
-  return { user, permissions, role, studioId, studioName, isAdminLoading, login, logout, loginError, loggingIn }
+  return { user, permissions, role, studioId, studioName, logoUrl, isAdminLoading, login, logout, loginError, loggingIn }
 }

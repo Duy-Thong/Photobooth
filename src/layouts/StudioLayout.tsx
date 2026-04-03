@@ -7,7 +7,8 @@ import {
   PoweroffOutlined,
   CameraOutlined,
   MenuOutlined,
-  CloseOutlined
+  CloseOutlined,
+  SettingOutlined
 } from '@ant-design/icons'
 import { useAdminAuth } from '@/hooks/useAdminAuth'
 
@@ -60,6 +61,7 @@ export default function StudioLayout() {
     { path: '/studio/dashboard', icon: <AppstoreOutlined />, label: 'Tổng Quan' },
     { path: '/studio/gallery', icon: <PictureOutlined />, label: 'Thư Viện Ảnh' },
     { path: '/studio/frames', icon: <PictureOutlined />, label: 'Quản Lý Khung' },
+    { path: '/studio/account', icon: <SettingOutlined />, label: 'Tài Khoản' },
   ]
 
   return (

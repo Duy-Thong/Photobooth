@@ -23,11 +23,12 @@ import { detectFrameSlots, getLayoutFromSlots } from '@/lib/imageProcessing'
 import FrameSlotEditor from '@/components/admin/FrameSlotEditor'
 import FrameEditModal from '@/components/admin/FrameEditModal'
 import { type SlotRect } from '@/types/photobooth'
-import { Button, Input, Modal, Select, Spin, Empty, Tooltip, Table, Tag, Checkbox, Form, DatePicker } from 'antd'
+import { Button, Input, Modal, Select, Spin, Empty, Tooltip, Table, Tag, Checkbox, Form, DatePicker, Card, Upload, message } from 'antd'
 import dayjs from 'dayjs'
-import { DeleteOutlined, ReloadOutlined, LogoutOutlined, PlayCircleOutlined, DeleteFilled, ClockCircleOutlined, UploadOutlined, PictureOutlined, EditOutlined, CheckOutlined, CloseOutlined, UserOutlined } from '@ant-design/icons'
+import { DeleteOutlined, ReloadOutlined, LogoutOutlined, PlayCircleOutlined, DeleteFilled, ClockCircleOutlined, UploadOutlined, PictureOutlined, EditOutlined, CheckOutlined, CloseOutlined, UserOutlined, CloudUploadOutlined } from '@ant-design/icons'
 import type { AdminUser } from '@/types/admin'
-import { fetchAllAdmins, createOrUpdateAdmin, DEFAULT_STUDIO_PERMISSIONS, buildStudioAdminPermissions } from '@/lib/adminService'
+import { fetchAllAdmins, createOrUpdateAdmin, deleteAdmin, uploadStudioLogo, DEFAULT_STUDIO_PERMISSIONS, buildStudioAdminPermissions } from '@/lib/adminService'
+import { useThemeStore } from '@/stores/themeStore'
 const LAYOUT_OPTIONS = [
   { value: '1x1', label: '1x1' },
   { value: '1x2', label: '1x2' },
@@ -77,7 +78,8 @@ const getPathFromUrl = (url: string) => {
 }
 
 export default function AdminPage() {
-  const { logout, permissions, user, role, studioId } = useAdminAuth()
+  const { logout, permissions, user, role, studioId, studioName, logoUrl } = useAdminAuth()
+  const { theme, toggleTheme } = useThemeStore()
   const [photos, setPhotos] = useState<MediaItem[]>([])
   const [videos, setVideos] = useState<MediaItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -88,17 +90,18 @@ export default function AdminPage() {
   
   const availableTabs = useMemo(() => {
     if (!permissions) return []
-    const tabs: ('photos' | 'videos' | 'frames' | 'requests' | 'feedback' | 'admins')[] = []
+    const tabs: ('photos' | 'videos' | 'frames' | 'requests' | 'feedback' | 'admins' | 'settings')[] = []
     if (permissions.canViewPhotos) tabs.push('photos')
     if (permissions.canViewVideos) tabs.push('videos')
     if (permissions.canManageFrames) tabs.push('frames')
     if (permissions.canManageRequests) tabs.push('requests')
     if (permissions.canManageFeedback) tabs.push('feedback')
     if (permissions.canManageAdmins) tabs.push('admins')
+    if (role === 'superadmin') tabs.push('settings')
     return tabs
-  }, [permissions])
+  }, [permissions, role])
 
-  const [tab, setTab] = useState<'photos' | 'videos' | 'frames' | 'requests' | 'feedback' | 'admins'>('photos')
+  const [tab, setTab] = useState<'photos' | 'videos' | 'frames' | 'requests' | 'feedback' | 'admins' | 'settings'>('photos')
 
   // Redirect if current tab becomes unavailable
   useEffect(() => {
@@ -921,12 +924,34 @@ export default function AdminPage() {
       setAdmins(prev => [...prev, newAdmin])
       setShowAddAdminModal(false)
       Modal.success({ title: 'Tạo studio thành công', content: `Tài khoản ${values.email} đã được tạo.`, centered: true })
-    } catch (err: any) {
-      console.error(err)
-      Modal.error({ title: 'Lỗi tạo tài khoản', content: err.message, centered: true })
     } finally {
       setAddAdminLoading(false)
     }
+  }
+
+  const handleDeleteAdmin = (admin: AdminUser) => {
+    if (admin.email === import.meta.env.VITE_ADMIN_EMAIL) {
+      Modal.error({ title: 'Không thể xóa', content: 'Tài khoản admin hệ thống không thể bị xóa.', centered: true })
+      return
+    }
+
+    Modal.confirm({
+      title: 'Xóa tài khoản Studio?',
+      content: `Sẽ xóa toàn bộ quyền truy cập của "${admin.studioName || admin.email}". Hành động này không thể hoàn tác trong ứng dụng.`,
+      okText: 'Xóa vĩnh viễn',
+      okButtonProps: { danger: true },
+      cancelText: 'Hủy',
+      centered: true,
+      onOk: async () => {
+        try {
+          await deleteAdmin(admin.uid)
+          setAdmins(prev => prev.filter(a => a.uid !== admin.uid))
+          Modal.success({ title: 'Đã xóa tài khoản', centered: true })
+        } catch {
+          Modal.error({ title: 'Xóa thất bại', centered: true })
+        }
+      }
+    })
   }
 
   const items = tab === 'photos' ? photos : videos
@@ -935,9 +960,20 @@ export default function AdminPage() {
     <div className="min-h-dvh bg-[#111] flex flex-col">
       {/* Header */}
       <header className="border-b border-[#1f1f1f] px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-white font-bold text-lg" style={{ letterSpacing: '-0.02em' }}>Sổ Media</h1>
-          <p className="text-[#555] text-[10px] uppercase tracking-widest">Admin Panel</p>
+        <div className="flex items-center gap-3">
+          {logoUrl ? (
+            <div className="w-10 h-10 rounded-lg overflow-hidden border border-white/10 shrink-0">
+              <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" />
+            </div>
+          ) : (
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shrink-0">
+              <span className="font-bold text-white text-base">P</span>
+            </div>
+          )}
+          <div>
+            <h1 className="text-white font-bold text-lg leading-tight" style={{ letterSpacing: '-0.02em' }}>{studioName || 'Sổ Media'}</h1>
+            <p className="text-[#555] text-[9px] uppercase tracking-[0.2em] font-semibold">{role === 'superadmin' ? 'Super Admin Panel' : 'Studio Console'}</p>
+          </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {selectedPaths.size > 0 && (
@@ -1022,7 +1058,8 @@ export default function AdminPage() {
               : t === 'frames' ? `Khung (${customFrames.length})`
               : t === 'requests' ? `Đề Xuất${requests.length > 0 && requestStatusFilter === 'pending' ? ` (${requests.length})` : ''}`
               : t === 'feedback' ? `Góp ý (${feedbacks.length})`
-              : 'Admin'}
+              : t === 'admins' ? 'Studio'
+              : 'Cài đặt'}
           </button>
         ))}
       </div>
@@ -1092,11 +1129,20 @@ export default function AdminPage() {
                 title: 'Hành động',
                 key: 'action',
                 render: (_, record) => (
-                  <Button 
-                    icon={<EditOutlined />} 
-                    onClick={() => setEditingAdmin(record)}
-                    disabled={record.email === import.meta.env.VITE_ADMIN_EMAIL && user?.email !== record.email}
-                  >Sửa</Button>
+                  <div className="flex gap-2">
+                    <Button 
+                      icon={<EditOutlined />} 
+                      onClick={() => setEditingAdmin(record)}
+                      disabled={record.email === import.meta.env.VITE_ADMIN_EMAIL && user?.email !== record.email}
+                    >Sửa</Button>
+                    {permissions?.canManageAdmins && record.role !== 'superadmin' && (
+                      <Button 
+                        danger
+                        icon={<DeleteOutlined />} 
+                        onClick={() => handleDeleteAdmin(record)}
+                      />
+                    )}
+                  </div>
                 )
               }
             ]}
@@ -1377,6 +1423,87 @@ export default function AdminPage() {
               },
             ]}
           />
+        </div>
+      ) : tab === 'settings' ? (
+        <div className="flex-1 p-8 max-w-4xl">
+          <h2 className="text-2xl font-bold text-white mb-8">Cài đặt hệ thống</h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* Branding Section */}
+            <Card title={<span className="text-white">Thương hiệu Admin</span>} className="bg-[#0a0a0a] border-[#1f1f1f]">
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-[10px] uppercase font-bold text-[#555] mb-2 tracking-widest">Logo Admin</label>
+                  <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden">
+                      {logoUrl ? <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" /> : <PictureOutlined className="text-2xl text-white/20" />}
+                    </div>
+                    <Upload 
+                      showUploadList={false} 
+                      beforeUpload={async (file) => {
+                        try {
+                          await uploadStudioLogo(user!.uid, file);
+                          message.success('Cập nhật logo thành công');
+                          setTimeout(() => window.location.reload(), 1000);
+                        } catch {
+                          message.error('Lỗi khi tải logo');
+                        }
+                        return false;
+                      }}
+                    >
+                      <Button icon={<CloudUploadOutlined />}>Tải Logo mới</Button>
+                    </Upload>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] uppercase font-bold text-[#555] mb-2 tracking-widest">Tên hệ thống</label>
+                  <div className="flex gap-2">
+                    <Input 
+                      defaultValue={studioName || ''} 
+                      id="admin-system-name"
+                      placeholder="Ví dụ: Sổ Media, My Photobooth..."
+                      className="bg-[#1a1a1a] border-white/10 text-white"
+                    />
+                    <Button type="primary" onClick={async () => {
+                      const val = (document.getElementById('admin-system-name') as HTMLInputElement).value;
+                      try {
+                        await createOrUpdateAdmin(user!.uid, { studioName: val });
+                        message.success('Đã lưu tên');
+                        setTimeout(() => window.location.reload(), 1000);
+                      } catch {
+                        message.error('Lỗi khi lưu');
+                      }
+                    }}>Lưu</Button>
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            {/* Theme Section */}
+            <Card title={<span className="text-white">Giao diện (Theme)</span>} className="bg-[#0a0a0a] border-[#1f1f1f]">
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-white font-medium">Chế độ hiển thị</p>
+                    <p className="text-[#555] text-xs">Chuyển đổi giữa chế độ Sáng và Tối</p>
+                  </div>
+                  <Button 
+                    onClick={toggleTheme} 
+                    icon={theme === 'dark' ? <CheckOutlined /> : <div className="w-2 h-2 rounded-full bg-blue-500" />}
+                  >
+                    {theme === 'dark' ? 'Đang dùng Tối' : 'Đang dùng Sáng'}
+                  </Button>
+                </div>
+                
+                <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl">
+                  <p className="text-[11px] text-blue-400">
+                    <strong>Gợi ý:</strong> Chế độ tối giúp giảm mỏi mắt khi quản lý vào ban đêm.
+                  </p>
+                </div>
+              </div>
+            </Card>
+          </div>
         </div>
       ) : (
       <div className="flex-1 p-6">

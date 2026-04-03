@@ -24,6 +24,8 @@ export interface AdminUser {
   email: string
   role: 'superadmin' | 'studio'
   studioName?: string
+  logoUrl?: string
+  status?: 'active' | 'disabled'
   permissions: AdminPermissions
   createdAt: string
 }
