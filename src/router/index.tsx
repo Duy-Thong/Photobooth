@@ -2,14 +2,23 @@ import { createBrowserRouter } from 'react-router-dom'
 import { MainLayout } from '@/components/layout'
 import HomePage from '@/pages/HomePage'
 import AdminLoginPage from '@/pages/AdminLoginPage'
+import StudioLoginPage from '@/pages/StudioLoginPage'
 import AdminPage from '@/pages/AdminPage'
 import SessionPage from '@/pages/SessionPage'
 import ProtectedRoute from '@/components/admin/ProtectedRoute'
 
 export const router = createBrowserRouter([
   {
+    path: '/login',
+    element: <StudioLoginPage />,
+  },
+  {
     path: '/',
-    element: <MainLayout />,
+    element: (
+      <ProtectedRoute require="studio">
+        <MainLayout />
+      </ProtectedRoute>
+    ),
     children: [
       {
         index: true,
@@ -28,7 +37,7 @@ export const router = createBrowserRouter([
   {
     path: '/admin',
     element: (
-      <ProtectedRoute>
+      <ProtectedRoute require="admin">
         <AdminPage />
       </ProtectedRoute>
     ),

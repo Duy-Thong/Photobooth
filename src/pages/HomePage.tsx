@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react'
 import { message, Tour, type TourProps } from 'antd'
 import { useCamera } from '@/hooks/useCamera'
 import { useVideoRecap } from '@/hooks/useVideoRecap'
+import { useAdminAuth } from '@/hooks/useAdminAuth'
 import { usePhotoboothStore } from '@/stores/photoboothStore'
 import { useThemeClass } from '@/stores/themeStore'
 import { buildStripImage, buildStripVideo, detectFrameSlots } from '@/lib/imageProcessing'
@@ -18,6 +19,7 @@ import ThemeToggle from '@/components/photobooth/ThemeToggle'
 
 export default function HomePage() {
   const { videoRef, stream, isMirrored, isReady, error, toggleMirror, captureFrame, selectDevice, retryCamera, devices, activeDeviceId, soundEnabled, toggleSound } = useCamera()
+  const { studioId } = useAdminAuth()
 
   const {
     layout, countdown, setCountdown,
@@ -371,8 +373,9 @@ export default function HomePage() {
         recapStripUrl={recapStripUrl}
         buildingStrip={buildingStrip}
         isX2={isX2}
-        onToggleX2={layout.cols === 1 && layout.slots > 1 ? handleToggleX2InResult : undefined}
+        onToggleX2={handleToggleX2InResult}
         isRebuildingImage={isRebuildingImage}
+        studioId={studioId ?? undefined}
         onClose={() => setResultModalOpen(false)}
         onRetake={() => {
           handleRetake()

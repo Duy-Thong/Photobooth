@@ -13,6 +13,8 @@ export interface AdminPermissions {
 export interface AdminUser {
   uid: string
   email: string
+  role: 'superadmin' | 'studio'
+  studioName?: string
   permissions: AdminPermissions
   createdAt: string
 }

@@ -77,7 +77,7 @@ const getPathFromUrl = (url: string) => {
 }
 
 export default function AdminPage() {
-  const { logout, permissions, user } = useAdminAuth()
+  const { logout, permissions, role, studioId, studioName, user } = useAdminAuth()
   const [photos, setPhotos] = useState<MediaItem[]>([])
   const [videos, setVideos] = useState<MediaItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -91,12 +91,15 @@ export default function AdminPage() {
     const tabs: ('photos' | 'videos' | 'frames' | 'requests' | 'feedback' | 'admins')[] = []
     if (permissions.canViewPhotos) tabs.push('photos')
     if (permissions.canViewVideos) tabs.push('videos')
-    if (permissions.canManageFrames) tabs.push('frames')
-    if (permissions.canManageRequests) tabs.push('requests')
-    if (permissions.canManageFeedback) tabs.push('feedback')
-    if (permissions.canManageAdmins) tabs.push('admins')
+    // Studio accounts only see photos/videos of their own sessions
+    if (role === 'superadmin') {
+      if (permissions.canManageFrames) tabs.push('frames')
+      if (permissions.canManageRequests) tabs.push('requests')
+      if (permissions.canManageFeedback) tabs.push('feedback')
+      if (permissions.canManageAdmins) tabs.push('admins')
+    }
     return tabs
-  }, [permissions])
+  }, [permissions, role])
 
   const [tab, setTab] = useState<'photos' | 'videos' | 'frames' | 'requests' | 'feedback' | 'admins'>('photos')
 
@@ -300,9 +303,11 @@ export default function AdminPage() {
     })
   }
 
-  // 1. Real-time Session Listener
+  // 1. Real-time Session Listener — filter by studioId for studio role
   useEffect(() => {
     setLoading(true)
+    // superadmin sees all sessions; studio only sees their own
+    const filterStudioId = role === 'studio' ? (studioId ?? undefined) : undefined
     const unsubscribe = listenToSessions((sessions: any[]) => {
       const sPhotos: MediaItem[] = []
       const sVideos: MediaItem[] = []
@@ -336,10 +341,10 @@ export default function AdminPage() {
       }
       setSessionItems({ photos: sPhotos, videos: sVideos, printed: sPrinted })
       setLoading(false)
-    })
+    }, filterStudioId)
     
     return () => unsubscribe()
-  }, [])
+  }, [role, studioId])
 
   // 2. Compute final lists with filters
   useEffect(() => {
@@ -903,6 +908,7 @@ export default function AdminPage() {
       const newAdmin: AdminUser = {
         uid: newUser.uid,
         email: values.email,
+        role: 'studio',
         permissions: {
           ...DEFAULT_PERMISSIONS,
           ...values,
@@ -938,7 +944,9 @@ export default function AdminPage() {
       <header className="border-b border-[#1f1f1f] px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-white font-bold text-lg" style={{ letterSpacing: '-0.02em' }}>Sổ Media</h1>
-          <p className="text-[#555] text-[10px] uppercase tracking-widest">Admin Panel</p>
+          <p className="text-[#555] text-[10px] uppercase tracking-widest">
+            {role === 'studio' ? (studioName ?? 'Studio Panel') : 'Admin Panel'}
+          </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {selectedPaths.size > 0 && (

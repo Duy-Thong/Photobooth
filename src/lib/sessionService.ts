@@ -1,4 +1,4 @@
-import { collection, doc, setDoc, getDoc, serverTimestamp, updateDoc, query, orderBy, onSnapshot, deleteDoc, getDocs } from 'firebase/firestore'
+import { collection, doc, setDoc, getDoc, serverTimestamp, updateDoc, query, orderBy, where, onSnapshot, deleteDoc, getDocs } from 'firebase/firestore'
 import { db } from './firebase'
 
 export interface SessionData {
@@ -7,6 +7,7 @@ export interface SessionData {
   videoUrl: string | null // Firebase Storage URL for strip video
   createdAt: string       // ISO string
   printedAt?: string | null // ISO string, null if not printed
+  studioId?: string       // UID of the studio that captured this session
 }
 
 const SESSIONS_COLLECTION = 'sessions'
@@ -37,9 +38,14 @@ export function generateSessionId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
 }
 
-/** Fetch all sessions from Firestore, ordered by createdAt descending. */
-export async function fetchSessions(): Promise<SessionData[]> {
-  const q = query(collection(db, SESSIONS_COLLECTION), orderBy('createdAt', 'desc'))
+/** Fetch all sessions from Firestore, ordered by createdAt descending.
+ *  Pass studioId to filter by studio (for studio accounts).
+ */
+export async function fetchSessions(studioId?: string): Promise<SessionData[]> {
+  const base = collection(db, SESSIONS_COLLECTION)
+  const q = studioId
+    ? query(base, where('studioId', '==', studioId), orderBy('createdAt', 'desc'))
+    : query(base, orderBy('createdAt', 'desc'))
   const snap = await getDocs(q)
   return snap.docs.map(doc => {
     const d = doc.data()
@@ -49,6 +55,7 @@ export async function fetchSessions(): Promise<SessionData[]> {
       videoUrl: d.videoUrl ?? null,
       createdAt: d.createdAt?.toDate?.()?.toISOString() ?? new Date().toISOString(),
       printedAt: d.printedAt?.toDate?.()?.toISOString() ?? null,
+      studioId: d.studioId ?? undefined,
     }
   })
 }
@@ -65,10 +72,15 @@ export async function deleteSession(id: string): Promise<void> {
   await deleteDoc(doc(db, SESSIONS_COLLECTION, id))
 }
 
-/** Listen to real-time session updates from Firestore. */
-export function listenToSessions(callback: (sessions: SessionData[]) => void): () => void {
-  const q = query(collection(db, SESSIONS_COLLECTION), orderBy('createdAt', 'desc'))
-  
+/** Listen to real-time session updates from Firestore.
+ *  Pass studioId to filter by studio (for studio accounts).
+ */
+export function listenToSessions(callback: (sessions: SessionData[]) => void, studioId?: string): () => void {
+  const base = collection(db, SESSIONS_COLLECTION)
+  const q = studioId
+    ? query(base, where('studioId', '==', studioId), orderBy('createdAt', 'desc'))
+    : query(base, orderBy('createdAt', 'desc'))
+
   return onSnapshot(q, (snap: any) => {
     const sessions = snap.docs.map((doc: any) => {
       const d = doc.data()
@@ -78,6 +90,7 @@ export function listenToSessions(callback: (sessions: SessionData[]) => void): (
         videoUrl: d.videoUrl ?? null,
         createdAt: d.createdAt?.toDate?.()?.toISOString() ?? new Date().toISOString(),
         printedAt: d.printedAt?.toDate?.()?.toISOString() ?? null,
+        studioId: d.studioId ?? undefined,
       }
     })
     callback(sessions)

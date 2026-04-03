@@ -40,3 +40,14 @@ export const SUPER_ADMIN_PERMISSIONS: AdminPermissions = {
   photoDateRange: null,
   videoDateRange: null,
 }
+
+export const STUDIO_PERMISSIONS: AdminPermissions = {
+  canViewPhotos: true,
+  canViewVideos: true,
+  canManageFrames: false,
+  canManageRequests: false,
+  canManageFeedback: false,
+  canManageAdmins: false,
+  photoDateRange: null,
+  videoDateRange: null,
+}

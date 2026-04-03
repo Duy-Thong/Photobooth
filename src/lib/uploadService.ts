@@ -25,13 +25,17 @@ export async function uploadSession(
   imageBlobUrl: string,
   videoUrl?: string | null,
   videoMimeType?: string,
+  studioId?: string,
 ): Promise<{ sessionId: string; stampedBlobUrl: string }> {
   const bucket = import.meta.env.VITE_FIREBASE_STORAGE_BUCKET as string
   const sessionId = generateSessionId()
   const sessionPageUrl = `${appOrigin()}/session/${sessionId}`
 
-  // Paths use sessionId so image + video are co-located
-  const imagePath = `sessions/${sessionId}/strip.jpg`
+  // Paths scoped by studioId when available, otherwise legacy flat path
+  const sessionBase = studioId
+    ? `sessions/${studioId}/${sessionId}`
+    : `sessions/${sessionId}`
+  const imagePath = `${sessionBase}/strip.jpg`
   const imageStorageUrl = stableStorageUrl(bucket, imagePath)
 
   // Stamp QR (pointing to session page) onto image BEFORE upload
@@ -47,7 +51,7 @@ export async function uploadSession(
   if (videoUrl) {
     const baseMime = (videoMimeType ?? 'video/webm').split(';')[0].trim()
     const ext = baseMime === 'video/mp4' ? 'mp4' : 'webm'
-    const videoPath = `sessions/${sessionId}/strip.${ext}`
+    const videoPath = `${sessionBase}/strip.${ext}`
     videoStorageUrl = stableStorageUrl(bucket, videoPath)
     const videoBlob = await fetch(videoUrl).then(r => r.blob())
     uploadTasks.push(uploadBytes(ref(storage, videoPath), videoBlob, { contentType: baseMime }))
@@ -55,8 +59,8 @@ export async function uploadSession(
 
   await Promise.all(uploadTasks)
 
-  // Save session metadata to Firestore
-  await createSession({ id: sessionId, imageUrl: imageStorageUrl, videoUrl: videoStorageUrl })
+  // Save session metadata to Firestore, including studioId when present
+  await createSession({ id: sessionId, imageUrl: imageStorageUrl, videoUrl: videoStorageUrl, studioId })
 
   return { sessionId, stampedBlobUrl }
 }

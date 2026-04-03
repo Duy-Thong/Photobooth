@@ -7,6 +7,9 @@ import type { AdminPermissions } from '@/types/admin'
 export function useAdminAuth() {
   const [user, setUser] = useState<User | null | undefined>(undefined) // undefined = loading
   const [permissions, setPermissions] = useState<AdminPermissions | null>(null)
+  const [role, setRole] = useState<'superadmin' | 'studio' | null>(null)
+  const [studioId, setStudioId] = useState<string | null>(null)
+  const [studioName, setStudioName] = useState<string | null>(null)
   const [isAdminLoading, setIsAdminLoading] = useState(true)
   const [loginError, setLoginError] = useState<string | null>(null)
   const [loggingIn, setLoggingIn] = useState(false)
@@ -18,11 +21,12 @@ export function useAdminAuth() {
         setIsAdminLoading(true)
         try {
           let admin = await fetchAdminUser(u.uid)
-          // If this is the main admin (from env) and no record exists, create it
+          // If this is the main admin (from env) and no record exists, bootstrap it as superadmin
           const superAdminEmail = import.meta.env.VITE_ADMIN_EMAIL || 'duythong.ptit@gmail.com'
           if (!admin && u.email === superAdminEmail) {
             const newAdmin = {
               email: u.email!,
+              role: 'superadmin' as const,
               permissions: SUPER_ADMIN_PERMISSIONS,
               createdAt: new Date().toISOString()
             }
@@ -30,14 +34,23 @@ export function useAdminAuth() {
             admin = { uid: u.uid, ...newAdmin }
           }
           setPermissions(admin?.permissions ?? DEFAULT_PERMISSIONS)
+          setRole(admin?.role ?? null)
+          setStudioId(admin ? u.uid : null)
+          setStudioName(admin?.studioName ?? null)
         } catch (err) {
           console.error('Error fetching admin permissions:', err)
           setPermissions(null)
+          setRole(null)
+          setStudioId(null)
+          setStudioName(null)
         } finally {
           setIsAdminLoading(false)
         }
       } else {
         setPermissions(null)
+        setRole(null)
+        setStudioId(null)
+        setStudioName(null)
         setIsAdminLoading(false)
       }
     })
@@ -63,5 +76,5 @@ export function useAdminAuth() {
 
   const logout = () => signOut(auth)
 
-  return { user, permissions, isAdminLoading, login, logout, loginError, loggingIn }
+  return { user, permissions, role, studioId, studioName, isAdminLoading, login, logout, loginError, loggingIn }
 }
