@@ -4,7 +4,7 @@ import { useAdminAuth } from '@/hooks/useAdminAuth'
 import { useThemeClass } from '@/stores/themeStore'
 
 export default function StudioLoginPage() {
-  const { user, role, isAdminLoading, login, loginError, loggingIn } = useAdminAuth()
+  const { user, role, isAdminLoading, login, logout, loginError, loggingIn } = useAdminAuth()
   const [form] = Form.useForm()
   const tc = useThemeClass()
 
@@ -12,6 +12,9 @@ export default function StudioLoginPage() {
   //  - studio/superadmin → photobooth home
   //  - admin login is separate at /admin/login
   if (!isAdminLoading && user && role) return <Navigate to="/" replace />
+
+  // User exists in Firebase Auth but not in admins collection → no access
+  const noAccess = !isAdminLoading && !!user && !role
 
   const handleFinish = ({ email, password }: { email: string; password: string }) => {
     login(email, password)
@@ -33,6 +36,14 @@ export default function StudioLoginPage() {
         </div>
 
         <div className={`rounded-2xl p-6 border ${tc('bg-[#0a0a0a] border-[#2a2a2a]', 'bg-white border-[#d9d9d9]')}`}>
+          {noAccess ? (
+            <div className="text-center py-4 flex flex-col gap-4">
+              <p className="text-red-400 text-sm">Tài khoản này không có quyền truy cập. Vui lòng liên hệ quản trị viên.</p>
+              <Button block onClick={logout} style={{ background: '#1e1e1e', border: '1px solid #2a2a2a', color: '#888' }}>
+                Đăng xuất
+              </Button>
+            </div>
+          ) : (
           <Form
             form={form}
             layout="vertical"
@@ -83,6 +94,7 @@ export default function StudioLoginPage() {
               Đăng nhập
             </Button>
           </Form>
+          )}
         </div>
       </div>
     </div>

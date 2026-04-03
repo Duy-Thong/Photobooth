@@ -74,8 +74,13 @@ export async function deleteSession(id: string): Promise<void> {
 
 /** Listen to real-time session updates from Firestore.
  *  Pass studioId to filter by studio (for studio accounts).
+ *  Pass onError to handle query errors (e.g. missing composite index).
  */
-export function listenToSessions(callback: (sessions: SessionData[]) => void, studioId?: string): () => void {
+export function listenToSessions(
+  callback: (sessions: SessionData[]) => void,
+  studioId?: string,
+  onError?: (err: Error) => void,
+): () => void {
   const base = collection(db, SESSIONS_COLLECTION)
   const q = studioId
     ? query(base, where('studioId', '==', studioId), orderBy('createdAt', 'desc'))
@@ -94,5 +99,9 @@ export function listenToSessions(callback: (sessions: SessionData[]) => void, st
       }
     })
     callback(sessions)
+  }, (err) => {
+    console.error('[Sessions] onSnapshot error:', err)
+    if (onError) onError(err)
+    else callback([]) // fallback: resolve spinner with empty list
   })
 }

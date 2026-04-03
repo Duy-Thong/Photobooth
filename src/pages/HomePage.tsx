@@ -409,7 +409,7 @@ export default function HomePage() {
             >
               Gallery
             </button>
-            {role === 'studio' && (
+            {role && (
               <button
                 onClick={logout}
                 title="Đăng xuất"

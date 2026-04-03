@@ -341,7 +341,10 @@ export default function AdminPage() {
       }
       setSessionItems({ photos: sPhotos, videos: sVideos, printed: sPrinted })
       setLoading(false)
-    }, filterStudioId)
+    }, filterStudioId, (err) => {
+      console.error('[AdminPage] Session listener error:', err)
+      setLoading(false)
+    })
     
     return () => unsubscribe()
   }, [role, studioId])
@@ -889,7 +892,9 @@ export default function AdminPage() {
         permissions,
       }
 
-      await createOrUpdateAdmin(editingAdmin.uid, updated)
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { uid: _uid, ...updatedWithoutUid } = updated
+      await createOrUpdateAdmin(editingAdmin.uid, updatedWithoutUid)
       setAdmins(prev => prev.map(a => a.uid === editingAdmin.uid ? updated : a))
       setEditingAdmin(null)
       Modal.success({ title: 'Đã lưu thay đổi', centered: true })
@@ -949,6 +954,8 @@ export default function AdminPage() {
   }
 
   const items = tab === 'photos' ? photos : videos
+  // Studio accounts can delete their own sessions (Firestore rules enforce ownership)
+  const canDeleteSessions = !!(permissions?.canManageAdmins || role === 'studio')
 
   return (
     <div className="min-h-dvh bg-[#111] flex flex-col">
@@ -971,7 +978,7 @@ export default function AdminPage() {
                 </Button>
               )}
 
-              {permissions?.canManageAdmins && (
+              {canDeleteSessions && (
                 <Button size="small" type="primary" danger icon={<DeleteFilled />} onClick={handleDeleteSelected}>
                   Xóa {selectedPaths.size}
                 </Button>
@@ -994,7 +1001,7 @@ export default function AdminPage() {
             </Button>
           )}
 
-          {permissions?.canManageAdmins && (
+          {canDeleteSessions && (
             <>
               <Tooltip title="Xóa dữ liệu cũ hơn 7 ngày (cả ảnh & video)">
                 <Button size="small" icon={<ClockCircleOutlined />} onClick={handleDeleteOlderThan7Days}
@@ -1003,13 +1010,15 @@ export default function AdminPage() {
                   <span className="hidden sm:inline">Cũ &gt; 7 ngày</span>
                 </Button>
               </Tooltip>
-              <Tooltip title="Quét và xóa các bản ghi không còn file ảnh/video thực tế">
-                <Button size="small" icon={<ReloadOutlined />} onClick={handleCleanupSessions}
-                  loading={bulkDeleting}
-                  style={{ background: '#1e1e1e', border: '1px solid #2a2a2a', color: '#3498db' }}>
-                  <span className="hidden sm:inline">Dọn dẹp DB</span>
-                </Button>
-              </Tooltip>
+              {permissions?.canManageAdmins && (
+                <Tooltip title="Quét và xóa các bản ghi không còn file ảnh/video thực tế">
+                  <Button size="small" icon={<ReloadOutlined />} onClick={handleCleanupSessions}
+                    loading={bulkDeleting}
+                    style={{ background: '#1e1e1e', border: '1px solid #2a2a2a', color: '#3498db' }}>
+                    <span className="hidden sm:inline">Dọn dẹp DB</span>
+                  </Button>
+                </Tooltip>
+              )}
               <Tooltip title="Xóa tất cả trong tab hiện tại">
                 <Button size="small" icon={<DeleteFilled />} onClick={handleDeleteAll}
                   loading={bulkDeleting} danger
@@ -1508,7 +1517,7 @@ export default function AdminPage() {
                     </Tooltip>
                   )}
                   
-                  {permissions?.canManageAdmins && (
+                  {canDeleteSessions && (
                     <Tooltip title="Xóa">
                       <button
                         onClick={(e) => { e.stopPropagation(); handleDelete(item); }}
