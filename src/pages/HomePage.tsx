@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { message, Tour, type TourProps } from 'antd'
 import { useCamera } from '@/hooks/useCamera'
 import { useVideoRecap } from '@/hooks/useVideoRecap'
@@ -19,7 +20,8 @@ import ThemeToggle from '@/components/photobooth/ThemeToggle'
 
 export default function HomePage() {
   const { videoRef, stream, isMirrored, isReady, error, toggleMirror, captureFrame, selectDevice, retryCamera, devices, activeDeviceId, soundEnabled, toggleSound } = useCamera()
-  const { studioId } = useAdminAuth()
+  const { studioId, studioName, role, logout } = useAdminAuth()
+  const navigate = useNavigate()
 
   const {
     layout, countdown, setCountdown,
@@ -394,6 +396,28 @@ export default function HomePage() {
               Sổ Media
             </h1>
             <p className={`text-[9px] tracking-[0.35em] uppercase mt-0.5 font-medium ${tc('text-white', 'text-black')}`}>Photobooth</p>
+            {studioName && (
+              <p className={`text-[9px] tracking-widest mt-0.5 ${tc('text-[#555]', 'text-[#aaa]')}`}>{studioName}</p>
+            )}
+          </div>
+          {/* Left: gallery link (studio users) */}
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
+            <button
+              onClick={() => navigate('/admin')}
+              title="Xem ảnh đã chụp"
+              className={`text-[10px] font-semibold uppercase tracking-widest px-3 py-1.5 rounded-lg border transition-all ${tc('border-[#252525] text-[#666] hover:border-[#444] hover:text-[#ccc]', 'border-[#d9d9d9] text-[#999] hover:border-[#999] hover:text-[#333]')}`}
+            >
+              Gallery
+            </button>
+            {role === 'studio' && (
+              <button
+                onClick={logout}
+                title="Đăng xuất"
+                className={`text-[10px] font-semibold uppercase tracking-widest px-3 py-1.5 rounded-lg border transition-all ${tc('border-[#252525] text-[#666] hover:border-[#c00] hover:text-[#f55]', 'border-[#d9d9d9] text-[#999] hover:border-[#f55] hover:text-[#c00]')}`}
+              >
+                Logout
+              </button>
+            )}
           </div>
           <div className="absolute right-4 top-1/2 -translate-y-1/2">
             <ThemeToggle />

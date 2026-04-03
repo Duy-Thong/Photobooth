@@ -27,7 +27,7 @@ import { Button, Input, Modal, Select, Spin, Empty, Tooltip, Table, Tag, Checkbo
 import dayjs from 'dayjs'
 import { DeleteOutlined, ReloadOutlined, LogoutOutlined, PlayCircleOutlined, DeleteFilled, ClockCircleOutlined, UploadOutlined, PictureOutlined, EditOutlined, CheckOutlined, CloseOutlined, UserOutlined } from '@ant-design/icons'
 import type { AdminUser } from '@/types/admin'
-import { fetchAllAdmins, createOrUpdateAdmin, DEFAULT_PERMISSIONS } from '@/lib/adminService'
+import { fetchAllAdmins, createOrUpdateAdmin, STUDIO_PERMISSIONS } from '@/lib/adminService'
 const LAYOUT_OPTIONS = [
   { value: '1x1', label: '1x1' },
   { value: '1x2', label: '1x2' },
@@ -866,24 +866,28 @@ export default function AdminPage() {
     if (!editingAdmin) return
     setAdminSaving(true)
     try {
-
+      // Build clean permissions — only extract known permission keys
+      const permissions = {
+        canViewPhotos: !!values.canViewPhotos,
+        canViewVideos: !!values.canViewVideos,
+        canManageFrames: !!values.canManageFrames,
+        canManageRequests: !!values.canManageRequests,
+        canManageFeedback: !!values.canManageFeedback,
+        canManageAdmins: !!values.canManageAdmins,
+        photoDateRange: values.photoDateRange ? {
+          start: values.photoDateRange[0].startOf('day').toISOString(),
+          end: values.photoDateRange[1].endOf('day').toISOString()
+        } : null,
+        videoDateRange: values.videoDateRange ? {
+          start: values.videoDateRange[0].startOf('day').toISOString(),
+          end: values.videoDateRange[1].endOf('day').toISOString()
+        } : null,
+      }
       const updated: AdminUser = {
         ...editingAdmin,
-        permissions: {
-          ...editingAdmin.permissions,
-          ...values,
-          photoDateRange: values.photoDateRange ? {
-            start: values.photoDateRange[0].startOf('day').toISOString(),
-            end: values.photoDateRange[1].endOf('day').toISOString()
-          } : null,
-          videoDateRange: values.videoDateRange ? {
-            start: values.videoDateRange[0].startOf('day').toISOString(),
-            end: values.videoDateRange[1].endOf('day').toISOString()
-          } : null,
-        }
+        studioName: values.studioName?.trim() || editingAdmin.studioName,
+        permissions,
       }
-      delete (updated.permissions as any).photoDateRange_Raw
-      delete (updated.permissions as any).videoDateRange_Raw
 
       await createOrUpdateAdmin(editingAdmin.uid, updated)
       setAdmins(prev => prev.map(a => a.uid === editingAdmin.uid ? updated : a))
@@ -904,33 +908,41 @@ export default function AdminPage() {
       const secondaryAuth = getAuth(secondaryApp)
       
       const { user: newUser } = await createUserWithEmailAndPassword(secondaryAuth, values.email, values.password)
-      
+
+      // Build a clean permissions object — only extract known permission keys
+      const permissions = {
+        canViewPhotos: !!values.canViewPhotos,
+        canViewVideos: !!values.canViewVideos,
+        canManageFrames: !!values.canManageFrames,
+        canManageRequests: !!values.canManageRequests,
+        canManageFeedback: !!values.canManageFeedback,
+        canManageAdmins: !!values.canManageAdmins,
+        photoDateRange: values.photoDateRange ? {
+          start: values.photoDateRange[0].startOf('day').toISOString(),
+          end: values.photoDateRange[1].endOf('day').toISOString()
+        } : null,
+        videoDateRange: values.videoDateRange ? {
+          start: values.videoDateRange[0].startOf('day').toISOString(),
+          end: values.videoDateRange[1].endOf('day').toISOString()
+        } : null,
+      }
+
       const newAdmin: AdminUser = {
         uid: newUser.uid,
         email: values.email,
         role: 'studio',
-        permissions: {
-          ...DEFAULT_PERMISSIONS,
-          ...values,
-          photoDateRange: values.photoDateRange ? {
-            start: values.photoDateRange[0].startOf('day').toISOString(),
-            end: values.photoDateRange[1].endOf('day').toISOString()
-          } : null,
-          videoDateRange: values.videoDateRange ? {
-            start: values.videoDateRange[0].startOf('day').toISOString(),
-            end: values.videoDateRange[1].endOf('day').toISOString()
-          } : null,
-        },
+        studioName: values.studioName?.trim() || undefined,
+        permissions,
         createdAt: new Date().toISOString()
       }
       
       await createOrUpdateAdmin(newUser.uid, newAdmin)
       setAdmins(prev => [...prev, newAdmin])
       setShowAddAdminModal(false)
-      Modal.success({ title: 'Đã tạo Admin mới', centered: true })
+      Modal.success({ title: 'Tạo studio thành công', content: `Tài khoản ${values.email} đã được tạo.`, centered: true })
     } catch (err: any) {
       console.error(err)
-      Modal.error({ title: 'Lỗi tạo Admin', content: err.message, centered: true })
+      Modal.error({ title: 'Lỗi tạo tài khoản', content: err.message, centered: true })
     } finally {
       setAddAdminLoading(false)
     }
@@ -1011,6 +1023,12 @@ export default function AdminPage() {
             style={{ background: '#1e1e1e', border: '1px solid #2a2a2a', color: '#888' }}>
             Đăng xuất
           </Button>
+          {role === 'studio' && (
+            <Button size="small" onClick={() => window.location.href = '/'}
+              style={{ background: '#1e1e1e', border: '1px solid #2a2a2a', color: '#888' }}>
+              ← Photobooth
+            </Button>
+          )}
         </div>
       </header>
 
@@ -1040,9 +1058,9 @@ export default function AdminPage() {
       {tab === 'admins' ? (
         <div className="flex-1 p-6 overflow-auto">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-white font-bold text-xl">Quản lý Admin</h2>
+            <h2 className="text-white font-bold text-xl">Quản lý Studio</h2>
             <div className="flex gap-2">
-              <Button type="primary" icon={<UserOutlined />} onClick={() => setShowAddAdminModal(true)}>Thêm Admin Mới</Button>
+              <Button type="primary" icon={<UserOutlined />} onClick={() => setShowAddAdminModal(true)}>Thêm Studio mới</Button>
               <Button icon={<ReloadOutlined />} onClick={loadAdmins} loading={adminsLoading}>Làm mới</Button>
             </div>
           </div>
@@ -1053,7 +1071,25 @@ export default function AdminPage() {
             rowKey="uid"
             pagination={false}
             columns={[
-              { title: 'Email', dataIndex: 'email', key: 'email', render: (t) => <span className="text-white font-medium">{t}</span> },
+              {
+                title: 'Studio / Email',
+                key: 'info',
+                render: (_, record) => (
+                  <div>
+                    <div className="text-white font-medium">{record.studioName ?? <span className="text-[#555] italic">Chưa đặt tên</span>}</div>
+                    <div className="text-[#666] text-xs">{record.email}</div>
+                  </div>
+                )
+              },
+              {
+                title: 'Role',
+                key: 'role',
+                render: (_, record) => (
+                  <Tag color={record.role === 'superadmin' ? 'red' : 'blue'}>
+                    {record.role === 'superadmin' ? 'Super Admin' : 'Studio'}
+                  </Tag>
+                )
+              },
               { 
                 title: 'Quyền hạn', 
                 key: 'permissions',
@@ -1853,7 +1889,7 @@ export default function AdminPage() {
 
       {/* Add Admin Modal */}
       <Modal
-        title={<span><UserOutlined /> Tạo tài khoản Admin mới</span>}
+        title={<span><UserOutlined /> Tạo tài khoản Studio mới</span>}
         open={showAddAdminModal}
         onCancel={() => setShowAddAdminModal(false)}
         footer={null}
@@ -1863,13 +1899,16 @@ export default function AdminPage() {
         <Form
           layout="vertical"
           onFinish={handleCreateAdmin}
-          initialValues={DEFAULT_PERMISSIONS}
+          initialValues={{ ...STUDIO_PERMISSIONS }}
         >
           <Form.Item name="email" label="Email" rules={[{ required: true, type: 'email' }]}>
-            <Input placeholder="admin@example.com" />
+            <Input placeholder="studio@example.com" />
           </Form.Item>
           <Form.Item name="password" label="Mật khẩu" rules={[{ required: true, min: 6 }]}>
             <Input.Password placeholder="Tối thiểu 6 ký tự" />
+          </Form.Item>
+          <Form.Item name="studioName" label="Tên Studio" rules={[{ required: true, message: 'Nhập tên studio' }]}>
+            <Input placeholder="Studio ABC" />
           </Form.Item>
           
           <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-4 p-4 bg-[#111] rounded border border-[#222]">

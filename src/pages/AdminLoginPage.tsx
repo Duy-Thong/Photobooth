@@ -4,11 +4,15 @@ import { useAdminAuth } from '@/hooks/useAdminAuth'
 import { useThemeClass } from '@/stores/themeStore'
 
 export default function AdminLoginPage() {
-  const { user, login, loginError, loggingIn } = useAdminAuth()
+  const { user, role, isAdminLoading, login, loginError, loggingIn } = useAdminAuth()
   const [form] = Form.useForm()
   const tc = useThemeClass()
 
-  if (user) return <Navigate to="/admin" replace />
+  // Only superadmin goes to /admin; studio users go to the photobooth home
+  if (!isAdminLoading && user) {
+    if (role === 'superadmin') return <Navigate to="/admin" replace />
+    if (role === 'studio') return <Navigate to="/" replace />
+  }
 
   const handleFinish = ({ email, password }: { email: string; password: string }) => {
     login(email, password)

@@ -37,7 +37,8 @@ export const router = createBrowserRouter([
   {
     path: '/admin',
     element: (
-      <ProtectedRoute require="admin">
+      // Both studio and superadmin can access; AdminPage filters tabs by role
+      <ProtectedRoute require="studio">
         <AdminPage />
       </ProtectedRoute>
     ),
