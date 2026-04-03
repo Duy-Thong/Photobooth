@@ -456,7 +456,7 @@ export default function HomePage() {
             <div className="absolute left-4 top-1/2 -translate-y-1/2">
               <StaffMenu
                 tc={tc}
-                onGallery={() => navigate('/admin')}
+                onGallery={() => navigate(role === 'superadmin' ? '/admin' : '/studio/gallery')}
                 onLogout={() => {
                   Modal.confirm({
                     title: 'Đăng xuất?',

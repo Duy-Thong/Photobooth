@@ -4,6 +4,7 @@ import HomePage from '@/pages/HomePage'
 import AdminLoginPage from '@/pages/AdminLoginPage'
 import StudioLoginPage from '@/pages/StudioLoginPage'
 import AdminPage from '@/pages/AdminPage'
+import StudioGalleryPage from '@/pages/StudioGalleryPage'
 import SessionPage from '@/pages/SessionPage'
 import ProtectedRoute from '@/components/admin/ProtectedRoute'
 
@@ -35,11 +36,20 @@ export const router = createBrowserRouter([
     element: <AdminLoginPage />,
   },
   {
+    // Superadmin-only management panel
     path: '/admin',
     element: (
-      // Both studio and superadmin can access; AdminPage filters tabs by role
-      <ProtectedRoute require="studio">
+      <ProtectedRoute require="admin">
         <AdminPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    // Studio gallery — scoped to their own sessions
+    path: '/studio/gallery',
+    element: (
+      <ProtectedRoute require="studio">
+        <StudioGalleryPage />
       </ProtectedRoute>
     ),
   },

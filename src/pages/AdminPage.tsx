@@ -77,7 +77,7 @@ const getPathFromUrl = (url: string) => {
 }
 
 export default function AdminPage() {
-  const { logout, permissions, role, studioId, studioName, user } = useAdminAuth()
+  const { logout, permissions, user } = useAdminAuth()
   const [photos, setPhotos] = useState<MediaItem[]>([])
   const [videos, setVideos] = useState<MediaItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -91,15 +91,12 @@ export default function AdminPage() {
     const tabs: ('photos' | 'videos' | 'frames' | 'requests' | 'feedback' | 'admins')[] = []
     if (permissions.canViewPhotos) tabs.push('photos')
     if (permissions.canViewVideos) tabs.push('videos')
-    // Studio accounts only see photos/videos of their own sessions
-    if (role === 'superadmin') {
-      if (permissions.canManageFrames) tabs.push('frames')
-      if (permissions.canManageRequests) tabs.push('requests')
-      if (permissions.canManageFeedback) tabs.push('feedback')
-      if (permissions.canManageAdmins) tabs.push('admins')
-    }
+    if (permissions.canManageFrames) tabs.push('frames')
+    if (permissions.canManageRequests) tabs.push('requests')
+    if (permissions.canManageFeedback) tabs.push('feedback')
+    if (permissions.canManageAdmins) tabs.push('admins')
     return tabs
-  }, [permissions, role])
+  }, [permissions])
 
   const [tab, setTab] = useState<'photos' | 'videos' | 'frames' | 'requests' | 'feedback' | 'admins'>('photos')
 
@@ -303,11 +300,9 @@ export default function AdminPage() {
     })
   }
 
-  // 1. Real-time Session Listener — filter by studioId for studio role
+  // 1. Real-time Session Listener — superadmin sees all sessions
   useEffect(() => {
     setLoading(true)
-    // superadmin sees all sessions; studio only sees their own
-    const filterStudioId = role === 'studio' ? (studioId ?? undefined) : undefined
     const unsubscribe = listenToSessions((sessions: any[]) => {
       const sPhotos: MediaItem[] = []
       const sVideos: MediaItem[] = []
@@ -341,13 +336,13 @@ export default function AdminPage() {
       }
       setSessionItems({ photos: sPhotos, videos: sVideos, printed: sPrinted })
       setLoading(false)
-    }, filterStudioId, (err) => {
+    }, undefined, (err) => {
       console.error('[AdminPage] Session listener error:', err)
       setLoading(false)
     })
     
     return () => unsubscribe()
-  }, [role, studioId])
+  }, [])
 
   // 2. Compute final lists with filters
   useEffect(() => {
@@ -961,8 +956,6 @@ export default function AdminPage() {
   }
 
   const items = tab === 'photos' ? photos : videos
-  // Studio accounts can delete their own sessions (Firestore rules enforce ownership)
-  const canDeleteSessions = !!(permissions?.canManageAdmins || role === 'studio')
 
   return (
     <div className="min-h-dvh bg-[#111] flex flex-col">
@@ -970,9 +963,7 @@ export default function AdminPage() {
       <header className="border-b border-[#1f1f1f] px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-white font-bold text-lg" style={{ letterSpacing: '-0.02em' }}>Sổ Media</h1>
-          <p className="text-[#555] text-[10px] uppercase tracking-widest">
-            {role === 'studio' ? (studioName ?? 'Studio Panel') : 'Admin Panel'}
-          </p>
+          <p className="text-[#555] text-[10px] uppercase tracking-widest">Admin Panel</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {selectedPaths.size > 0 && (
@@ -985,7 +976,7 @@ export default function AdminPage() {
                 </Button>
               )}
 
-              {canDeleteSessions && (
+              {permissions?.canManageAdmins && (
                 <Button size="small" type="primary" danger icon={<DeleteFilled />} onClick={handleDeleteSelected}>
                   Xóa {selectedPaths.size}
                 </Button>
@@ -1008,24 +999,22 @@ export default function AdminPage() {
             </Button>
           )}
 
-          {canDeleteSessions && (
+          {permissions?.canManageAdmins && (
             <>
-              <Tooltip title="Xóa dữ liệu cũ hơn 7 ngày (cả ảnh & video)">
+              <Tooltip title="Xóa dữ liệu cũ hơn 7 ngày (ảnh & video)">
                 <Button size="small" icon={<ClockCircleOutlined />} onClick={handleDeleteOlderThan7Days}
                   loading={bulkDeleting}
                   style={{ background: '#1e1e1e', border: '1px solid #2a2a2a', color: '#e67e22' }}>
                   <span className="hidden sm:inline">Cũ &gt; 7 ngày</span>
                 </Button>
               </Tooltip>
-              {permissions?.canManageAdmins && (
-                <Tooltip title="Quét và xóa các bản ghi không còn file ảnh/video thực tế">
+              <Tooltip title="Quét và xóa các bản ghi không còn file ảnh/video thực tế">
                   <Button size="small" icon={<ReloadOutlined />} onClick={handleCleanupSessions}
                     loading={bulkDeleting}
                     style={{ background: '#1e1e1e', border: '1px solid #2a2a2a', color: '#3498db' }}>
                     <span className="hidden sm:inline">Dọn dẹp DB</span>
                   </Button>
                 </Tooltip>
-              )}
               <Tooltip title="Xóa tất cả trong tab hiện tại">
                 <Button size="small" icon={<DeleteFilled />} onClick={handleDeleteAll}
                   loading={bulkDeleting} danger
@@ -1039,12 +1028,6 @@ export default function AdminPage() {
             style={{ background: '#1e1e1e', border: '1px solid #2a2a2a', color: '#888' }}>
             Đăng xuất
           </Button>
-          {role === 'studio' && (
-            <Button size="small" onClick={() => window.location.href = '/'}
-              style={{ background: '#1e1e1e', border: '1px solid #2a2a2a', color: '#888' }}>
-              ← Photobooth
-            </Button>
-          )}
         </div>
       </header>
 
@@ -1524,7 +1507,7 @@ export default function AdminPage() {
                     </Tooltip>
                   )}
                   
-                  {canDeleteSessions && (
+                  {permissions?.canManageAdmins && (
                     <Tooltip title="Xóa">
                       <button
                         onClick={(e) => { e.stopPropagation(); handleDelete(item); }}
