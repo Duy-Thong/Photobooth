@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import { FloatButton, Modal, Form, Input, Select, message } from 'antd'
-import { CommentOutlined } from '@ant-design/icons'
+import { Modal, Form, Input, Select, message } from 'antd'
 import { submitFeedback } from '@/lib/feedbackService'
 import type { FeedbackType } from '@/types/feedback'
 
@@ -8,10 +7,6 @@ export default function FeedbackBubble() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [form] = Form.useForm()
   const [submitting, setSubmitting] = useState(false)
-
-  const showModal = () => {
-    setIsModalOpen(true)
-  }
 
   const handleCancel = () => {
     setIsModalOpen(false)

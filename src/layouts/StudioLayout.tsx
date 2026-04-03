@@ -71,9 +71,9 @@ export default function StudioLayout() {
           <div className="absolute top-0 left-0 right-0 h-16 bg-[#0a0a0a]/80 backdrop-blur-md border-b border-white/5 z-40 flex items-center justify-between px-4">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-[0_0_15px_rgba(59,130,246,0.3)]">
-                <span className="font-bold text-white text-xs">SM</span>
+                <span className="font-bold text-white text-xs">P</span>
               </div>
-              <span className="font-bold text-sm tracking-wide">Sổ Media</span>
+              <span className="font-bold text-sm tracking-wide">{studioName || 'Photobooth'}</span>
             </div>
             <button 
               onClick={() => setCollapsed(!collapsed)}
@@ -98,12 +98,12 @@ export default function StudioLayout() {
             <div className={`flex items-center gap-3 transition-all duration-300 ${collapsed && !isMobile ? 'scale-110' : ''}`}>
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-[0_0_20px_rgba(59,130,246,0.4)] relative overflow-hidden group">
                 <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                <span className="font-black text-white text-sm tracking-tighter">SM</span>
+                <span className="font-black text-white text-sm tracking-tighter">P</span>
               </div>
               {(!collapsed || isMobile) && (
                 <div className="flex flex-col whitespace-nowrap overflow-hidden">
-                  <span className="font-bold text-base tracking-wide text-white leading-tight">Sổ Media</span>
-                  <span className="text-[10px] uppercase tracking-[0.2em] text-blue-400 font-semibold">Photobooth</span>
+                  <span className="font-bold text-base tracking-wide text-white leading-tight truncate max-w-[160px]">{studioName || 'Photobooth'}</span>
+                  <span className="text-[10px] uppercase tracking-[0.2em] text-blue-400 font-semibold">System</span>
                 </div>
               )}
             </div>

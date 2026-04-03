@@ -13,7 +13,7 @@ import {
 } from '@ant-design/icons'
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
-  LineChart, Line, Cell, PieChart, Pie
+  LineChart, Line, Cell
 } from 'recharts'
 import { useAdminAuth } from '@/hooks/useAdminAuth'
 import { listenToSessions, type SessionData } from '@/lib/sessionService'
@@ -24,7 +24,7 @@ export default function StudioDashboard() {
 
   const [loading, setLoading] = useState(true)
   const [sessions, setSessions] = useState<SessionData[]>([])
-  const [online] = useState(true)
+  const [] = useState(true)
 
   useEffect(() => {
     if (!studioId) return

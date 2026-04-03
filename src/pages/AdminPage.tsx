@@ -174,7 +174,6 @@ export default function AdminPage() {
   const [editSlotsData, setEditSlotsData] = useState<SlotRect[]>([])
   const [editLayout, setEditLayout] = useState('')
   const [editFrameType, setEditFrameType] = useState('')
-  const [editSaving, setEditSaving] = useState(false)
 
   const openEditFrame = (frame: FrameItem) => {
     setEditingFrame(frame)
