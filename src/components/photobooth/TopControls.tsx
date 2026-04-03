@@ -92,7 +92,7 @@ export default function TopControls({
               'border-[#d0d0d0] text-[#999] hover:border-[#999] hover:text-[#555]'
             )}`}
           >
-            + Đóng góp
+            + Tải khung lên
           </button>
         </div>
       </div>

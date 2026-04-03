@@ -113,7 +113,7 @@ export default function StudioDashboard() {
           <span className="inline-block animate-wave">👋</span>
         </h1>
         <p className="text-[#888] text-sm md:text-base max-w-xl">
-          Chào mừng trở lại. Đây là báo cáo chi tiết về hiệu quả vận hành của tiệm bạn.
+          Chào mừng trở lại. Đây là báo cáo chi tiết về hiệu quả vận hành của riêng {studioName || 'studio'} bạn.
         </p>
       </div>
 

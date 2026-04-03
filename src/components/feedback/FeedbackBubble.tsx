@@ -34,13 +34,13 @@ export default function FeedbackBubble() {
 
   return (
     <>
-      <FloatButton
+      {/* <FloatButton
         icon={<CommentOutlined />}
         type="primary"
         style={{ right: 24, bottom: 24, width: 56, height: 56 }}
         onClick={showModal}
         tooltip={<div>Góp ý & Báo lỗi</div>}
-      />
+      /> */}
 
       <Modal
         title="Gửi góp ý cho chúng tôi"

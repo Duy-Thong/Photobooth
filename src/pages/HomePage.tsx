@@ -45,7 +45,6 @@ export default function HomePage() {
   const [recapMimeType, setRecapMimeType] = useState<string>('video/webm')
   const [recapStripUrl, setRecapStripUrl] = useState<string | null>(null)
   const [buildingStrip, setBuildingStrip] = useState(false)
-  const [isRebuildingImage, setIsRebuildingImage] = useState(false)
   const [frameModalOpen, setFrameModalOpen] = useState(false)
   const [resultModalOpen, setResultModalOpen] = useState(false)
   const [contributeOpen, setContributeOpen] = useState(false)
@@ -433,7 +432,6 @@ export default function HomePage() {
         buildingStrip={buildingStrip}
         isX2={isX2}
         onToggleX2={() => setIsX2(!isX2)}
-        isRebuildingImage={isRebuildingImage}
         studioId={studioId || undefined}
         frameId={selectedFrame?.id?.toString() || selectedFrame?.firestoreId}
         frameName={selectedFrame?.name}
@@ -454,13 +452,12 @@ export default function HomePage() {
         {/* Header */}
         <header className={`pt-5 pb-4 border-b relative ${tc('border-[#141414]', 'border-[#e0e0e0]')}`}>
           <div className="text-center cursor-pointer select-none" onClick={handleLogoTap}>
-            <h1 className={`text-2xl font-bold ${tc('text-white', 'text-black')}`} style={{ letterSpacing: '-0.03em' }}>
-              Sổ Media
+            <h1 className={`text-base md:text-lg font-bold uppercase tracking-[0.2em] ${tc('text-white', 'text-black')}`}>
+              {studioName || 'Photobooth'}
             </h1>
-            <p className={`text-[9px] tracking-[0.35em] uppercase mt-0.5 font-medium ${tc('text-white', 'text-black')}`}>Photobooth</p>
-            {studioName && (
-              <p className={`text-[9px] tracking-widest mt-0.5 ${tc('text-[#555]', 'text-[#aaa]')}`}>{studioName}</p>
-            )}
+            <p className={`text-[10px] md:text-[11px] tracking-[0.3em] uppercase mt-0.5 font-bold opacity-40 ${tc('text-white', 'text-black')}`}>
+              Photobooth
+            </p>
           </div>
 
           <div className="absolute right-4 top-1/2 -translate-y-1/2">
