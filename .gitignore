@@ -26,3 +26,5 @@ dist-ssr
 .env
 .env.*.local
 *.pem
+serviceAccountKey*.json
+*service-account*.json

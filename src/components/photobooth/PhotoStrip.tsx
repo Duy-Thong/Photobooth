@@ -13,6 +13,7 @@ interface PhotoStripProps {
   activeEffects: EffectType[]
   stream: MediaStream | null
   isMirrored: boolean
+  isCapturing?: boolean
   onUploadSlot: (index: number, dataUrl: string) => void
   onRemoveSlot: (index: number) => void
   onDownload: () => void
@@ -46,10 +47,11 @@ function LiveSlotVideo({ stream, isMirrored }: { stream: MediaStream; isMirrored
 
 // ── Mini slot thumbnail ──────────────────────────────────────────────────────
 function MiniSlot({
-  slot, index, onUpload, onRemove,
+  slot, index, isCapturing, onUpload, onRemove,
 }: {
   slot: CapturedSlot | null
   index: number
+  isCapturing?: boolean
   onUpload: (i: number, dataUrl: string) => void
   onRemove: (i: number) => void
 }) {
@@ -57,6 +59,7 @@ function MiniSlot({
   const tc = useThemeClass()
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (isCapturing) return
     const file = e.target.files?.[0]
     if (!file) return
     const reader = new FileReader()
@@ -66,34 +69,39 @@ function MiniSlot({
   }
 
   return (
-    <div className="relative group shrink-0">
+    <div className={`relative group shrink-0 ${isCapturing ? 'opacity-40 pointer-events-none' : ''}`}>
       {slot ? (
         <>
           <img
             src={slot.dataUrl}
             alt={`slot ${index + 1}`}
-            onClick={() => inputRef.current?.click()}
-            className="w-10 h-10 object-cover rounded-lg cursor-pointer opacity-70 hover:opacity-100 transition shadow-sm"
+            onClick={() => !isCapturing && inputRef.current?.click()}
+            title="Nhấn để đổi ảnh"
+            className="w-12 h-12 sm:w-13.5 sm:h-13.5 object-cover rounded-xl cursor-pointer opacity-90 hover:opacity-100 transition-all shadow-md hover:scale-105 border border-white/10"
           />
-          <button
-            onClick={() => onRemove(index)}
-            className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-[#ff4d4f] text-white rounded-full flex items-center justify-center shadow-lg hover:bg-[#ff7875] hover:scale-110 active:scale-95 transition-all z-10"
-          >
-            <CloseOutlined style={{ fontSize: 9, strokeWidth: 2.5 }} />
-          </button>
+          {!isCapturing && (
+            <button
+              onClick={() => onRemove(index)}
+              title="Xóa ảnh này"
+              className="absolute -top-1.5 -right-1.5 w-5.5 h-5.5 bg-[#ff4d4f] text-white rounded-full flex items-center justify-center shadow-lg hover:bg-[#ff7875] hover:scale-110 active:scale-95 transition-all z-10 cursor-pointer"
+            >
+              <CloseOutlined style={{ fontSize: 11, strokeWidth: 3 }} />
+            </button>
+          )}
         </>
       ) : (
         <div
-          onClick={() => inputRef.current?.click()}
-          className={`w-10 h-10 rounded-lg border border-dashed flex items-center justify-center cursor-pointer transition ${tc(
-            'border-[#1e1e1e] bg-[#0a0a0a] hover:border-[#383838]',
-            'border-[#d0d0d0] bg-[#f5f5f5] hover:border-[#999]'
+          onClick={() => !isCapturing && inputRef.current?.click()}
+          title="Tải ảnh lên ô này"
+          className={`w-12 h-12 sm:w-13.5 sm:h-13.5 rounded-xl border border-dashed flex items-center justify-center cursor-pointer transition-all hover:scale-105 shadow-sm ${tc(
+            'border-[#2e2e2e] bg-[#0f0f0f] hover:border-[#666]',
+            'border-[#d0d0d0] bg-[#f5f5f5] hover:border-[#888]'
           )}`}
         >
-          <span className={`text-lg leading-none select-none ${tc('text-[#333]', 'text-[#ccc]')}`}>+</span>
+          <span className={`text-lg font-bold leading-none select-none ${tc('text-[#555]', 'text-[#aaa]')}`}>+</span>
         </div>
       )}
-      <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
+      <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleFile} disabled={isCapturing} />
     </div>
   )
 }
@@ -107,6 +115,7 @@ export const PhotoStrip = memo(function PhotoStrip({
   activeEffects,
   stream,
   isMirrored,
+  isCapturing,
   onUploadSlot,
   onRemoveSlot,
   onDownload,
@@ -129,7 +138,7 @@ export const PhotoStrip = memo(function PhotoStrip({
     <div id="tour-photo-strip" className="flex flex-col gap-2">
 
       {/* ── Live composite preview ── */}
-      <div className={`relative rounded-xl border overflow-hidden flex items-center justify-center p-0.5 shadow-2xl ${tc('bg-[#0d0d0d] border-[#141414]', 'bg-[#f0f0f0] border-[#e0e0e0]')}`} 
+      <div className={`relative rounded-2xl border overflow-hidden flex items-center justify-center p-0.5 shadow-2xl max-h-[calc(100dvh-220px)] w-auto max-w-full mx-auto ${tc('bg-[#0d0d0d] border-[#1f1f1f]', 'bg-[#f0f0f0] border-[#e0e0e0]')}`} 
         style={{ aspectRatio: containerAspectRatio }}>
         
         {/* Layer 0: Individual Live Videos for each empty slot (positioned exactly in the holes) */}
@@ -166,7 +175,7 @@ export const PhotoStrip = memo(function PhotoStrip({
           <img
             src={previewUrl}
             alt="preview"
-            className="w-full h-full object-contain relative z-10"
+            className="w-full h-full object-contain relative z-10 block"
           />
         ) : (
           /* No preview yet — show empty slot placeholders */
@@ -193,20 +202,21 @@ export const PhotoStrip = memo(function PhotoStrip({
 
         {/* Rendering spinner overlay */}
         {rendering && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/30 pointer-events-none">
-            <div className="w-5 h-5 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
+          <div className="absolute inset-0 flex items-center justify-center bg-black/40 pointer-events-none z-20">
+            <div className="w-6 h-6 border-2 border-white/20 border-t-white/80 rounded-full animate-spin" />
           </div>
         )}
       </div>
 
       {/* ── Mini thumbnails for remove / replace ── */}
       {filled > 0 && (
-        <div className="flex gap-1.5 justify-center flex-wrap">
+        <div className="flex gap-2 justify-center flex-wrap py-0.5">
           {slots.map((slot, i) => (
             <MiniSlot
               key={i}
               slot={slot}
               index={i}
+              isCapturing={isCapturing}
               onUpload={onUploadSlot}
               onRemove={onRemoveSlot}
             />
@@ -217,20 +227,20 @@ export const PhotoStrip = memo(function PhotoStrip({
       {/* ── Status + actions ── */}
       <div className="flex flex-col gap-1.5">
         <div className="flex items-center justify-between px-1">
-          <span className={`text-[10px] font-bold uppercase tracking-[0.12em] opacity-40 ${tc('text-white', 'text-black')}`}>Ảnh đã chụp</span>
-          <span className={`text-[13px] font-bold tabular-nums opacity-60 ${tc('text-white', 'text-black')}`}>{filled} / {layout.slots}</span>
+          <span className={`text-[10px] font-bold uppercase tracking-wider opacity-50 ${tc('text-white', 'text-black')}`}>Ảnh đã chụp</span>
+          <span className={`text-xs font-bold tabular-nums opacity-80 ${tc('text-white', 'text-black')}`}>{filled} / {layout.slots}</span>
         </div>
 
         {allFilled && !finalImageUrl && (
           <button
             id="tour-build-button"
             onClick={onBuildStrip}
-            className={`w-full py-3 rounded-xl text-[13px] font-bold tracking-wide active:scale-[0.97] transition-all duration-150 shadow-lg ${tc(
-              'bg-white text-black hover:bg-[#e8e8e8]',
-              'bg-black text-white hover:bg-[#222]'
+            className={`w-full py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-bold tracking-wide active:scale-[0.98] transition-all duration-150 shadow-xl cursor-pointer ${tc(
+              'bg-white text-black hover:bg-[#eaeaea] shadow-[0_0_16px_rgba(255,255,255,0.15)]',
+              'bg-black text-white hover:bg-[#222] shadow-[0_0_16px_rgba(0,0,0,0.15)]'
             )}`}
           >
-            ✦ Tạo Ảnh Strip
+            ✦ Ghép Khung Ảnh
           </button>
         )}
 
@@ -238,12 +248,12 @@ export const PhotoStrip = memo(function PhotoStrip({
           <button
             id="tour-download-button"
             onClick={onDownload}
-            className={`w-full py-3 rounded-xl text-[13px] font-bold tracking-wide active:scale-[0.97] transition-all duration-150 flex items-center justify-center gap-2 shadow-lg ${tc(
-              'bg-white text-black hover:bg-[#e8e8e8]',
-              'bg-black text-white hover:bg-[#222]'
+            className={`w-full py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-bold tracking-wide active:scale-[0.98] transition-all duration-150 flex items-center justify-center gap-2 shadow-xl cursor-pointer ${tc(
+              'bg-white text-black hover:bg-[#eaeaea] shadow-[0_0_16px_rgba(255,255,255,0.15)]',
+              'bg-black text-white hover:bg-[#222] shadow-[0_0_16px_rgba(0,0,0,0.15)]'
             )}`}
           >
-            <DownloadOutlined style={{ fontSize: 16 }} /> Tải Về Máy
+            <DownloadOutlined style={{ fontSize: 16 }} /> Xem &amp; Tải Về
           </button>
         )}
       </div>

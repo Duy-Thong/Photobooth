@@ -1,7 +1,15 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { Spin, Modal, Tour, type TourProps } from 'antd'
-import { LoadingOutlined, PrinterOutlined } from '@ant-design/icons'
+import { Spin, Modal, QRCode, message, Tour, type TourProps } from 'antd'
+import {
+  LoadingOutlined,
+  PrinterOutlined,
+  DownloadOutlined,
+  CopyOutlined,
+  CheckOutlined,
+  ShareAltOutlined,
+  CameraOutlined,
+} from '@ant-design/icons'
 import { fetchSession, type SessionData } from '@/lib/sessionService'
 import { downloadMedia, isMobileDevice } from '@/lib/imageProcessing'
 import { useThemeClass } from '@/stores/themeStore'
@@ -13,16 +21,22 @@ export default function SessionPage() {
   const [session, setSession] = useState<SessionData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
-  
+
   const [downloadingPhoto, setDownloadingPhoto] = useState(false)
   const [downloadingVideo, setDownloadingVideo] = useState(false)
+  const [copied, setCopied] = useState(false)
 
   const [tourOpen, setTourOpen] = useState(false)
+
+  const currentUrl = typeof window !== 'undefined' ? window.location.href : ''
 
   useEffect(() => {
     if (!id) return
     fetchSession(id)
-      .then(s => { setSession(s); if (!s) setError(true) })
+      .then(s => {
+        setSession(s)
+        if (!s) setError(true)
+      })
       .catch(() => setError(true))
       .finally(() => setLoading(false))
   }, [id])
@@ -36,15 +50,39 @@ export default function SessionPage() {
     }
   }, [loading, session])
 
+  const handleCopyUrl = () => {
+    navigator.clipboard.writeText(currentUrl).then(() => {
+      setCopied(true)
+      message.success('Đã copy link!')
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Sổ Media Photobooth',
+          text: 'Xem bộ ảnh photobooth siêu xinh của mình nè! ✨',
+          url: currentUrl,
+        })
+      } catch {
+        // User cancelled
+      }
+    } else {
+      handleCopyUrl()
+    }
+  }
+
   const tourSteps: TourProps['steps'] = [
     {
       title: 'Chào mừng 🎉',
-      description: 'Đây là trang nhận ảnh của bạn. Tại đây bạn có thể xem lại và lưu giữ những khoảnh khắc vừa chụp.',
+      description: 'Đây là trang nhận ảnh của bạn. Tại đây bạn có thể xem lại, tải về và lưu giữ những khoảnh khắc vừa chụp.',
       target: null,
     },
     {
       title: 'Dải ảnh của bạn',
-      description: 'Đây là bộ ảnh hoàn chỉnh đã được ghép khung. Bạn có thể nhấn giữ để lưu hoặc chia sẻ link này.',
+      description: 'Đây là bộ ảnh hoàn chỉnh đã ghép khung. Bạn có thể nhấn giữ để lưu hoặc chia sẻ link này.',
       target: () => document.getElementById('tour-session-photo')!,
     },
     {
@@ -54,19 +92,28 @@ export default function SessionPage() {
     },
     {
       title: 'In ảnh',
-      description: 'Nếu có máy in kết nối, bạn có thể in ảnh ngay tại đây.',
+      description: 'Nếu có máy in kết nối, bạn có thể in ảnh chuẩn khổ 10x15cm ngay tại đây.',
       target: () => document.getElementById('tour-session-print-photo')!,
     },
-    ...(session?.videoUrl ? [{
-      title: 'Strip Video',
-      description: 'Đây là đoạn clip ngắn ghi lại quá trình chụp ảnh của bạn. Một món quà nhỏ từ chúng mình!',
-      target: () => document.getElementById('tour-session-video')!,
-    },
+    ...(session?.videoUrl
+      ? [
+          {
+            title: 'Strip Video',
+            description: 'Đây là đoạn clip ngắn ghi lại quá trình chụp ảnh của bạn. Một món quà nhỏ từ chúng mình!',
+            target: () => document.getElementById('tour-session-video')!,
+          },
+          {
+            title: 'Tải video',
+            description: 'Bạn cũng có thể tải đoạn video này về để làm kỷ niệm nhé.',
+            target: () => document.getElementById('tour-session-download-video')!,
+          },
+        ]
+      : []),
     {
-      title: 'Tải video',
-      description: 'Bạn cũng có thể tải đoạn video này về để làm kỷ niệm nhé.',
-      target: () => document.getElementById('tour-session-download-video')!,
-    }] : []),
+      title: 'Mã QR & Chia sẻ',
+      description: 'Dùng điện thoại quét mã QR này để mở ảnh nhanh hoặc gửi link cho bạn bè cùng xem nhé.',
+      target: () => document.getElementById('tour-session-qr')!,
+    },
   ]
 
   if (loading) {
@@ -81,17 +128,24 @@ export default function SessionPage() {
     return (
       <div className={`min-h-dvh flex flex-col items-center justify-center gap-3 text-center px-6 ${tc('bg-[#0a0a0a]', 'bg-[#f5f5f5]')}`}>
         <p className="text-4xl">📷</p>
-        <p className={`font-semibold text-lg ${tc('text-white', 'text-black')}`}>Không tìm thấy ảnh</p>
-        <p className={`text-sm ${tc('text-[#555]', 'text-[#999]')}`}>Link này không tồn tại hoặc đã bị xoá.</p>
-        <a href="/" className={`mt-4 text-xs underline transition-colors ${tc('text-[#444] hover:text-[#888]', 'text-[#bbb] hover:text-[#666]')}`}>
-          Về trang chủ
+        <p className={`font-bold text-lg ${tc('text-white', 'text-black')}`}>Không tìm thấy ảnh</p>
+        <p className={`text-sm ${tc('text-[#666]', 'text-[#888]')}`}>Link này không tồn tại hoặc đã hết hạn.</p>
+        <a
+          href="/"
+          className={`mt-4 px-4 py-2 rounded-xl text-xs font-semibold transition-all border ${tc(
+            'bg-[#141414] hover:bg-[#222] text-white border-[#333]',
+            'bg-white hover:bg-[#eee] text-black border-[#d9d9d9]'
+          )}`}
+        >
+          Về trang chủ Photobooth
         </a>
       </div>
     )
   }
 
   const date = new Date(session.createdAt).toLocaleString('vi-VN', {
-    dateStyle: 'short', timeStyle: 'short',
+    dateStyle: 'short',
+    timeStyle: 'short',
   })
 
   const handleDownloadPhoto = async (e: React.MouseEvent) => {
@@ -143,7 +197,8 @@ export default function SessionPage() {
     document.head.appendChild(style)
     document.body.appendChild(frame)
     const cleanup = () => {
-      style.remove(); frame.remove()
+      style.remove()
+      frame.remove()
       window.removeEventListener('afterprint', cleanup)
     }
     window.addEventListener('afterprint', cleanup)
@@ -159,89 +214,168 @@ export default function SessionPage() {
     }
   }
 
+  const smallBtnClass = tc(
+    'bg-[#1a1a1a] border border-[#2e2e2e] text-[#aaa] hover:text-white hover:border-[#444] hover:bg-[#252525]',
+    'bg-white border border-[#d9d9d9] text-[#666] hover:text-black hover:border-[#999] hover:bg-[#f5f5f5]'
+  )
+
   return (
-    <div className={`min-h-dvh flex flex-col items-center py-10 px-4 gap-8 ${tc('bg-[#0a0a0a]', 'bg-[#f5f5f5]')}`}>
+    <div className={`min-h-dvh flex flex-col items-center py-8 px-4 gap-6 ${tc('bg-[#0a0a0a]', 'bg-[#f5f5f5]')}`}>
       {/* Theme toggle */}
       <div className="fixed top-4 right-4 z-50">
         <ThemeToggle />
       </div>
 
       {/* Header */}
-      <div className="flex flex-col items-center gap-1">
-        <a href="/" className={`font-bold text-xl tracking-tight ${tc('text-white', 'text-black')}`} style={{ letterSpacing: '-0.04em' }}>
+      <div className="flex flex-col items-center gap-1 text-center">
+        <a href="/" className={`font-bold text-2xl tracking-tight ${tc('text-white', 'text-black')}`} style={{ letterSpacing: '-0.04em' }}>
           Sổ Media
         </a>
-        <p className={`text-[10px] uppercase tracking-[0.2em] ${tc('text-[#444]', 'text-[#bbb]')}`}>Photobooth</p>
-        <p className={`text-xs mt-2 ${tc('text-[#333]', 'text-[#ccc]')}`}>{date}</p>
+        <p className={`text-[10px] uppercase tracking-[0.25em] font-medium ${tc('text-[#777]', 'text-[#999]')}`}>Photobooth Studio</p>
+        <p className={`text-xs mt-1 font-mono ${tc('text-[#555]', 'text-[#aaa]')}`}>{date}</p>
       </div>
 
       {/* Strip image */}
       <div className="w-full max-w-xs">
-        <img
-          id="tour-session-photo"
-          src={session.imageUrl}
-          alt="Photo strip"
-          className={`w-full rounded-2xl shadow-2xl border ${tc('border-[#222]', 'border-[#d9d9d9]')}`}
-          crossOrigin="anonymous"
-        />
+        <div className={`rounded-2xl border p-2 shadow-2xl ${tc('bg-[#111] border-[#222]', 'bg-white border-[#e0e0e0]')}`}>
+          <img
+            id="tour-session-photo"
+            src={session.imageUrl}
+            alt="Photo strip"
+            className="w-full rounded-xl object-contain"
+            crossOrigin="anonymous"
+          />
+        </div>
       </div>
 
-      <div className="w-full max-w-xs flex flex-col gap-2">
+      {/* Action buttons */}
+      <div className="w-full max-w-xs flex flex-col gap-2.5">
         <button
           id="tour-session-download-photo"
           onClick={handleDownloadPhoto}
           disabled={downloadingPhoto}
-          className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed ${tc(
-            'bg-white text-black hover:bg-[#eee]',
-            'bg-black text-white hover:bg-[#222]'
+          className={`w-full h-11 flex items-center justify-center gap-2 rounded-xl font-bold text-sm transition-all shadow-lg cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed ${tc(
+            'bg-white text-black hover:bg-[#eaeaea] active:scale-[0.98]',
+            'bg-black text-white hover:bg-[#222] active:scale-[0.98]'
           )}`}
         >
-          {downloadingPhoto ? <LoadingOutlined /> : '↓ Tải ảnh'}
+          {downloadingPhoto ? <LoadingOutlined /> : <DownloadOutlined style={{ fontSize: 16 }} />}
+          Tải ảnh về máy
         </button>
+
         <button
           id="tour-session-print-photo"
           onClick={handlePrint}
-          className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm transition-colors cursor-pointer border ${tc(
-            'bg-[#0a0a0a] text-white hover:bg-[#111] border-[#333]',
-            'bg-white text-black hover:bg-[#f5f5f5] border-[#d9d9d9]'
+          className={`w-full h-10 flex items-center justify-center gap-2 rounded-xl font-semibold text-xs transition-all cursor-pointer border ${tc(
+            'bg-[#141414] text-[#ddd] hover:text-white hover:bg-[#1f1f1f] border-[#2e2e2e]',
+            'bg-white text-[#333] hover:text-black hover:bg-[#fafafa] border-[#d9d9d9]'
           )}`}
         >
-          <PrinterOutlined /> In ảnh
+          <PrinterOutlined /> In ảnh (khổ 10x15cm)
         </button>
+
         {isMobileDevice() && (
-          <p className={`text-[10px] text-center mt-1 opacity-50 ${tc('text-[#555]', 'text-[#999]')}`}>
-            Mẹo: Nhấn giữ ảnh hoặc nút Tải về để lưu vào thư viện.
+          <p className={`text-[10px] text-center font-medium opacity-60 ${tc('text-[#777]', 'text-[#888]')}`}>
+            💡 Mẹo: Nhấn giữ ảnh để lưu trực tiếp vào thư viện
           </p>
         )}
       </div>
 
-      {/* Strip video */}
+      {/* Strip video (if present) */}
       {session.videoUrl && (
-        <div id="tour-session-video" className="w-full max-w-xs flex flex-col gap-3">
-          <p className={`text-[10px] uppercase tracking-[0.2em] text-center ${tc('text-[#555]', 'text-[#999]')}`}>Strip Video</p>
+        <div id="tour-session-video" className="w-full max-w-xs flex flex-col gap-2.5">
+          <div className="flex items-center justify-between px-1">
+            <span className={`text-[10px] uppercase tracking-wider font-bold ${tc('text-[#888]', 'text-[#777]')}`}>
+              🎞️ Strip Video Kỷ Niệm
+            </span>
+          </div>
           <video
             src={session.videoUrl}
             controls
             autoPlay
             loop
             playsInline
-            className={`w-full rounded-xl border ${tc('border-[#222] bg-black', 'border-[#d9d9d9] bg-white')}`}
+            className={`w-full rounded-2xl border shadow-lg ${tc('border-[#222] bg-black', 'border-[#d9d9d9] bg-white')}`}
           />
           <button
             id="tour-session-download-video"
             onClick={handleDownloadVideo}
             disabled={downloadingVideo}
-            className={`w-full max-w-xs flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm transition-colors cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed ${tc(
-              'bg-white text-black hover:bg-[#eee]',
-              'bg-black text-white hover:bg-[#222]'
+            className={`w-full h-10 flex items-center justify-center gap-2 rounded-xl font-semibold text-xs transition-all cursor-pointer border disabled:opacity-70 disabled:cursor-not-allowed ${tc(
+              'bg-[#141414] text-[#ddd] hover:text-white hover:bg-[#1f1f1f] border-[#2e2e2e]',
+              'bg-white text-[#333] hover:text-black hover:bg-[#fafafa] border-[#d9d9d9]'
             )}`}
           >
-            {downloadingVideo ? <LoadingOutlined /> : 'Tải video'}
+            {downloadingVideo ? <LoadingOutlined /> : <DownloadOutlined />} Tải video recap
           </button>
         </div>
       )}
 
-      <p className={`text-[10px] pb-6 ${tc('text-[#2a2a2a]', 'text-[#ccc]')}`}>somedia · photobooth</p>
+      {/* QR Code & Share Card below */}
+      <div
+        id="tour-session-qr"
+        className={`w-full max-w-xs rounded-2xl border p-5 flex flex-col items-center gap-3.5 shadow-xl ${tc(
+          'bg-[#111] border-[#222]',
+          'bg-white border-[#e0e0e0]'
+        )}`}
+      >
+        <div className="flex flex-col items-center gap-1 text-center">
+          <span className={`text-xs font-bold uppercase tracking-wider ${tc('text-white', 'text-black')}`}>
+            📱 Quét mã để chia sẻ
+          </span>
+          <span className={`text-[11px] ${tc('text-[#666]', 'text-[#888]')}`}>
+            Mở trên điện thoại hoặc gửi cho bạn bè
+          </span>
+        </div>
+
+        <div className="p-3 bg-white rounded-2xl shadow-sm inline-flex items-center justify-center border border-gray-200">
+          <QRCode
+            value={currentUrl}
+            size={145}
+            bordered={false}
+            errorLevel="H"
+            color="#000000"
+            bgColor="#ffffff"
+            icon="/clublogo.png"
+            iconSize={36}
+          />
+        </div>
+
+        {/* URL row + Copy + Share */}
+        <div className={`w-full flex items-center gap-1.5 rounded-xl p-1.5 pl-3 border ${tc('bg-[#0a0a0a] border-[#222]', 'bg-[#f5f5f5] border-[#d9d9d9]')}`}>
+          <span className={`flex-1 text-[11px] truncate select-all font-mono ${tc('text-[#888]', 'text-[#666]')}`}>
+            {currentUrl}
+          </span>
+          <button
+            onClick={handleCopyUrl}
+            className={`px-2.5 py-1 rounded-lg text-[10px] font-semibold uppercase tracking-wider transition-all flex items-center gap-1 cursor-pointer ${smallBtnClass}`}
+            title="Copy link"
+          >
+            {copied ? <CheckOutlined className="text-green-400" /> : <CopyOutlined />}
+            Copy
+          </button>
+          <button
+            onClick={handleShare}
+            className={`px-2.5 py-1 rounded-lg text-[10px] font-semibold uppercase tracking-wider transition-all flex items-center gap-1 cursor-pointer ${smallBtnClass}`}
+            title="Chia sẻ"
+          >
+            <ShareAltOutlined />
+          </button>
+        </div>
+      </div>
+
+      {/* CTA: Back to Photobooth */}
+      <a
+        href="/"
+        className={`w-full max-w-xs flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-xs transition-all border ${tc(
+          'bg-[#141414] hover:bg-[#1c1c1c] text-white/90 border-[#2a2a2a]',
+          'bg-white hover:bg-[#f0f0f0] text-black/90 border-[#d9d9d9]'
+        )}`}
+      >
+        <CameraOutlined /> Tự chụp bộ ảnh của riêng bạn
+      </a>
+
+      <p className={`text-[10px] pb-6 ${tc('text-[#333]', 'text-[#bbb]')}`}>somedia · photobooth</p>
 
       <Tour
         open={tourOpen}

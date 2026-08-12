@@ -8,7 +8,6 @@ import { buildStripImage, buildStripVideo, detectFrameSlots } from '@/lib/imageP
 import { LAYOUTS, FILTERS } from '@/types/photobooth'
 import CameraView from '@/components/photobooth/CameraView'
 import PhotoStrip from '@/components/photobooth/PhotoStrip'
-import TopControls from '@/components/photobooth/TopControls'
 import CaptureControls from '@/components/photobooth/CaptureControls'
 // import FilterPanel from '@/components/photobooth/FilterPanel'
 import FrameModal from '@/components/photobooth/FrameModal'
@@ -54,8 +53,11 @@ export default function HomePage() {
     const isSeen = localStorage.getItem('photobooth-tour-seen')
     if (!isSeen) {
       setTourOpen(true)
+    } else if (!selectedFrame) {
+      const timer = setTimeout(() => setFrameModalOpen(true), 300)
+      return () => clearTimeout(timer)
     }
-  }, [])
+  }, [selectedFrame])
 
   useEffect(() => {
     if (capturedCount === layout.slots && !isCapturing) {
@@ -205,14 +207,24 @@ export default function HomePage() {
   // ---------- Manual single capture ----------
   const handleManualCapture = useCallback(async () => {
     if (!isReady || isCapturing) return
+    if (!selectedFrame) {
+      messageApi.warning('Vui lòng chọn khung ảnh trước khi chụp!')
+      setFrameModalOpen(true)
+      return
+    }
     setIsCapturing(true)
     await takeOnePhoto()
     setIsCapturing(false)
-  }, [isReady, isCapturing, setIsCapturing, takeOnePhoto])
+  }, [isReady, isCapturing, selectedFrame, setIsCapturing, takeOnePhoto, messageApi])
 
   // ---------- AUTO — capture all remaining slots ----------
   const handleAutoCapture = useCallback(async () => {
     if (!isReady || isCapturing) return
+    if (!selectedFrame) {
+      messageApi.warning('Vui lòng chọn khung ảnh trước khi chụp!')
+      setFrameModalOpen(true)
+      return
+    }
     abortRef.current = false
     setIsCapturing(true)
     const remaining = capturedSlots.filter(s => s === null).length
@@ -222,9 +234,9 @@ export default function HomePage() {
       if (i < remaining - 1) await new Promise(r => setTimeout(r, 500))
     }
     setIsCapturing(false)
-  }, [isReady, isCapturing, setIsCapturing, capturedSlots, takeOnePhoto])
+  }, [isReady, isCapturing, selectedFrame, setIsCapturing, capturedSlots, takeOnePhoto, messageApi])
 
-  // ---------- Retake ----------
+  // ---------- Retake (keeps the chosen frame) ----------
   const handleRetake = useCallback(() => {
     abortRef.current = true
     setIsCapturing(false)
@@ -236,8 +248,7 @@ export default function HomePage() {
     resetPhotos()
     setFinalImageUrl(null)
     setCountdownValue(null)
-    setSelectedFrame(null)
-  }, [resetPhotos, setFinalImageUrl, setIsCapturing, cancelRecording, setSelectedFrame])
+  }, [resetPhotos, setFinalImageUrl, setIsCapturing, cancelRecording])
 
   // ---------- Build final strip ----------
   const handleBuildStrip = useCallback(async () => {
@@ -276,9 +287,14 @@ export default function HomePage() {
   }, [])
 
   const handleUploadAll = useCallback((dataUrl: string) => {
+    if (!selectedFrame) {
+      messageApi.warning('Vui lòng chọn khung ảnh trước khi tải ảnh!')
+      setFrameModalOpen(true)
+      return
+    }
     addPhoto(dataUrl, false)
     setFinalImageUrl(null)
-  }, [addPhoto, setFinalImageUrl])
+  }, [selectedFrame, addPhoto, setFinalImageUrl, messageApi])
 
   return (
     <>
@@ -349,7 +365,6 @@ export default function HomePage() {
       <ResultModal
         open={resultModalOpen}
         imageBlobUrl={finalImageUrl}
-        recapClips={recapClips}
         recapMimeType={recapMimeType}
         recapStripUrl={recapStripUrl}
         buildingStrip={buildingStrip}
@@ -363,45 +378,28 @@ export default function HomePage() {
           setTimeout(() => setFrameModalOpen(true), 150)
         }}
       />
-      <div className={`min-h-dvh flex flex-col ${tc('bg-[#0a0a0a]', 'bg-[#f5f5f5]')}`}>
-        {/* Header */}
-        <header className={`pt-5 pb-4 border-b relative ${tc('border-[#141414]', 'border-[#e0e0e0]')}`}>
+      <div className={`min-h-dvh md:h-dvh md:max-h-dvh md:overflow-hidden flex flex-col ${tc('bg-[#0a0a0a]', 'bg-[#f5f5f5]')}`}>
+        {/* Header - slim & centered */}
+        <header className={`py-2 px-4 sm:px-8 border-b shrink-0 relative flex items-center justify-between ${tc('border-[#141414]', 'border-[#e0e0e0]')}`}>
+          <div className="w-8" />
           <div className="text-center">
-            <h1 className={`text-2xl font-bold ${tc('text-white', 'text-black')}`} style={{ letterSpacing: '-0.03em' }}>
+            <h1 className={`text-xl sm:text-2xl font-bold tracking-tight ${tc('text-white', 'text-black')}`} style={{ letterSpacing: '-0.03em' }}>
               Sổ Media
             </h1>
-            <p className={`text-[9px] tracking-[0.35em] uppercase mt-0.5 font-medium ${tc('text-white', 'text-black')}`}>Photobooth</p>
+            <p className={`text-[8px] sm:text-[9px] tracking-[0.35em] uppercase font-medium ${tc('text-[#888]', 'text-[#666]')}`}>
+              Photobooth
+            </p>
           </div>
-          <div className="absolute right-4 top-1/2 -translate-y-1/2">
+          <div>
             <ThemeToggle />
           </div>
         </header>
 
-        {/* Top controls bar */}
-        <div className={`border-b px-4 py-2.5 ${tc('border-[#141414]', 'border-[#e0e0e0]')}`}>
-          <div className="max-w-5xl mx-auto">
-            <TopControls
-              countdown={countdown}
-              videoRecap={videoRecap}
-              selectedFrame={selectedFrame}
-              soundEnabled={soundEnabled}
-              onCountdownChange={setCountdown}
-              onChooseFrame={() => setFrameModalOpen(true)}
-              onClearFrame={() => {
-                setSelectedFrame(null)
-                setFinalImageUrl(null)
-              }}
-              onContributeFrame={() => setContributeOpen(true)}
-              onToggleSound={toggleSound}
-            />
-          </div>
-        </div>
-
-        {/* Main */}
-        <div className="flex-1 max-w-5xl mx-auto w-full px-3 md:px-4 py-4">
-          <div className="flex flex-col md:flex-row gap-3 h-full">
-            {/* Left: camera + controls + filters */}
-            <div className="flex-1 flex flex-col gap-2.5 min-w-0">
+        {/* Main Studio Area - Full Width Stretch & Generous Preview */}
+        <div className="flex-1 min-h-0 w-full max-w-[1640px] mx-auto px-2 sm:px-4 lg:px-6 py-2 md:overflow-hidden">
+          <div className="flex flex-col md:flex-row gap-3 sm:gap-5 h-full items-start">
+            {/* Left: camera (takes available vertical space) + unified capture controls (shrink-0) */}
+            <div className="flex-1 flex flex-col gap-2 h-full min-h-0 min-w-0">
               <CameraView
                 videoRef={videoRef as React.RefObject<HTMLVideoElement>}
                 isMirrored={isMirrored}
@@ -418,32 +416,38 @@ export default function HomePage() {
                 onToggleMirror={toggleMirror}
                 onRetry={retryCamera}
               />
-              <CaptureControls
-                isReady={isReady}
-                isCapturing={isCapturing}
-                countdown={countdown}
-                capturedCount={capturedCount}
-                totalSlots={layout.slots}
-                videoRecap={videoRecap}
-                onManualCapture={handleManualCapture}
-                onAutoCapture={handleAutoCapture}
-                onRetake={handleRetake}
-                onUploadAll={handleUploadAll}
-                onToggleVideoRecap={setVideoRecap}
-                isX2={isX2}
-                onToggleX2={setIsX2}
-                layout={layout}
-              />
-              {/* <FilterPanel
-                activeFilter={activeFilter}
-                activeEffects={activeEffects}
-                onFilterChange={setFilter}
-                onEffectToggle={toggleEffect}
-              /> */}
+              <div className="shrink-0 w-full">
+                <CaptureControls
+                  isReady={isReady}
+                  isCapturing={isCapturing}
+                  countdown={countdown}
+                  capturedCount={capturedCount}
+                  totalSlots={layout.slots}
+                  videoRecap={videoRecap}
+                  selectedFrame={selectedFrame}
+                  soundEnabled={soundEnabled}
+                  onManualCapture={handleManualCapture}
+                  onAutoCapture={handleAutoCapture}
+                  onRetake={handleRetake}
+                  onUploadAll={handleUploadAll}
+                  onToggleVideoRecap={setVideoRecap}
+                  onChooseFrame={() => setFrameModalOpen(true)}
+                  onClearFrame={() => {
+                    setSelectedFrame(null)
+                    setFinalImageUrl(null)
+                  }}
+                  onContributeFrame={() => setContributeOpen(true)}
+                  onCountdownChange={setCountdown}
+                  onToggleSound={toggleSound}
+                  isX2={isX2}
+                  onToggleX2={setIsX2}
+                  layout={layout}
+                />
+              </div>
             </div>
 
-            {/* Right: photo strip — width depends on layout cols, self-start so it doesn't grow to camera height */}
-            <div className={`shrink-0 w-full md:self-start ${layout.cols === 2 ? 'md:w-72 lg:w-80' : 'md:w-48 lg:w-56'}`}>
+            {/* Right: photo strip — wider and comfortable preview */}
+            <div className={`shrink-0 w-full md:self-start ${layout.cols === 2 ? 'md:w-80 lg:w-96 xl:w-[420px]' : 'md:w-52 lg:w-60 xl:w-64'}`}>
               <PhotoStrip
                 layout={layout}
                 slots={capturedSlots}
@@ -452,6 +456,7 @@ export default function HomePage() {
                 activeEffects={activeEffects}
                 stream={stream}
                 isMirrored={isMirrored}
+                isCapturing={isCapturing}
                 onUploadSlot={handleUploadSlot}
                 onRemoveSlot={handleRemoveSlot}
                 onDownload={handleDownload}
@@ -466,6 +471,9 @@ export default function HomePage() {
         onClose={() => {
           setTourOpen(false)
           localStorage.setItem('photobooth-tour-seen', 'true')
+          if (!selectedFrame) {
+            setTimeout(() => setFrameModalOpen(true), 250)
+          }
         }}
         steps={introTourSteps}
         getPopupContainer={() => document.body}

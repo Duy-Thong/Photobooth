@@ -4,11 +4,11 @@ import { useAdminAuth } from '@/hooks/useAdminAuth'
 import { useThemeClass } from '@/stores/themeStore'
 
 export default function AdminLoginPage() {
-  const { user, login, loginError, loggingIn } = useAdminAuth()
+  const { user, permissions, login, loginError, loggingIn } = useAdminAuth()
   const [form] = Form.useForm()
   const tc = useThemeClass()
 
-  if (user) return <Navigate to="/admin" replace />
+  if (user && permissions) return <Navigate to="/admin" replace />
 
   const handleFinish = ({ email, password }: { email: string; password: string }) => {
     login(email, password)

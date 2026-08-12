@@ -34,11 +34,8 @@ export async function uploadSession(
   const imagePath = `sessions/${sessionId}/strip.jpg`
   const imageStorageUrl = stableStorageUrl(bucket, imagePath)
 
-  // Stamp QR (pointing to session page) onto image BEFORE upload
-  const stampedBlobUrl = await stampQrOnImage(imageBlobUrl, sessionPageUrl)
-
-  // Upload image + video in parallel
-  const imageBlob = await fetch(stampedBlobUrl).then(r => r.blob())
+  // Upload original clean image directly (no QR stamp overlay)
+  const imageBlob = await fetch(imageBlobUrl).then(r => r.blob())
   const uploadTasks: Promise<unknown>[] = [
     uploadBytes(ref(storage, imagePath), imageBlob, { contentType: 'image/jpeg' }),
   ]
@@ -58,7 +55,7 @@ export async function uploadSession(
   // Save session metadata to Firestore
   await createSession({ id: sessionId, imageUrl: imageStorageUrl, videoUrl: videoStorageUrl })
 
-  return { sessionId, stampedBlobUrl }
+  return { sessionId, stampedBlobUrl: imageBlobUrl }
 }
 
 /**
