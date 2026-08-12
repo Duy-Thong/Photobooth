@@ -39,6 +39,30 @@ export default function SessionPage() {
       .finally(() => setLoading(false))
   }, [id])
 
+  const handleCopyUrl = () => {
+    navigator.clipboard.writeText(currentUrl).then(() => {
+      setCopied(true)
+      message.success('Đã copy link!')
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Sổ Media Photobooth',
+          text: 'Xem bộ ảnh photobooth siêu xinh của mình nè! ✨',
+          url: currentUrl,
+        })
+      } catch {
+        // User cancelled
+      }
+    } else {
+      handleCopyUrl()
+    }
+  }
+
   if (loading) {
     return (
       <div className={`min-h-dvh flex items-center justify-center ${tc('bg-[#0a0a0a]', 'bg-[#f5f5f5]')}`}>
