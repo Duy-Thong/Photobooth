@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
-import { message, Tour, type TourProps } from 'antd'
+import { message } from 'antd'
 import { useCamera } from '@/hooks/useCamera'
 import { useVideoRecap } from '@/hooks/useVideoRecap'
 import { usePhotoboothStore } from '@/stores/photoboothStore'
@@ -46,103 +46,12 @@ export default function HomePage() {
   const capturedCount = capturedSlots.filter(Boolean).length
   const tc = useThemeClass()
 
-  const [tourOpen, setTourOpen] = useState(false)
-  const [completionTourOpen, setCompletionTourOpen] = useState(false)
-
   useEffect(() => {
-    const isSeen = localStorage.getItem('photobooth-tour-seen')
-    if (!isSeen) {
-      setTourOpen(true)
-    } else if (!selectedFrame) {
+    if (!selectedFrame) {
       const timer = setTimeout(() => setFrameModalOpen(true), 300)
       return () => clearTimeout(timer)
     }
   }, [selectedFrame])
-
-  useEffect(() => {
-    if (capturedCount === layout.slots && !isCapturing) {
-      const isSeenCompletion = localStorage.getItem('photobooth-completion-seen')
-      if (!isSeenCompletion) {
-        setCompletionTourOpen(true)
-      }
-    }
-  }, [capturedCount, layout.slots, isCapturing])
-
-  const introTourSteps: TourProps['steps'] = [
-    {
-      title: 'Chào mừng 🎉',
-      description: 'Chào mừng bạn đến với Sổ Media Photobooth! Hãy để mình hướng dẫn bạn cách tạo ra một bộ ảnh thật xịn nhé.',
-      target: null,
-    },
-    {
-      title: 'Chọn Khung',
-      description: 'Đầu tiên, hãy chọn cho mình một khung ảnh thật ưng ý tại đây.',
-      target: () => document.getElementById('tour-frame-button')!,
-    },
-    {
-      title: 'Âm Thanh',
-      description: 'Bật hoặc tắt âm thanh khi chụp ảnh tại đây.',
-      target: () => document.getElementById('tour-sound-button')!,
-    },
-    {
-      title: 'Giao Diện',
-      description: 'Thay đổi giữa giao diện Sáng hoặc Tối tùy theo sở thích của bạn.',
-      target: () => document.getElementById('tour-theme-button')!,
-    },
-    {
-      title: 'Máy Ảnh',
-      description: 'Đây là khu vực hiển thị camera của bạn. Bạn có thể lật hình hoặc đổi camera nếu muốn.',
-      target: () => document.getElementById('tour-camera-view')!,
-    },
-    {
-      title: 'Video Recap',
-      description: 'Bật nút này để máy quay lại một đoạn clip ngắn mỗi khi bạn chụp ảnh, tạo thành một video kỷ niệm thú vị.',
-      target: () => document.getElementById('tour-video-btn')!,
-    },
-    {
-      title: 'Nhân Đôi (Double)',
-      description: 'Dành riêng cho khung dọc: Nhấn để tự động nhân đôi dải ảnh của bạn sang hai bên.',
-      target: () => document.getElementById('tour-double-btn')!,
-    },
-    {
-      title: 'Chụp Thủ Công',
-      description: 'Nếu bạn muốn tự mình bắt trọn từng khoảnh khắc, hãy nhấn nút này để chụp từng tấm một.',
-      target: () => document.getElementById('tour-manual-btn')!,
-    },
-    {
-      title: 'Chụp Tự Động (AUTO)',
-      description: 'Nút quan trọng nhất! Máy sẽ tự động đếm ngược và chụp liên tục cho đến khi đủ bộ ảnh.',
-      target: () => document.getElementById('tour-auto-btn')!,
-    },
-    {
-      title: 'Chụp Lại',
-      description: 'Nếu chưa ưng ý, bạn có thể nhấn nút này để xóa hết ảnh hiện tại và bắt đầu lại từ đầu.',
-      target: () => document.getElementById('tour-retake-btn')!,
-    },
-    {
-      title: 'Tải Ảnh Lên',
-      description: 'Bạn có ảnh sẵn trong máy? Hãy nhấn vào đây để tải ảnh lên thay vì dùng camera nhé.',
-      target: () => document.getElementById('tour-upload-btn')!,
-    }
-  ]
-
-  const completionTourSteps: TourProps['steps'] = [
-    {
-      title: 'Xem Preview',
-      description: 'Tại đây bạn có thể xem lại dải ảnh (photo strip) sơ bộ của mình trước khi hoàn thiện.',
-      target: () => document.getElementById('tour-photo-strip')!,
-    },
-    {
-      title: 'Ghép Khung',
-      description: 'Sau khi đã chụp đủ ảnh, nhấn nút này để chúng mình hoàn thiện dải ảnh chính thức cho bạn nhé.',
-      target: () => document.getElementById('tour-build-button')!,
-    },
-    {
-      title: 'Lưu Ảnh',
-      description: 'Ảnh đã sẵn sàng! Bạn có thể tải về máy ngay hoặc nhấn tiếp tục để lấy link chia sẻ.',
-      target: () => document.getElementById('tour-download-button')!,
-    },
-  ]
 
   // Build the combined strip video once we have all clips + a frame
   useEffect(() => {
@@ -466,27 +375,6 @@ export default function HomePage() {
           </div>
         </div>
       </div>
-      <Tour
-        open={tourOpen}
-        onClose={() => {
-          setTourOpen(false)
-          localStorage.setItem('photobooth-tour-seen', 'true')
-          if (!selectedFrame) {
-            setTimeout(() => setFrameModalOpen(true), 250)
-          }
-        }}
-        steps={introTourSteps}
-        getPopupContainer={() => document.body}
-      />
-      <Tour
-        open={completionTourOpen}
-        onClose={() => {
-          setCompletionTourOpen(false)
-          localStorage.setItem('photobooth-completion-seen', 'true')
-        }}
-        steps={completionTourSteps}
-        getPopupContainer={() => document.body}
-      />
     </>
   )
 }

@@ -74,7 +74,6 @@ export default function CaptureControls({
 
   return (
     <div
-      id="tour-capture-controls"
       className={`relative w-full rounded-2xl border px-2.5 sm:px-3.5 py-2 flex items-center justify-between gap-1.5 sm:gap-2 shadow-2xl ${tc(
         'bg-[#111] border-[#222]',
         'bg-white border-[#d8d8d8]'
@@ -91,7 +90,6 @@ export default function CaptureControls({
       {/* ── Group 1: Khung Ảnh ── */}
       <div className="flex items-center gap-1.5 shrink-0">
         <button
-          id="tour-frame-button"
           onClick={onChooseFrame}
           disabled={isCapturing}
           className={`h-10 px-2.5 sm:px-3 rounded-xl border text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-all duration-150 active:scale-95 shadow-sm ${
@@ -148,8 +146,8 @@ export default function CaptureControls({
           className={`h-10 px-2.5 rounded-xl border border-dashed text-xs font-semibold transition active:scale-95 hidden 2xl:flex items-center ${
             isCapturing ? 'opacity-30 cursor-not-allowed pointer-events-none' : 'cursor-pointer'
           } ${tc(
-            'border-[#2a2a2a] text-[#777] hover:border-[#555] hover:text-[#ddd] bg-[#0a0a0a]',
-            'border-[#d0d0d0] text-[#777] hover:border-[#999] hover:text-[#111] bg-[#f9f9f9]'
+            'border-[#252525] text-[#777] hover:border-[#444] hover:text-[#bbb] bg-[#0e0e0e]',
+            'border-[#d0d0d0] text-[#888] hover:border-[#999] hover:text-[#333] bg-white'
           )}`}
         >
           + Đóng góp
@@ -159,21 +157,22 @@ export default function CaptureControls({
       {/* ── Divider ── */}
       <div className={`w-px h-6 shrink-0 ${tc('bg-[#262626]', 'bg-[#e0e0e0]')}`} />
 
-      {/* ── Group 2: Countdown & Sound ── */}
-      <div className="flex items-center gap-1 shrink-0">
+      {/* ── Group 2: Timer & Settings ── */}
+      <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
         {COUNTDOWN_OPTIONS.map((n) => {
-          const isDisabled = (n === 0 && videoRecap) || isCapturing
+          const isSelected = countdown === n
+          const isDisabled = n === 0 && videoRecap
           return (
             <button
               key={n}
               onClick={() => onCountdownChange(n)}
-              disabled={isDisabled}
-              title={n === 0 && videoRecap ? 'Tắt Video để dùng 0s' : `${n} giây`}
-              className={`h-10 min-w-[34px] sm:min-w-[38px] px-1.5 sm:px-2 rounded-xl border text-xs sm:text-sm font-bold transition-all ${
-                countdown === n
+              disabled={isDisabled || isCapturing}
+              title={isDisabled ? 'Tắt video để dùng 0s' : `${n} giây đếm ngược`}
+              className={`h-10 min-w-[34px] sm:min-w-[40px] px-1.5 sm:px-2 rounded-xl border text-xs font-bold transition-all ${
+                isSelected
                   ? tc(
-                      'bg-white text-black border-white shadow-[0_0_12px_rgba(255,255,255,0.25)]',
-                      'bg-black text-white border-black shadow-[0_0_12px_rgba(0,0,0,0.25)]'
+                      'border-white/40 bg-white text-black font-black shadow-[0_0_12px_rgba(255,255,255,0.15)]',
+                      'border-black/40 bg-black text-white font-black shadow-[0_0_12px_rgba(0,0,0,0.15)]'
                     )
                   : tc(
                       'border-[#262626] bg-[#0e0e0e] text-[#888] hover:border-[#444] hover:text-[#eee]',
@@ -187,7 +186,6 @@ export default function CaptureControls({
         })}
 
         <button
-          id="tour-sound-button"
           onClick={onToggleSound}
           disabled={isCapturing}
           title={soundEnabled ? 'Tắt âm thanh' : 'Bật âm thanh'}
@@ -210,7 +208,6 @@ export default function CaptureControls({
       <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
         {/* Video Recap */}
         <label
-          id="tour-video-btn"
           className={`h-10 px-2 sm:px-2.5 rounded-xl border flex items-center gap-1.5 select-none transition-all ${
             countdown === 0 || isCapturing ? 'opacity-30 cursor-not-allowed pointer-events-none' : 'cursor-pointer active:scale-95'
           } ${
@@ -233,7 +230,6 @@ export default function CaptureControls({
         {/* Double x2 */}
         {layout.cols === 1 && layout.slots > 1 && (
           <button
-            id="tour-double-btn"
             onClick={() => onToggleX2(!isX2)}
             disabled={isCapturing}
             title="Nhân đôi strip (side-by-side)"
@@ -251,7 +247,6 @@ export default function CaptureControls({
 
         {/* Retake */}
         <button
-          id="tour-retake-btn"
           onClick={onRetake}
           disabled={capturedCount === 0 || isCapturing}
           title="Chụp lại từ đầu"
@@ -272,7 +267,6 @@ export default function CaptureControls({
 
         {/* Upload file */}
         <button
-          id="tour-upload-btn"
           onClick={() => uploadRef.current?.click()}
           disabled={isCapturing}
           title="Tải ảnh lên thay vì chụp"
@@ -289,7 +283,6 @@ export default function CaptureControls({
 
         {/* Single Manual Capture */}
         <button
-          id="tour-manual-btn"
           onClick={onManualCapture}
           disabled={disabled || allDone}
           title="Chụp một ảnh"
@@ -307,7 +300,6 @@ export default function CaptureControls({
 
         {/* AUTO Capture (Primary Prominent Button) */}
         <button
-          id="tour-auto-btn"
           onClick={onAutoCapture}
           disabled={disabled || allDone}
           title="Tự động chụp hết"

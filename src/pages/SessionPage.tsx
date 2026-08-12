@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { Spin, Modal, QRCode, message, Tour, type TourProps } from 'antd'
+import { Spin, Modal, QRCode, message } from 'antd'
 import {
   LoadingOutlined,
   PrinterOutlined,
@@ -26,8 +26,6 @@ export default function SessionPage() {
   const [downloadingVideo, setDownloadingVideo] = useState(false)
   const [copied, setCopied] = useState(false)
 
-  const [tourOpen, setTourOpen] = useState(false)
-
   const currentUrl = typeof window !== 'undefined' ? window.location.href : ''
 
   useEffect(() => {
@@ -40,81 +38,6 @@ export default function SessionPage() {
       .catch(() => setError(true))
       .finally(() => setLoading(false))
   }, [id])
-
-  useEffect(() => {
-    if (!loading && session) {
-      const seen = localStorage.getItem('photobooth-session-tour-seen')
-      if (!seen) {
-        setTourOpen(true)
-      }
-    }
-  }, [loading, session])
-
-  const handleCopyUrl = () => {
-    navigator.clipboard.writeText(currentUrl).then(() => {
-      setCopied(true)
-      message.success('Đã copy link!')
-      setTimeout(() => setCopied(false), 2000)
-    })
-  }
-
-  const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'Sổ Media Photobooth',
-          text: 'Xem bộ ảnh photobooth siêu xinh của mình nè! ✨',
-          url: currentUrl,
-        })
-      } catch {
-        // User cancelled
-      }
-    } else {
-      handleCopyUrl()
-    }
-  }
-
-  const tourSteps: TourProps['steps'] = [
-    {
-      title: 'Chào mừng 🎉',
-      description: 'Đây là trang nhận ảnh của bạn. Tại đây bạn có thể xem lại, tải về và lưu giữ những khoảnh khắc vừa chụp.',
-      target: null,
-    },
-    {
-      title: 'Dải ảnh của bạn',
-      description: 'Đây là bộ ảnh hoàn chỉnh đã ghép khung. Bạn có thể nhấn giữ để lưu hoặc chia sẻ link này.',
-      target: () => document.getElementById('tour-session-photo')!,
-    },
-    {
-      title: 'Tải ảnh',
-      description: 'Nhấn vào đây để tải ảnh chất lượng cao về máy.',
-      target: () => document.getElementById('tour-session-download-photo')!,
-    },
-    {
-      title: 'In ảnh',
-      description: 'Nếu có máy in kết nối, bạn có thể in ảnh chuẩn khổ 10x15cm ngay tại đây.',
-      target: () => document.getElementById('tour-session-print-photo')!,
-    },
-    ...(session?.videoUrl
-      ? [
-          {
-            title: 'Strip Video',
-            description: 'Đây là đoạn clip ngắn ghi lại quá trình chụp ảnh của bạn. Một món quà nhỏ từ chúng mình!',
-            target: () => document.getElementById('tour-session-video')!,
-          },
-          {
-            title: 'Tải video',
-            description: 'Bạn cũng có thể tải đoạn video này về để làm kỷ niệm nhé.',
-            target: () => document.getElementById('tour-session-download-video')!,
-          },
-        ]
-      : []),
-    {
-      title: 'Mã QR & Chia sẻ',
-      description: 'Dùng điện thoại quét mã QR này để mở ảnh nhanh hoặc gửi link cho bạn bè cùng xem nhé.',
-      target: () => document.getElementById('tour-session-qr')!,
-    },
-  ]
 
   if (loading) {
     return (
@@ -239,7 +162,6 @@ export default function SessionPage() {
       <div className="w-full max-w-xs">
         <div className={`rounded-2xl border p-2 shadow-2xl ${tc('bg-[#111] border-[#222]', 'bg-white border-[#e0e0e0]')}`}>
           <img
-            id="tour-session-photo"
             src={session.imageUrl}
             alt="Photo strip"
             className="w-full rounded-xl object-contain"
@@ -251,7 +173,6 @@ export default function SessionPage() {
       {/* Action buttons */}
       <div className="w-full max-w-xs flex flex-col gap-2.5">
         <button
-          id="tour-session-download-photo"
           onClick={handleDownloadPhoto}
           disabled={downloadingPhoto}
           className={`w-full h-11 flex items-center justify-center gap-2 rounded-xl font-bold text-sm transition-all shadow-lg cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed ${tc(
@@ -264,7 +185,6 @@ export default function SessionPage() {
         </button>
 
         <button
-          id="tour-session-print-photo"
           onClick={handlePrint}
           className={`w-full h-10 flex items-center justify-center gap-2 rounded-xl font-semibold text-xs transition-all cursor-pointer border ${tc(
             'bg-[#141414] text-[#ddd] hover:text-white hover:bg-[#1f1f1f] border-[#2e2e2e]',
@@ -283,7 +203,7 @@ export default function SessionPage() {
 
       {/* Strip video (if present) */}
       {session.videoUrl && (
-        <div id="tour-session-video" className="w-full max-w-xs flex flex-col gap-2.5">
+        <div className="w-full max-w-xs flex flex-col gap-2.5">
           <div className="flex items-center justify-between px-1">
             <span className={`text-[10px] uppercase tracking-wider font-bold ${tc('text-[#888]', 'text-[#777]')}`}>
               🎞️ Strip Video Kỷ Niệm
@@ -298,7 +218,6 @@ export default function SessionPage() {
             className={`w-full rounded-2xl border shadow-lg ${tc('border-[#222] bg-black', 'border-[#d9d9d9] bg-white')}`}
           />
           <button
-            id="tour-session-download-video"
             onClick={handleDownloadVideo}
             disabled={downloadingVideo}
             className={`w-full h-10 flex items-center justify-center gap-2 rounded-xl font-semibold text-xs transition-all cursor-pointer border disabled:opacity-70 disabled:cursor-not-allowed ${tc(
@@ -313,7 +232,6 @@ export default function SessionPage() {
 
       {/* QR Code & Share Card below */}
       <div
-        id="tour-session-qr"
         className={`w-full max-w-xs rounded-2xl border p-5 flex flex-col items-center gap-3.5 shadow-xl ${tc(
           'bg-[#111] border-[#222]',
           'bg-white border-[#e0e0e0]'
@@ -376,16 +294,6 @@ export default function SessionPage() {
       </a>
 
       <p className={`text-[10px] pb-6 ${tc('text-[#333]', 'text-[#bbb]')}`}>somedia · photobooth</p>
-
-      <Tour
-        open={tourOpen}
-        onClose={() => {
-          setTourOpen(false)
-          localStorage.setItem('photobooth-session-tour-seen', 'true')
-        }}
-        steps={tourSteps}
-        getPopupContainer={() => document.body}
-      />
     </div>
   )
 }

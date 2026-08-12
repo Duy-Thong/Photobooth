@@ -1,16 +1,10 @@
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { storage } from './firebase'
-import { stampQrOnImage } from './imageProcessing'
 import { generateSessionId, createSession } from './sessionService'
 
 /** Stable public URL for a Storage path (no token required when rules allow read). */
 function stableStorageUrl(bucket: string, storagePath: string): string {
   return `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodeURIComponent(storagePath)}?alt=media`
-}
-
-/** App origin — works in both dev and production. */
-function appOrigin(): string {
-  return window.location.origin
 }
 
 /**
@@ -28,7 +22,6 @@ export async function uploadSession(
 ): Promise<{ sessionId: string; stampedBlobUrl: string }> {
   const bucket = import.meta.env.VITE_FIREBASE_STORAGE_BUCKET as string
   const sessionId = generateSessionId()
-  const sessionPageUrl = `${appOrigin()}/session/${sessionId}`
 
   // Paths use sessionId so image + video are co-located
   const imagePath = `sessions/${sessionId}/strip.jpg`

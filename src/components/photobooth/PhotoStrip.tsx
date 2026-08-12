@@ -135,7 +135,7 @@ export const PhotoStrip = memo(function PhotoStrip({
       : (layout.cols === 2 ? '2/3.1' : '1/3')
 
   return (
-    <div id="tour-photo-strip" className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2">
 
       {/* ── Live composite preview ── */}
       <div className={`relative rounded-2xl border overflow-hidden flex items-center justify-center p-0.5 shadow-2xl max-h-[calc(100dvh-220px)] w-auto max-w-full mx-auto ${tc('bg-[#0d0d0d] border-[#1f1f1f]', 'bg-[#f0f0f0] border-[#e0e0e0]')}`} 
@@ -233,7 +233,6 @@ export const PhotoStrip = memo(function PhotoStrip({
 
         {allFilled && !finalImageUrl && (
           <button
-            id="tour-build-button"
             onClick={onBuildStrip}
             className={`w-full py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-bold tracking-wide active:scale-[0.98] transition-all duration-150 shadow-xl cursor-pointer ${tc(
               'bg-white text-black hover:bg-[#eaeaea] shadow-[0_0_16px_rgba(255,255,255,0.15)]',
@@ -246,7 +245,6 @@ export const PhotoStrip = memo(function PhotoStrip({
 
         {finalImageUrl && (
           <button
-            id="tour-download-button"
             onClick={onDownload}
             className={`w-full py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-bold tracking-wide active:scale-[0.98] transition-all duration-150 flex items-center justify-center gap-2 shadow-xl cursor-pointer ${tc(
               'bg-white text-black hover:bg-[#eaeaea] shadow-[0_0_16px_rgba(255,255,255,0.15)]',
