@@ -239,7 +239,7 @@ export const PhotoStrip = memo(function PhotoStrip({
               'bg-black text-white hover:bg-[#222] shadow-[0_0_16px_rgba(0,0,0,0.15)]'
             )}`}
           >
-            ✦ Ghép Khung Ảnh
+            ✦ Nhận Ảnh
           </button>
         )}
 
@@ -251,7 +251,7 @@ export const PhotoStrip = memo(function PhotoStrip({
               'bg-black text-white hover:bg-[#222] shadow-[0_0_16px_rgba(0,0,0,0.15)]'
             )}`}
           >
-            <DownloadOutlined style={{ fontSize: 16 }} /> Xem &amp; Tải Về
+            <DownloadOutlined style={{ fontSize: 16 }} /> Nhận Ảnh
           </button>
         )}
       </div>

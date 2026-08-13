@@ -74,7 +74,7 @@ export default function PrivacyNoticeModal({ open, onClose }: PrivacyNoticeModal
                 1. Xử lý 100% trực tiếp trên thiết bị của bạn
               </span>
               <span className={`text-[11px] sm:text-xs leading-relaxed ${tc('text-[#999]', 'text-[#666]')}`}>
-                Hình ảnh từ camera và bộ lọc màu được kết xuất trực tiếp bằng trình duyệt của bạn (HTML5 Canvas).
+                Hình ảnh từ camera và bộ lọc màu được kết xuất trực tiếp bằng trình duyệt của bạn.
               </span>
             </div>
           </div>
@@ -104,7 +104,7 @@ export default function PrivacyNoticeModal({ open, onClose }: PrivacyNoticeModal
                 3. Toàn quyền kiểm soát trong tay bạn
               </span>
               <span className={`text-[11px] sm:text-xs leading-relaxed ${tc('text-[#999]', 'text-[#666]')}`}>
-                Bạn lưu ảnh về máy hoàn toàn miễn phí. Mã QR chia sẻ chỉ được khởi tạo khi bạn chủ động bấm nút "Tạo mã QR" và lưu trữ dưới dạng <strong>riêng tư</strong> (không công khai lên bảng tin).
+                Bạn lưu ảnh về máy hoàn toàn miễn phí. Mã QR chia sẻ chỉ được khởi tạo khi bạn chủ động bấm nút "Tạo mã QR" và lưu trữ dưới dạng <strong>riêng tư</strong>.
               </span>
             </div>
           </div>

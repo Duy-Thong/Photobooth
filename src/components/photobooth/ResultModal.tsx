@@ -254,7 +254,7 @@ export default function ResultModal({
                 )}`}
               >
                 {downloading ? <LoadingOutlined /> : <DownloadOutlined style={{ fontSize: 18 }} />}
-                Tải ảnh về máy (Miễn phí)
+                Tải ảnh về máy
               </button>
 
               {/* Local Storage Privacy Badge */}
@@ -286,7 +286,7 @@ export default function ResultModal({
                   }}
                   className={`w-full h-11 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 border transition-all cursor-pointer shadow-md disabled:opacity-50 ${btnSecondaryClass}`}
                 >
-                  <DownloadOutlined /> Tải Video Recap (.{recapExt})
+                  <DownloadOutlined /> Tải Video Recap
                 </button>
               )}
 
