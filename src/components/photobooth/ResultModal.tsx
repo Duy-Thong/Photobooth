@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
-import { Modal, QRCode, Spin, Button, message } from 'antd'
+import { Modal, QRCode, Spin, message } from 'antd'
 import {
   DownloadOutlined,
   ReloadOutlined,
@@ -8,12 +8,13 @@ import {
   CopyOutlined,
   CheckOutlined,
   ShareAltOutlined,
+  QrcodeOutlined,
 } from '@ant-design/icons'
 import { uploadSession } from '@/lib/uploadService'
 import { downloadImage, downloadMedia, isMobileDevice } from '@/lib/imageProcessing'
 import { useThemeClass } from '@/stores/themeStore'
 
-type Phase = 'uploading' | 'done' | 'error'
+type QrState = 'idle' | 'uploading' | 'ready' | 'error'
 
 interface ResultModalProps {
   open: boolean
@@ -43,16 +44,13 @@ export default function ResultModal({
   const tc = useThemeClass()
   const recapExt = recapMimeType?.startsWith('video/mp4') ? 'mp4' : 'webm'
 
-  const [phase, setPhase] = useState<Phase>('uploading')
+  const [qrState, setQrState] = useState<QrState>('idle')
   const [sessionId, setSessionId] = useState<string | null>(null)
-  const [errorMsg, setErrorMsg] = useState<string | null>(null)
-  const [uploadKey, setUploadKey] = useState(0)
+  const [qrErrorMsg, setQrErrorMsg] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [downloading, setDownloading] = useState(false)
   const [mediaTab, setMediaTab] = useState<'photo' | 'video'>('photo')
 
-  const lastOpenedUrlRef = useRef<string | null>(null)
-  const lastUploadKeyRef = useRef(0)
   const lastUploadedUrlRef = useRef<string | null>(null)
   const lastSessionIdRef = useRef<string | null>(null)
   const isUploadingRef = useRef(false)
@@ -84,85 +82,52 @@ export default function ResultModal({
     }
   }
 
+  // Reset or preserve state on modal open
   useEffect(() => {
     if (!open || !imageBlobUrl) return
-
-    if (imageBlobUrl === lastOpenedUrlRef.current) {
-      if (phase === 'done' && sessionId) return
-      if (phase === 'uploading') return
-    }
-
-    lastOpenedUrlRef.current = imageBlobUrl
+    setMediaTab('photo')
 
     if (imageBlobUrl === lastUploadedUrlRef.current && lastSessionIdRef.current) {
       setSessionId(lastSessionIdRef.current)
-      setPhase('done')
-      return
+      setQrState('ready')
+    } else {
+      setQrState('idle')
+      setSessionId(null)
+      setQrErrorMsg(null)
     }
-
-    setPhase('uploading')
-    setSessionId(null)
-    setErrorMsg(null)
-    setMediaTab('photo')
-    setUploadKey(k => k + 1)
   }, [open, imageBlobUrl])
 
-  useEffect(() => {
-    if (uploadKey === 0 || !imageBlobUrl) return
-    if (buildingStrip) return
-    if (isUploadingRef.current) return
-    if (lastUploadKeyRef.current === uploadKey) return
-
-    if (lastUploadedUrlRef.current === imageBlobUrl && lastSessionIdRef.current) {
-      if (sessionId !== lastSessionIdRef.current) setSessionId(lastSessionIdRef.current)
-      setPhase('done')
+  // Explicit action when user clicks "⚡ Tạo Mã QR & Link Chia Sẻ"
+  const handleCreateQR = async () => {
+    if (!imageBlobUrl || isUploadingRef.current) return
+    if (buildingStrip) {
+      message.info('Đang hoàn tất kết xuất video recap, vui lòng đợi giây lát...')
       return
     }
 
-    lastUploadKeyRef.current = uploadKey
+    setQrState('uploading')
+    setQrErrorMsg(null)
     isUploadingRef.current = true
-    lastUploadedUrlRef.current = imageBlobUrl
 
-    let cancelled = false
-
-    const timeout = setTimeout(() => {
-      if (!cancelled && phase === 'uploading') {
-        setPhase('done')
-        message.info('Mạng hơi chậm, bạn có thể tải ảnh trực tiếp về trước nhé!')
-      }
-    }, 15000)
-
-    async function run() {
-      try {
-        const result = await uploadSession(
-          imageBlobUrl!,
-          recapStripUrl ?? null,
-          recapMimeType ?? undefined,
-        )
-        if (cancelled) return
-        clearTimeout(timeout)
-        setSessionId(result.sessionId)
-        lastSessionIdRef.current = result.sessionId
-        lastUploadedUrlRef.current = imageBlobUrl
-        setPhase('done')
-      } catch (err: unknown) {
-        if (cancelled) return
-        clearTimeout(timeout)
-        console.warn('Session upload failed, fallback to done state:', err)
-        setPhase('done')
-      } finally {
-        isUploadingRef.current = false
-      }
-    }
-
-    run()
-
-    return () => {
-      cancelled = true
-      clearTimeout(timeout)
+    try {
+      const result = await uploadSession(
+        imageBlobUrl,
+        recapStripUrl ?? null,
+        recapMimeType ?? undefined,
+      )
+      setSessionId(result.sessionId)
+      lastSessionIdRef.current = result.sessionId
+      lastUploadedUrlRef.current = imageBlobUrl
+      setQrState('ready')
+      message.success('Đã tạo mã QR & liên kết chia sẻ!')
+    } catch (err: unknown) {
+      console.warn('Session upload failed:', err)
+      setQrErrorMsg('Không thể kết nối máy chủ để tạo mã QR. Vui lòng thử lại!')
+      setQrState('error')
+    } finally {
       isUploadingRef.current = false
     }
-  }, [uploadKey, imageBlobUrl, recapStripUrl, recapMimeType, buildingStrip])
+  }
 
   const handleDownload = async () => {
     if (!imageBlobUrl || downloading) return
@@ -172,12 +137,6 @@ export default function ResultModal({
     } finally {
       setDownloading(false)
     }
-  }
-
-  const handleStartUpload = () => {
-    setPhase('uploading')
-    setErrorMsg(null)
-    setUploadKey(k => k + 1)
   }
 
   const btnSecondaryClass = tc(
@@ -197,9 +156,7 @@ export default function ResultModal({
       title={
         <div className="flex items-center gap-2">
           <span className={`font-bold text-base sm:text-lg tracking-tight ${tc('text-white', 'text-black')}`}>
-            {phase === 'uploading' && 'Đang chuẩn bị ảnh & mã QR...'}
-            {phase === 'done' && 'Ảnh của bạn đã hoàn thành ✨'}
-            {phase === 'error' && 'Có lỗi xảy ra'}
+            Bộ ảnh photobooth của bạn ✨
           </span>
         </div>
       }
@@ -220,42 +177,7 @@ export default function ResultModal({
         },
       }}
     >
-      {/* ── LOADING ─────────────────────────────────────────────────────────── */}
-      {phase === 'uploading' && (
-        <div className="flex flex-col items-center justify-center gap-4 py-20 text-center">
-          <Spin size="large" />
-          <div>
-            <p className={`text-base font-medium ${tc('text-[#e5e5e5]', 'text-[#333]')}`}>Đang tải ảnh &amp; tạo liên kết chia sẻ...</p>
-            <p className={`text-xs mt-1.5 ${tc('text-[#666]', 'text-[#999]')}`}>Vui lòng đợi trong giây lát</p>
-          </div>
-          {imageBlobUrl && (
-            <Button
-              onClick={handleDownload}
-              icon={downloading ? <LoadingOutlined /> : <DownloadOutlined />}
-              disabled={downloading}
-              className="mt-3"
-            >
-              Tải ảnh về máy ngay
-            </Button>
-          )}
-        </div>
-      )}
-
-      {/* ── ERROR ────────────────────────────────────────────────────────────── */}
-      {phase === 'error' && (
-        <div className="flex flex-col items-center gap-4 py-12 text-center">
-          <p className="text-red-400 text-sm font-medium">{errorMsg}</p>
-          <div className="flex gap-2 mt-2">
-            <Button onClick={onClose}>Đóng</Button>
-            <Button type="primary" onClick={handleStartUpload}>
-              Thử lại
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* ── DONE ─────────────────────────────────────────────────────────────── */}
-      {phase === 'done' && imageBlobUrl && (
+      {imageBlobUrl && (
         <div className="flex flex-col md:flex-row gap-6 lg:gap-8 items-start mt-3">
           {/* Left — Large Media Preview (Photo / Video Recap Tabs) */}
           <div className="w-full md:w-[380px] lg:w-[450px] shrink-0 flex flex-col gap-3">
@@ -330,8 +252,14 @@ export default function ResultModal({
                 )}`}
               >
                 {downloading ? <LoadingOutlined /> : <DownloadOutlined style={{ fontSize: 18 }} />}
-                Tải ảnh về máy
+                Tải ảnh về máy (Miễn phí)
               </button>
+
+              {/* Local Storage Privacy Badge */}
+              <div className={`p-2 rounded-xl text-center border flex items-center justify-center gap-1.5 ${tc('bg-emerald-500/10 border-emerald-500/20 text-emerald-400', 'bg-emerald-50 border-emerald-200 text-emerald-700')}`}>
+                <span className="text-xs">🛡️</span>
+                <span className="text-[11px] font-semibold">Quyền riêng tư: Mặc định ảnh KHÔNG tự động lưu trên hệ thống.</span>
+              </div>
 
               {recapStripUrl && (
                 <button
@@ -367,16 +295,57 @@ export default function ResultModal({
               </div>
             </div>
 
-            {/* QR Code & Share Card */}
-            <div className={`rounded-2xl border p-4 sm:p-5 flex flex-col items-center gap-3.5 shadow-lg ${tc('bg-[#0a0a0a]', 'bg-[#f7f7f7]')}`}>
-              <div className="flex items-center gap-1.5 text-center">
-                <span className={`text-xs sm:text-sm font-bold uppercase tracking-wider ${tc('text-[#aaa]', 'text-[#555]')}`}>
-                  📱 Quét mã QR để xem &amp; tải trên điện thoại
-                </span>
-              </div>
+            {/* QR Code & Share Card (On-Demand + Private Cloud Notice) */}
+            <div className={`rounded-2xl border p-4 sm:p-5 flex flex-col items-center gap-3.5 shadow-lg ${tc('bg-[#0a0a0a] border-[#1e1e1e]', 'bg-[#f7f7f7] border-[#e0e0e0]')}`}>
+              {qrState === 'idle' && (
+                <div className="w-full flex flex-col items-center gap-3 text-center py-1">
+                  <div className="flex flex-col items-center gap-1">
+                    <span className={`text-xs sm:text-sm font-bold uppercase tracking-wider ${tc('text-white', 'text-black')}`}>
+                      📱 Quét mã QR để xem &amp; tải trên điện thoại
+                    </span>
+                    <span className={`text-[11px] ${tc('text-[#888]', 'text-[#777]')}`}>
+                      Tạo mã QR nếu bạn muốn chuyển ảnh sang điện thoại hoặc gửi bạn bè.
+                    </span>
+                  </div>
 
-              {sessionId ? (
+                  {/* Private Cloud Notice Box */}
+                  <div className={`w-full p-2.5 rounded-xl text-left border flex items-start gap-2 ${tc('bg-blue-500/10 border-blue-500/25 text-blue-300', 'bg-blue-50 border-blue-200 text-blue-800')}`}>
+                    <span className="text-sm shrink-0">🔒</span>
+                    <p className="text-[11px] leading-relaxed">
+                      <strong className="font-bold">Lưu ý riêng tư:</strong> Khi bấm tạo QR, ảnh sẽ được tải lên Cloud lưu trữ <strong className="underline">riêng tư</strong> (chỉ ai có mã QR/link mới xem được, <strong>KHÔNG công khai</strong> lên bảng tin hay bất kỳ đâu).
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={handleCreateQR}
+                    className={`w-full py-3 px-4 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 border transition-all cursor-pointer shadow-lg active:scale-[0.98] ${tc(
+                      'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white border-blue-400/30 shadow-blue-500/20',
+                      'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white border-blue-400/30 shadow-blue-500/20'
+                    )}`}
+                  >
+                    <QrcodeOutlined style={{ fontSize: 16 }} />
+                    Tạo Mã QR &amp; Link Chia Sẻ
+                  </button>
+                </div>
+              )}
+
+              {qrState === 'uploading' && (
+                <div className="py-6 flex flex-col items-center gap-2.5 text-center">
+                  <Spin indicator={<LoadingOutlined style={{ fontSize: 24 }} spin />} />
+                  <span className={`text-xs font-medium ${tc('text-[#aaa]', 'text-[#666]')}`}>
+                    Đang tải ảnh &amp; khởi tạo mã QR...
+                  </span>
+                </div>
+              )}
+
+              {qrState === 'ready' && sessionId && (
                 <>
+                  <div className="flex items-center gap-1.5 text-center">
+                    <span className={`text-xs sm:text-sm font-bold uppercase tracking-wider ${tc('text-[#aaa]', 'text-[#555]')}`}>
+                      📱 Quét mã QR để xem &amp; tải trên điện thoại
+                    </span>
+                  </div>
+
                   <div className="p-3 bg-white rounded-2xl shadow-md inline-flex items-center justify-center border border-gray-200">
                     <QRCode
                       value={sessionUrl}
@@ -423,10 +392,19 @@ export default function ResultModal({
                     </div>
                   </div>
                 </>
-              ) : (
-                <div className="py-6 flex flex-col items-center gap-2.5">
-                  <Spin indicator={<LoadingOutlined style={{ fontSize: 24 }} spin />} />
-                  <span className={`text-xs font-medium ${tc('text-[#777]', 'text-[#888]')}`}>Đang khởi tạo mã QR...</span>
+              )}
+
+              {qrState === 'error' && (
+                <div className="py-4 flex flex-col items-center gap-2.5 text-center">
+                  <span className="text-xs text-red-400 font-medium">
+                    {qrErrorMsg || 'Không thể tạo mã QR, thử lại nhé!'}
+                  </span>
+                  <button
+                    onClick={handleCreateQR}
+                    className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${btnSecondaryClass}`}
+                  >
+                    Thử lại
+                  </button>
                 </div>
               )}
             </div>

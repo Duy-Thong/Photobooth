@@ -27,7 +27,7 @@ interface CaptureControlsProps {
   onToggleVideoRecap: (v: boolean) => void
   onChooseFrame: () => void
   onClearFrame: () => void
-  onContributeFrame: () => void
+  onContributeFrame?: () => void
   onCountdownChange: (n: number) => void
   onToggleSound: () => void
   isX2: boolean
@@ -51,7 +51,6 @@ export default function CaptureControls({
   onToggleVideoRecap,
   onChooseFrame,
   onClearFrame,
-  onContributeFrame,
   onCountdownChange,
   onToggleSound,
   isX2,
