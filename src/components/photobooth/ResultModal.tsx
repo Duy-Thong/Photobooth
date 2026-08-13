@@ -29,6 +29,7 @@ interface ResultModalProps {
   onClose: () => void
   onRetake: () => void
   onChangeFrame: () => void
+  onOpenPrivacyModal?: () => void
 }
 
 export default function ResultModal({
@@ -40,6 +41,7 @@ export default function ResultModal({
   onClose,
   onRetake,
   onChangeFrame,
+  onOpenPrivacyModal,
 }: ResultModalProps) {
   const tc = useThemeClass()
   const recapExt = recapMimeType?.startsWith('video/mp4') ? 'mp4' : 'webm'
@@ -256,9 +258,18 @@ export default function ResultModal({
               </button>
 
               {/* Local Storage Privacy Badge */}
-              <div className={`p-2 rounded-xl text-center border flex items-center justify-center gap-1.5 ${tc('bg-emerald-500/10 border-emerald-500/20 text-emerald-400', 'bg-emerald-50 border-emerald-200 text-emerald-700')}`}>
+              <div className={`p-2 rounded-xl text-center border flex items-center justify-center flex-wrap gap-1 ${tc('bg-emerald-500/10 border-emerald-500/20 text-emerald-400', 'bg-emerald-50 border-emerald-200 text-emerald-700')}`}>
                 <span className="text-xs">🛡️</span>
                 <span className="text-[11px] font-semibold">Quyền riêng tư: Mặc định ảnh KHÔNG tự động lưu trên hệ thống.</span>
+                {onOpenPrivacyModal && (
+                  <button
+                    type="button"
+                    onClick={onOpenPrivacyModal}
+                    className="text-[11px] font-bold underline cursor-pointer hover:opacity-80 transition-opacity ml-0.5"
+                  >
+                    [Xem thêm]
+                  </button>
+                )}
               </div>
 
               {recapStripUrl && (
@@ -295,7 +306,7 @@ export default function ResultModal({
               </div>
             </div>
 
-            {/* QR Code & Share Card (On-Demand + Private Cloud Notice) */}
+            {/* QR Code & Share Card (On-Demand) */}
             <div className={`rounded-2xl border p-4 sm:p-5 flex flex-col items-center gap-3.5 shadow-lg ${tc('bg-[#0a0a0a] border-[#1e1e1e]', 'bg-[#f7f7f7] border-[#e0e0e0]')}`}>
               {qrState === 'idle' && (
                 <div className="w-full flex flex-col items-center gap-3 text-center py-1">
@@ -306,14 +317,6 @@ export default function ResultModal({
                     <span className={`text-[11px] ${tc('text-[#888]', 'text-[#777]')}`}>
                       Tạo mã QR nếu bạn muốn chuyển ảnh sang điện thoại hoặc gửi bạn bè.
                     </span>
-                  </div>
-
-                  {/* Private Cloud Notice Box */}
-                  <div className={`w-full p-2.5 rounded-xl text-left border flex items-start gap-2 ${tc('bg-blue-500/10 border-blue-500/25 text-blue-300', 'bg-blue-50 border-blue-200 text-blue-800')}`}>
-                    <span className="text-sm shrink-0">🔒</span>
-                    <p className="text-[11px] leading-relaxed">
-                      <strong className="font-bold">Lưu ý riêng tư:</strong> Khi bấm tạo QR, ảnh sẽ được tải lên Cloud lưu trữ <strong className="underline">riêng tư</strong> (chỉ ai có mã QR/link mới xem được, <strong>KHÔNG công khai</strong> lên bảng tin hay bất kỳ đâu).
-                    </p>
                   </div>
 
                   <button

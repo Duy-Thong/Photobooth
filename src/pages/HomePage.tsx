@@ -13,6 +13,7 @@ import CaptureControls from '@/components/photobooth/CaptureControls'
 import FrameModal from '@/components/photobooth/FrameModal'
 import ResultModal from '@/components/photobooth/ResultModal'
 import ContributeFrameModal from '@/components/photobooth/ContributeFrameModal'
+import PrivacyNoticeModal from '@/components/photobooth/PrivacyNoticeModal'
 import ThemeToggle from '@/components/photobooth/ThemeToggle'
 
 export default function HomePage() {
@@ -40,11 +41,25 @@ export default function HomePage() {
   const [frameModalOpen, setFrameModalOpen] = useState(false)
   const [resultModalOpen, setResultModalOpen] = useState(false)
   const [contributeOpen, setContributeOpen] = useState(false)
+  const [privacyModalOpen, setPrivacyModalOpen] = useState(false)
   const [messageApi, contextHolder] = message.useMessage()
 
   const abortRef = useRef(false)
   const capturedCount = capturedSlots.filter(Boolean).length
   const tc = useThemeClass()
+
+  // First time visit privacy notice popup
+  useEffect(() => {
+    const accepted = localStorage.getItem('somedia_privacy_accepted')
+    if (!accepted) {
+      setPrivacyModalOpen(true)
+    }
+  }, [])
+
+  const handleClosePrivacyModal = () => {
+    localStorage.setItem('somedia_privacy_accepted', 'true')
+    setPrivacyModalOpen(false)
+  }
 
   useEffect(() => {
     if (!selectedFrame) {
@@ -286,7 +301,14 @@ export default function HomePage() {
           setResultModalOpen(false)
           setTimeout(() => setFrameModalOpen(true), 150)
         }}
+        onOpenPrivacyModal={() => setPrivacyModalOpen(true)}
       />
+
+      <PrivacyNoticeModal
+        open={privacyModalOpen}
+        onClose={handleClosePrivacyModal}
+      />
+
       <div className={`min-h-dvh md:h-dvh md:max-h-dvh md:overflow-hidden flex flex-col ${tc('bg-[#0a0a0a]', 'bg-[#f5f5f5]')}`}>
         {/* Header - slim & centered */}
         <header className={`py-2 px-4 sm:px-8 border-b shrink-0 relative flex items-center justify-between ${tc('border-[#141414]', 'border-[#e0e0e0]')}`}>
