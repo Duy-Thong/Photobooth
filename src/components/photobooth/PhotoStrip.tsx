@@ -138,7 +138,7 @@ export const PhotoStrip = memo(function PhotoStrip({
     <div className="flex flex-col gap-2">
 
       {/* ── Live composite preview ── */}
-      <div className={`relative rounded-2xl border overflow-hidden flex items-center justify-center p-0.5 shadow-2xl max-h-[calc(100dvh-220px)] w-auto max-w-full mx-auto ${tc('bg-[#0d0d0d] border-[#1f1f1f]', 'bg-[#f0f0f0] border-[#e0e0e0]')}`} 
+      <div className={`relative rounded-2xl border overflow-hidden flex items-center justify-center p-0.5 shadow-2xl max-h-[380px] sm:max-h-[480px] md:max-h-[calc(100dvh-220px)] w-auto max-w-full mx-auto ${tc('bg-[#0d0d0d] border-[#1f1f1f]', 'bg-[#f0f0f0] border-[#e0e0e0]')}`} 
         style={{ aspectRatio: containerAspectRatio }}>
         
         {/* Layer 0: Individual Live Videos for each empty slot (positioned exactly in the holes) */}
@@ -210,7 +210,7 @@ export const PhotoStrip = memo(function PhotoStrip({
 
       {/* ── Mini thumbnails for remove / replace ── */}
       {filled > 0 && (
-        <div className="flex gap-2 justify-center flex-wrap py-0.5">
+        <div className="flex gap-2 justify-start sm:justify-center overflow-x-auto no-scrollbar flex-nowrap py-0.5 max-w-full">
           {slots.map((slot, i) => (
             <MiniSlot
               key={i}

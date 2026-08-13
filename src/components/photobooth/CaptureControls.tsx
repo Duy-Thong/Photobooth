@@ -74,7 +74,7 @@ export default function CaptureControls({
 
   return (
     <div
-      className={`relative w-full rounded-2xl border px-2.5 sm:px-3.5 py-2 flex items-center justify-between gap-1.5 sm:gap-2 shadow-2xl ${tc(
+      className={`relative w-full rounded-2xl border px-2.5 sm:px-3.5 py-2 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2 md:gap-1.5 sm:gap-2 shadow-2xl ${tc(
         'bg-[#111] border-[#222]',
         'bg-white border-[#d8d8d8]'
       )}`}
@@ -87,125 +87,111 @@ export default function CaptureControls({
         />
       </div>
 
-      {/* ── Group 1: Khung Ảnh ── */}
-      <div className="flex items-center gap-1.5 shrink-0">
-        <button
-          onClick={onChooseFrame}
-          disabled={isCapturing}
-          className={`h-10 px-2.5 sm:px-3 rounded-xl border text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-all duration-150 active:scale-95 shadow-sm ${
-            isCapturing ? 'opacity-30 cursor-not-allowed pointer-events-none' : 'cursor-pointer'
-          } ${
-            selectedFrame
-              ? tc(
-                  'border-white/30 text-white bg-[#181818] hover:bg-[#222]',
-                  'border-black/30 text-black bg-[#f0f0f0] hover:bg-[#e4e4e4]'
-                )
-              : tc(
-                  'border-amber-400/80 text-amber-300 bg-amber-500/15 hover:bg-amber-500/25 shadow-[0_0_16px_rgba(251,191,36,0.35)] animate-pulse',
-                  'border-amber-500 text-amber-900 bg-amber-100 hover:bg-amber-200 shadow-[0_0_16px_rgba(245,158,11,0.35)] animate-pulse'
-                )
-          }`}
-        >
-          {selectedFrame ? (
-            <>
-              <img
-                src={frameImageUrl(selectedFrame.filename, selectedFrame.storageUrl)}
-                alt=""
-                className="w-3.5 h-4.5 object-contain shrink-0 rounded-xs"
-              />
-              <span className="truncate max-w-[80px] sm:max-w-[120px]">{selectedFrame.name}</span>
-            </>
-          ) : (
-            <>
-              <span className="text-sm sm:text-base">🖼️</span>
-              <span>Chọn khung</span>
-            </>
-          )}
-        </button>
-
-        {selectedFrame && (
+      {/* ── Top Row on Mobile / Left Groups on Desktop ── */}
+      <div className="flex items-center justify-between md:justify-start gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar py-0.5 md:py-0 shrink-0">
+        {/* ── Group 1: Khung Ảnh ── */}
+        <div className="flex items-center gap-1.5 shrink-0">
           <button
-            onClick={onClearFrame}
+            onClick={onChooseFrame}
             disabled={isCapturing}
-            title="Bỏ khung"
-            className={`w-9 h-10 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl border transition active:scale-95 ${
+            className={`h-10 px-2.5 sm:px-3 rounded-xl border text-xs sm:text-sm font-bold flex items-center gap-1.5 transition-all duration-150 active:scale-95 shadow-sm ${
               isCapturing ? 'opacity-30 cursor-not-allowed pointer-events-none' : 'cursor-pointer'
-            } ${tc(
-              'border-[#2a2a2a] bg-[#161616] text-[#999] hover:text-red-400 hover:border-red-400/40',
-              'border-[#d0d0d0] bg-white text-[#666] hover:text-red-500 hover:border-red-400/40'
-            )}`}
+            } ${
+              selectedFrame
+                ? tc(
+                    'border-white/30 text-white bg-[#181818] hover:bg-[#222]',
+                    'border-black/30 text-black bg-[#f0f0f0] hover:bg-[#e4e4e4]'
+                  )
+                : tc(
+                    'border-amber-400/80 text-amber-300 bg-amber-500/15 hover:bg-amber-500/25 shadow-[0_0_16px_rgba(251,191,36,0.35)] animate-pulse',
+                    'border-amber-500 text-amber-900 bg-amber-100 hover:bg-amber-200 shadow-[0_0_16px_rgba(245,158,11,0.35)] animate-pulse'
+                  )
+            }`}
           >
-            <CloseOutlined style={{ fontSize: 11 }} />
+            {selectedFrame ? (
+              <>
+                <img
+                  src={frameImageUrl(selectedFrame.filename, selectedFrame.storageUrl)}
+                  alt=""
+                  className="w-3.5 h-4.5 object-contain shrink-0 rounded-xs"
+                />
+                <span className="truncate max-w-[80px] sm:max-w-[120px]">{selectedFrame.name}</span>
+              </>
+            ) : (
+              <span>Chọn khung</span>
+            )}
           </button>
-        )}
 
-        <button
-          onClick={onContributeFrame}
-          disabled={isCapturing}
-          title="Đóng góp khung"
-          className={`h-10 px-2.5 rounded-xl border border-dashed text-xs font-semibold transition active:scale-95 hidden 2xl:flex items-center ${
-            isCapturing ? 'opacity-30 cursor-not-allowed pointer-events-none' : 'cursor-pointer'
-          } ${tc(
-            'border-[#252525] text-[#777] hover:border-[#444] hover:text-[#bbb] bg-[#0e0e0e]',
-            'border-[#d0d0d0] text-[#888] hover:border-[#999] hover:text-[#333] bg-white'
-          )}`}
-        >
-          + Đóng góp
-        </button>
-      </div>
-
-      {/* ── Divider ── */}
-      <div className={`w-px h-6 shrink-0 ${tc('bg-[#262626]', 'bg-[#e0e0e0]')}`} />
-
-      {/* ── Group 2: Timer & Settings ── */}
-      <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-        {COUNTDOWN_OPTIONS.map((n) => {
-          const isSelected = countdown === n
-          const isDisabled = n === 0 && videoRecap
-          return (
+          {selectedFrame && (
             <button
-              key={n}
-              onClick={() => onCountdownChange(n)}
-              disabled={isDisabled || isCapturing}
-              title={isDisabled ? 'Tắt video để dùng 0s' : `${n} giây đếm ngược`}
-              className={`h-10 min-w-[34px] sm:min-w-[40px] px-1.5 sm:px-2 rounded-xl border text-xs font-bold transition-all ${
-                isSelected
-                  ? tc(
-                      'border-white/40 bg-white text-black font-black shadow-[0_0_12px_rgba(255,255,255,0.15)]',
-                      'border-black/40 bg-black text-white font-black shadow-[0_0_12px_rgba(0,0,0,0.15)]'
-                    )
-                  : tc(
-                      'border-[#262626] bg-[#0e0e0e] text-[#888] hover:border-[#444] hover:text-[#eee]',
-                      'border-[#d0d0d0] bg-white text-[#666] hover:border-[#999] hover:text-[#111]'
-                    )
-              } ${isDisabled ? 'opacity-30 cursor-not-allowed pointer-events-none' : 'cursor-pointer active:scale-95'}`}
+              onClick={onClearFrame}
+              disabled={isCapturing}
+              title="Bỏ khung"
+              className={`w-9 h-10 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl border transition active:scale-95 ${
+                isCapturing ? 'opacity-30 cursor-not-allowed pointer-events-none' : 'cursor-pointer'
+              } ${tc(
+                'border-[#2a2a2a] bg-[#161616] text-[#999] hover:text-red-400 hover:border-red-400/40',
+                'border-[#d0d0d0] bg-white text-[#666] hover:text-red-500 hover:border-red-400/40'
+              )}`}
             >
-              {n}s
+              <CloseOutlined style={{ fontSize: 11 }} />
             </button>
-          )
-        })}
+          )}
+        </div>
 
-        <button
-          onClick={onToggleSound}
-          disabled={isCapturing}
-          title={soundEnabled ? 'Tắt âm thanh' : 'Bật âm thanh'}
-          className={`w-9 h-10 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl border transition ${
-            isCapturing ? 'opacity-30 cursor-not-allowed pointer-events-none' : 'cursor-pointer active:scale-95'
-          } ${
-            soundEnabled
-              ? tc('border-white/30 bg-[#181818] text-white', 'border-black/30 bg-white text-black')
-              : tc('border-[#262626] bg-[#0e0e0e] text-[#666] hover:border-[#444] hover:text-[#aaa]', 'border-[#d0d0d0] bg-white text-[#999] hover:border-[#999] hover:text-[#444]')
-          }`}
-        >
-          {soundEnabled ? <SoundOutlined style={{ fontSize: 14 }} /> : <MutedOutlined style={{ fontSize: 14 }} />}
-        </button>
+        {/* ── Divider ── */}
+        <div className={`w-px h-6 shrink-0 ${tc('bg-[#262626]', 'bg-[#e0e0e0]')}`} />
+
+        {/* ── Group 2: Timer & Settings ── */}
+        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+          {COUNTDOWN_OPTIONS.map((n) => {
+            const isSelected = countdown === n
+            const isDisabled = n === 0 && videoRecap
+            return (
+              <button
+                key={n}
+                onClick={() => onCountdownChange(n)}
+                disabled={isDisabled || isCapturing}
+                title={isDisabled ? 'Tắt video để dùng 0s' : `${n} giây đếm ngược`}
+                className={`h-10 min-w-[34px] sm:min-w-[40px] px-1.5 sm:px-2 rounded-xl border text-xs font-bold transition-all ${
+                  isSelected
+                    ? tc(
+                        'border-white/40 bg-white text-black font-black shadow-[0_0_12px_rgba(255,255,255,0.15)]',
+                        'border-black/40 bg-black text-white font-black shadow-[0_0_12px_rgba(0,0,0,0.15)]'
+                      )
+                    : tc(
+                        'border-[#262626] bg-[#0e0e0e] text-[#888] hover:border-[#444] hover:text-[#eee]',
+                        'border-[#d0d0d0] bg-white text-[#666] hover:border-[#999] hover:text-[#111]'
+                      )
+                } ${isDisabled ? 'opacity-30 cursor-not-allowed pointer-events-none' : 'cursor-pointer active:scale-95'}`}
+              >
+                {n}s
+              </button>
+            )
+          })}
+
+          <button
+            onClick={onToggleSound}
+            disabled={isCapturing}
+            title={soundEnabled ? 'Tắt âm thanh' : 'Bật âm thanh'}
+            className={`w-9 h-10 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl border transition ${
+              isCapturing ? 'opacity-30 cursor-not-allowed pointer-events-none' : 'cursor-pointer active:scale-95'
+            } ${
+              soundEnabled
+                ? tc('border-white/30 bg-[#181818] text-white', 'border-black/30 bg-white text-black')
+                : tc('border-[#262626] bg-[#0e0e0e] text-[#666] hover:border-[#444] hover:text-[#aaa]', 'border-[#d0d0d0] bg-white text-[#999] hover:border-[#999] hover:text-[#444]')
+            }`}
+          >
+            {soundEnabled ? <SoundOutlined style={{ fontSize: 14 }} /> : <MutedOutlined style={{ fontSize: 14 }} />}
+          </button>
+        </div>
       </div>
 
-      {/* ── Divider ── */}
-      <div className={`w-px h-6 shrink-0 ${tc('bg-[#262626]', 'bg-[#e0e0e0]')}`} />
+      {/* ── Divider (Desktop only) ── */}
+      <div className={`hidden md:block w-px h-6 shrink-0 ${tc('bg-[#262626]', 'bg-[#e0e0e0]')}`} />
 
       {/* ── Group 3: Capture Actions ── */}
-      <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+      <div className="flex items-center justify-end gap-1 sm:gap-1.5 shrink-0 w-full md:w-auto">
         {/* Video Recap */}
         <label
           className={`h-10 px-2 sm:px-2.5 rounded-xl border flex items-center gap-1.5 select-none transition-all ${
@@ -224,7 +210,7 @@ export default function CaptureControls({
             onChange={onToggleVideoRecap}
             style={{ background: videoRecap && countdown > 0 ? '#4da6ff' : undefined }}
           />
-          <span className="text-xs font-bold uppercase tracking-wider hidden xl:inline">Video</span>
+          <span className="text-xs font-bold uppercase tracking-wider hidden sm:inline xl:inline">Video</span>
         </label>
 
         {/* Double x2 */}
@@ -295,7 +281,7 @@ export default function CaptureControls({
           <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
             <path d="M20 5h-3.17L15 3H9L7.17 5H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-8 13c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.65 0-3 1.35-3 3s1.35 3 3 3 3-1.35 3-3-1.35-3-3-3z" />
           </svg>
-          <span className="hidden sm:inline">Chụp</span>
+          <span className="inline">Chụp</span>
         </button>
 
         {/* AUTO Capture (Primary Prominent Button) */}

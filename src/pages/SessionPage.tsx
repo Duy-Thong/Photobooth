@@ -284,25 +284,27 @@ export default function SessionPage() {
         </div>
 
         {/* URL row + Copy + Share */}
-        <div className={`w-full flex items-center gap-1.5 rounded-xl p-1.5 pl-3 border ${tc('bg-[#0a0a0a] border-[#222]', 'bg-[#f5f5f5] border-[#d9d9d9]')}`}>
+        <div className={`w-full flex flex-col sm:flex-row items-stretch sm:items-center gap-1.5 rounded-xl p-2 sm:pl-3 border ${tc('bg-[#0a0a0a] border-[#222]', 'bg-[#f5f5f5] border-[#d9d9d9]')}`}>
           <span className={`flex-1 text-[11px] truncate select-all font-mono ${tc('text-[#888]', 'text-[#666]')}`}>
             {currentUrl}
           </span>
-          <button
-            onClick={handleCopyUrl}
-            className={`px-2.5 py-1 rounded-lg text-[10px] font-semibold uppercase tracking-wider transition-all flex items-center gap-1 cursor-pointer ${smallBtnClass}`}
-            title="Copy link"
-          >
-            {copied ? <CheckOutlined className="text-green-400" /> : <CopyOutlined />}
-            Copy
-          </button>
-          <button
-            onClick={handleShare}
-            className={`px-2.5 py-1 rounded-lg text-[10px] font-semibold uppercase tracking-wider transition-all flex items-center gap-1 cursor-pointer ${smallBtnClass}`}
-            title="Chia sẻ"
-          >
-            <ShareAltOutlined />
-          </button>
+          <div className="flex items-center justify-end gap-1.5 shrink-0">
+            <button
+              onClick={handleCopyUrl}
+              className={`px-2.5 py-1 rounded-lg text-[10px] font-semibold uppercase tracking-wider transition-all flex items-center gap-1 cursor-pointer ${smallBtnClass}`}
+              title="Copy link"
+            >
+              {copied ? <CheckOutlined className="text-green-400" /> : <CopyOutlined />}
+              Copy
+            </button>
+            <button
+              onClick={handleShare}
+              className={`px-2.5 py-1 rounded-lg text-[10px] font-semibold uppercase tracking-wider transition-all flex items-center gap-1 cursor-pointer ${smallBtnClass}`}
+              title="Chia sẻ"
+            >
+              <ShareAltOutlined />
+            </button>
+          </div>
         </div>
       </div>
 

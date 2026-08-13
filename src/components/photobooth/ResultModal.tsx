@@ -291,7 +291,7 @@ export default function ResultModal({
                 <img
                   src={imageBlobUrl}
                   alt="Final photo strip"
-                  className="w-full max-h-[65vh] object-contain rounded-xl shadow-md"
+                  className="w-full max-h-[45vh] md:max-h-[65vh] object-contain rounded-xl shadow-md"
                 />
               ) : recapStripUrl ? (
                 <video
@@ -300,7 +300,7 @@ export default function ResultModal({
                   autoPlay
                   loop
                   playsInline
-                  className="w-full max-h-[65vh] object-contain rounded-xl shadow-md"
+                  className="w-full max-h-[45vh] md:max-h-[65vh] object-contain rounded-xl shadow-md"
                 />
               ) : (
                 <div className={`flex flex-col items-center justify-center gap-3 py-24 text-xs font-medium ${tc('text-[#777]', 'text-[#888]')}`}>
@@ -368,7 +368,7 @@ export default function ResultModal({
             </div>
 
             {/* QR Code & Share Card */}
-            <div className={`rounded-2xl border p-4 sm:p-5 flex flex-col items-center gap-3.5 shadow-lg ${tc('bg-[#0a0a0a] border-[#1e1e1e]', 'bg-[#f7f7f7] border-[#e5e5e5]')}`}>
+            <div className={`rounded-2xl border p-4 sm:p-5 flex flex-col items-center gap-3.5 shadow-lg ${tc('bg-[#0a0a0a]', 'bg-[#f7f7f7]')}`}>
               <div className="flex items-center gap-1.5 text-center">
                 <span className={`text-xs sm:text-sm font-bold uppercase tracking-wider ${tc('text-[#aaa]', 'text-[#555]')}`}>
                   📱 Quét mã QR để xem &amp; tải trên điện thoại
@@ -391,23 +391,23 @@ export default function ResultModal({
                   </div>
 
                   {/* URL Row */}
-                  <div className={`w-full flex items-center gap-2 rounded-xl p-1.5 pl-3.5 border ${tc('bg-[#141414] border-[#222]', 'bg-white border-[#e0e0e0]')}`}>
+                  <div className={`w-full flex flex-col sm:flex-row items-stretch sm:items-center gap-2 rounded-xl p-2 sm:pl-3.5 border ${tc('bg-[#141414] border-[#222]', 'bg-white border-[#e0e0e0]')}`}>
                     <span className={`flex-1 text-xs truncate select-all font-mono ${tc('text-[#aaa]', 'text-[#555]')}`}>
                       {sessionUrl}
                     </span>
-                    <div className="flex items-center gap-1.5 shrink-0">
+                    <div className="flex items-center justify-end gap-1.5 shrink-0">
                       <a
                         href={sessionUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1 ${smallBtnClass}`}
+                        className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1 ${smallBtnClass}`}
                         title="Mở tab mới"
                       >
                         Mở ↗
                       </a>
                       <button
                         onClick={handleCopyUrl}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1 cursor-pointer ${smallBtnClass}`}
+                        className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1 cursor-pointer ${smallBtnClass}`}
                         title="Copy link"
                       >
                         {copied ? <CheckOutlined className="text-green-400" /> : <CopyOutlined />}
@@ -415,7 +415,7 @@ export default function ResultModal({
                       </button>
                       <button
                         onClick={handleShare}
-                        className={`px-2.5 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1 cursor-pointer ${smallBtnClass}`}
+                        className={`px-2 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1 cursor-pointer ${smallBtnClass}`}
                         title="Chia sẻ"
                       >
                         <ShareAltOutlined />

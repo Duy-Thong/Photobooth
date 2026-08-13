@@ -52,7 +52,7 @@ export default function CameraView({
   const filterCss = FILTERS.find(f => f.value === activeFilter)?.css ?? 'none'
 
   return (
-    <div className={`relative w-full flex-1 min-h-0 h-full rounded-2xl overflow-hidden border shadow-2xl ${tc('bg-[#080808] border-[#222]', 'bg-[#e8e8e8] border-[#d0d0d0]')}`}>
+    <div className={`relative w-full flex-1 min-h-[280px] sm:min-h-[360px] md:min-h-0 h-full rounded-2xl overflow-hidden border shadow-2xl ${tc('bg-[#080808] border-[#222]', 'bg-[#e8e8e8] border-[#d0d0d0]')}`}>
       <video
         ref={videoRef}
         autoPlay
@@ -101,7 +101,7 @@ export default function CameraView({
           <select
             value={activeDeviceId ?? ''}
             onChange={e => onSelectDevice(e.target.value)}
-            className={`h-12 max-w-56 px-4 rounded-2xl bg-black/60 backdrop-blur-md text-white/95 text-xs sm:text-sm font-bold border border-white/15 hover:bg-black/80 transition cursor-pointer outline-none shadow-xl`}
+            className={`h-10 sm:h-12 max-w-[130px] sm:max-w-56 px-2.5 sm:px-4 rounded-2xl bg-black/60 backdrop-blur-md text-white/95 text-xs sm:text-sm font-bold border border-white/15 hover:bg-black/80 transition cursor-pointer outline-none shadow-xl truncate`}
           >
             {devices.map((d, i) => (
               <option key={d.deviceId} value={d.deviceId} className={tc('bg-[#0a0a0a] text-white', 'bg-white text-black')}>

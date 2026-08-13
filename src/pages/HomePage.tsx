@@ -356,7 +356,7 @@ export default function HomePage() {
             </div>
 
             {/* Right: photo strip — wider and comfortable preview */}
-            <div className={`shrink-0 w-full md:self-start ${layout.cols === 2 ? 'md:w-80 lg:w-96 xl:w-[420px]' : 'md:w-52 lg:w-60 xl:w-64'}`}>
+            <div className={`shrink-0 w-full md:self-start pb-4 md:pb-0 ${layout.cols === 2 ? 'md:w-80 lg:w-96 xl:w-[420px]' : 'md:w-52 lg:w-60 xl:w-64'}`}>
               <PhotoStrip
                 layout={layout}
                 slots={capturedSlots}

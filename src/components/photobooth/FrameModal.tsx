@@ -31,25 +31,24 @@ export default function FrameModal({
   const [search, setSearch] = useState('')
   const [activeCategoryName, setActiveCategoryName] = useState<string | null>(null)
   const [layoutFilter, setLayoutFilter] = useState<string | null>(currentLayout.type)
-  const [preview, setPreview] = useState<FrameItem | null>(null)
   const [contributeOpen, setContributeOpen] = useState(false)
 
-  // Sync slotFilter when modal opens (layout may have changed outside)
+  // Sync slotFilter when modal opens
   useEffect(() => {
     if (open) setLayoutFilter(currentLayout.type)
   }, [open, currentLayout.type])
 
-  // Load data when modal opens — wait for Firebase, no static preload
+  // Load data when modal opens
   useEffect(() => {
     if (!open) return
-    if (frames.length > 0) return // already loaded (cached)
+    if (frames.length > 0) return
     setLoading(true)
     setError(null)
     Promise.all([fetchFrames(), fetchCategories()])
       .then(([f, c]) => { setFrames(f); setCategories(c) })
       .catch(() => setError('Không tải được danh sách khung. Kiểm tra kết nối mạng.'))
       .finally(() => setLoading(false))
-  }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [open])
 
   const filtered = useMemo(() => {
     let list = layoutFilter
@@ -65,7 +64,6 @@ export default function FrameModal({
     return list
   }, [frames, layoutFilter, activeCategoryName, search])
 
-  // Categories available for current slot filter
   const availableCategories = useMemo(() => {
     const base = layoutFilter
       ? frames.filter(f => f.layout === layoutFilter)
@@ -74,26 +72,22 @@ export default function FrameModal({
     return categories.filter(c => names.has(c.name))
   }, [frames, categories, layoutFilter])
 
-  // Distinct slot counts in ALL frames
   const availableLayouts = useMemo(() => {
-    const layouts = [...new Set(frames.map(f => f.layout).filter(Boolean) as string[])].sort()
-    return layouts
+    return [...new Set(frames.map(f => f.layout).filter(Boolean) as string[])].sort()
   }, [frames])
 
-  function handleConfirm() {
-    if (!preview) return
-    onSelect(frameImageUrl(preview.filename, preview.storageUrl), preview)
-    setPreview(null)
-  }
-
-  const chipActive = tc('bg-white text-black border-white font-semibold', 'bg-black text-white border-black font-semibold')
-  const chipInactive = tc(
-    'border-[#252525] text-[#5a5a5a] hover:border-[#3a3a3a] hover:text-[#bbb]',
-    'border-[#d0d0d0] text-[#888] hover:border-[#999] hover:text-[#333]'
+  const chipActive = tc(
+    'bg-white text-black font-bold border-white',
+    'bg-black text-white font-bold border-black'
   )
+  const chipInactive = tc(
+    'border-[#262626] bg-[#141414] text-[#aaa] hover:border-[#444] hover:text-white',
+    'border-[#e0e0e0] bg-[#f5f5f5] text-[#555] hover:border-[#bbb] hover:text-black'
+  )
+
   const footerBtn = tc(
-    'border-[#2a2a2a] text-[#666] hover:text-[#aaa] hover:border-[#444]',
-    'border-[#d0d0d0] text-[#888] hover:text-[#555] hover:border-[#999]'
+    'border-[#2a2a2a] bg-[#141414] text-[#bbb] hover:text-white hover:border-[#444] hover:bg-[#1e1e1e]',
+    'border-[#d0d0d0] bg-white text-[#555] hover:text-black hover:border-[#999] hover:bg-[#f5f5f5]'
   )
 
   return (
@@ -103,67 +97,93 @@ export default function FrameModal({
         open={open}
         onCancel={onClose}
         title={
-          <span className="font-semibold text-sm tracking-tight">
-            Chọn Khung Ảnh
-          </span>
+          <div className="flex items-center gap-2.5">
+            <span className="font-bold text-base sm:text-lg tracking-tight">
+              Chọn Khung Ảnh
+            </span>
+            {!loading && (
+              <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${tc('bg-white/10 text-white/80 border-white/15', 'bg-black/5 text-black/70 border-black/10')}`}>
+                {filtered.length} khung
+              </span>
+            )}
+          </div>
         }
         footer={
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-2.5 pt-1">
             <button
               onClick={() => { onClear(); onClose() }}
               disabled={!selectedFrame}
-              className={`text-xs px-3 py-1.5 rounded-md border disabled:opacity-30 disabled:cursor-not-allowed transition ${footerBtn}`}
+              className={`h-10 px-4 rounded-xl border text-xs font-bold transition-colors disabled:opacity-30 disabled:cursor-not-allowed ${
+                selectedFrame
+                  ? tc('border-red-500/40 text-red-400 bg-red-500/10 hover:bg-red-500/20', 'border-red-400 text-red-600 bg-red-50 hover:bg-red-100')
+                  : footerBtn
+              }`}
             >
-              Bỏ Khung
+              ✕ Bỏ Khung Hiện Tại
             </button>
-            <div className="flex gap-2">
+
+            <div className="flex items-center gap-2 justify-end">
               <button
                 onClick={() => setContributeOpen(true)}
-                className={`text-xs px-3 py-1.5 rounded-md border transition ${footerBtn}`}
+                className={`h-10 px-3.5 rounded-xl border border-dashed text-xs font-bold transition-colors flex items-center gap-1.5 ${tc(
+                  'border-[#333] bg-[#0e0e0e] text-[#aaa] hover:text-white hover:border-[#555]',
+                  'border-[#ccc] bg-white text-[#666] hover:text-black hover:border-[#888]'
+                )}`}
               >
-                + Đóng góp khung
+                <span>+</span> Đóng góp khung
               </button>
               <button
                 onClick={onClose}
-                className={`text-xs px-3 py-1.5 rounded-md border transition ${footerBtn}`}
+                className={`h-10 px-4 rounded-xl border text-xs font-bold transition-colors ${footerBtn}`}
               >
-                Huỷ
+                Đóng
               </button>
             </div>
           </div>
         }
-        width={680}
+        width="min(1280px, 95vw)"
         centered
+        styles={{
+          body: {
+            padding: '16px 20px 24px',
+          }
+        }}
       >
-        <div className="px-4 pt-3 pb-2 flex items-center gap-2 flex-wrap">
-          <span className={`text-[10px] font-semibold uppercase tracking-[0.15em] shrink-0 ${tc('text-white', 'text-black')}`}>Layout:</span>
-          {['Tất cả', ...availableLayouts].map(ly => (
-            <button
-              key={ly}
-              onClick={() => { setLayoutFilter(ly === 'Tất cả' ? null : ly); setActiveCategoryName(null) }}
-              className={`text-[11px] px-2.5 py-0.5 rounded-md border transition-all duration-150 ${
-                (layoutFilter === ly || (ly === 'Tất cả' && !layoutFilter))
-                  ? chipActive
-                  : chipInactive
-              }`}
-            >
-              {ly}
-            </button>
-          ))}
+        {/* Layout Selector Bar */}
+        <div className="pb-3 flex items-center gap-2 overflow-x-auto no-scrollbar flex-nowrap shrink-0">
+          <span className={`text-[10px] font-black uppercase tracking-[0.15em] shrink-0 ${tc('text-[#777]', 'text-[#888]')}`}>
+            Layout:
+          </span>
+          {['Tất cả', ...availableLayouts].map(ly => {
+            const isSelected = (layoutFilter === ly || (ly === 'Tất cả' && !layoutFilter))
+            return (
+              <button
+                key={ly}
+                onClick={() => { setLayoutFilter(ly === 'Tất cả' ? null : ly); setActiveCategoryName(null) }}
+                className={`text-xs sm:text-sm px-3.5 py-1.5 rounded-xl border transition-colors shrink-0 cursor-pointer ${
+                  isSelected ? chipActive : chipInactive
+                }`}
+              >
+                {ly}
+              </button>
+            )
+          })}
         </div>
 
-        {/* Search */}
-        <div className="px-4 pt-1 pb-3">
+        {/* Search Input */}
+        <div className="pb-3">
           <Input.Search
-            placeholder="Tìm kiếm khung..."
+            placeholder="Tìm kiếm theo tên khung..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             allowClear
+            size="large"
+            className="rounded-xl"
           />
         </div>
 
-        {/* Category pills */}
-        <div className="px-4 pb-3 flex flex-wrap gap-1.5">
+        {/* Category Pills */}
+        <div className="pb-4 flex overflow-x-auto no-scrollbar flex-nowrap sm:flex-wrap gap-2 shrink-0">
           {[
             { id: null, name: 'Tất cả' },
             ...availableCategories
@@ -173,7 +193,7 @@ export default function FrameModal({
               <button
                 key={cat.id ?? 'all'}
                 onClick={() => setActiveCategoryName(cat.name === 'Tất cả' ? null : cat.name)}
-                className={`text-[11px] px-3 py-1 rounded-md border transition-all duration-150 ${
+                className={`text-xs sm:text-sm px-4 py-1.5 rounded-xl border transition-colors shrink-0 cursor-pointer ${
                   active ? chipActive : chipInactive
                 }`}
               >
@@ -183,95 +203,90 @@ export default function FrameModal({
           })}
         </div>
 
-        {/* Frame grid */}
-        <div className="px-4 pb-4 overflow-y-auto" style={{ maxHeight: 400 }}>
+        {/* Frame Gallery Grid */}
+        <div className="pb-2 overflow-y-auto max-h-[70vh] sm:max-h-[600px] pr-1.5">
           {loading && (
-            <div className="flex justify-center py-12">
+            <div className="flex flex-col items-center justify-center py-20 gap-3">
               <Spin size="large" />
+              <span className={`text-xs sm:text-sm font-medium ${tc('text-[#777]', 'text-[#888]')}`}>Đang tải bộ sưu tập khung...</span>
             </div>
           )}
-          {error && <p className="text-center text-red-400 py-8 text-sm">{error}</p>}
+          
+          {error && <p className="text-center text-red-400 py-12 text-sm font-medium">{error}</p>}
+          
           {!loading && !error && filtered.length === 0 && (
-            <Empty description="Không tìm thấy khung phù hợp" />
+            <div className="py-16">
+              <Empty description="Không tìm thấy khung phù hợp" />
+            </div>
           )}
+
           {!loading && !error && filtered.length > 0 && (
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
               {filtered.map((frame) => {
                 const imgUrl = frameImageUrl(frame.filename, frame.storageUrl)
                 const isActive = selectedFrame?.id === frame.id
+                const isVerticalStrip = frame.layout === '1x4' || frame.layout === '1x3' || frame.frame === 'square'
+                
                 return (
-                  <button
+                  <div
                     key={frame.id}
-                    onClick={() => setPreview(frame)}
-                    className={`relative rounded-lg overflow-hidden border transition-all duration-150 aspect-3/4 flex flex-col items-center ${tc('bg-[#111]', 'bg-[#f5f5f5]')} ${
+                    onClick={() => onSelect(imgUrl, frame)}
+                    className={`relative rounded-2xl overflow-hidden border p-2.5 sm:p-3.5 flex flex-col items-center justify-between cursor-pointer transition-colors group ${tc(
+                      'bg-[#0c0c0c] hover:bg-[#161616]',
+                      'bg-[#f7f7f7] hover:bg-white'
+                    )} ${
                       isActive
-                        ? 'border-white shadow-[0_0_0_1px_rgba(255,255,255,0.2)]'
-                        : tc('border-[#1e1e1e] hover:border-[#3a3a3a]', 'border-[#e0e0e0] hover:border-[#999]')
+                        ? tc('border-white ring-2 ring-white/60', 'border-black ring-2 ring-black/60')
+                        : tc('border-[#222] hover:border-[#555]', 'border-[#e0e0e0] hover:border-[#888]')
                     }`}
                   >
-                    <img
-                      src={imgUrl}
-                      alt={frame.name}
-                      className="w-full h-full object-contain"
-                      loading="lazy"
-                    />
-                    <span className="absolute bottom-0 left-0 right-0 text-center text-[9px] text-white/80 font-medium bg-black/50 py-0.5 truncate px-1">
-                      {frame.name}
-                    </span>
+                    {/* Frame Image Container (aspect ratio guaranteed) */}
+                    <div className={`w-full flex items-center justify-center overflow-hidden p-2 bg-black/20 rounded-xl ${
+                      isVerticalStrip ? 'aspect-[1/2.2]' : 'aspect-[3/4]'
+                    }`}>
+                      <img
+                        src={imgUrl}
+                        alt={frame.name}
+                        className="w-full h-full object-contain"
+                        loading="lazy"
+                      />
+                    </div>
+
+                    {/* Frame Label & Quick Select Button */}
+                    <div className="w-full mt-2 flex flex-col gap-1.5 items-center">
+                      <span className="w-full text-center text-xs sm:text-sm font-bold tracking-tight bg-black/80 text-white py-1 px-2 rounded-xl truncate border border-white/10">
+                        {frame.name}
+                      </span>
+                      <button
+                        className={`w-full h-8 sm:h-9 rounded-xl text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer shadow-sm ${
+                          isActive
+                            ? 'bg-emerald-500 text-white border border-emerald-400'
+                            : tc(
+                                'bg-white text-black hover:bg-[#e8e8e8]',
+                                'bg-black text-white hover:bg-[#222]'
+                              )
+                        }`}
+                      >
+                        {isActive ? '✓ Đã chọn' : 'Chọn'}
+                      </button>
+                    </div>
+
+                    {/* Active Selected Badge */}
                     {isActive && (
-                      <span className="absolute top-1 right-1 w-4 h-4 bg-white rounded-full flex items-center justify-center">
-                        <svg viewBox="0 0 12 12" fill="none" className="w-2.5 h-2.5">
-                          <path d="M2 6l3 3 5-5" stroke="#000" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      <span className="absolute top-2 right-2 w-6 h-6 bg-white text-black rounded-full flex items-center justify-center shadow-md">
+                        <svg viewBox="0 0 12 12" fill="none" className="w-3.5 h-3.5">
+                          <path d="M2 6l3 3 5-5" stroke="#000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                       </span>
                     )}
-                  </button>
+                  </div>
                 )
               })}
-
             </div>
           )}
         </div>
       </Modal>
 
-      {/* Preview modal */}
-      <Modal
-        open={!!preview}
-        onCancel={() => setPreview(null)}
-        title={<span className="font-semibold text-sm">{preview?.name}</span>}
-        footer={
-          <div className="flex justify-end gap-2">
-            <button
-              onClick={() => setPreview(null)}
-              className={`text-xs px-3 py-1.5 rounded-md border transition ${footerBtn}`}
-            >
-              Huỷ
-            </button>
-            <button
-              onClick={handleConfirm}
-              className={`text-xs px-4 py-1.5 rounded-md font-semibold active:scale-[0.98] transition ${tc(
-                'bg-white text-black hover:bg-[#e8e8e8]',
-                'bg-black text-white hover:bg-[#222]'
-              )}`}
-            >
-              Áp dụng
-            </button>
-          </div>
-        }
-        width={320}
-        centered
-      >
-        {preview && (
-          <div className="flex flex-col items-center gap-3 py-3">
-            <img
-              src={frameImageUrl(preview.filename, preview.storageUrl)}
-              alt={preview.name}
-              className="w-44 object-contain rounded-md"
-            />
-            <p className={`text-[11px] ${tc('text-[#555]', 'text-[#999]')}`}>{preview.categoryName}</p>
-          </div>
-        )}
-      </Modal>
       <ContributeFrameModal open={contributeOpen} onClose={() => setContributeOpen(false)} />
     </>
   )

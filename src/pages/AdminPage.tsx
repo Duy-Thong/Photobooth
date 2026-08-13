@@ -1007,12 +1007,12 @@ export default function AdminPage() {
       </header>
 
       {/* Tabs */}
-      <div className="flex border-b border-[#1f1f1f] px-6">
+      <div className="flex border-b border-[#1f1f1f] px-4 sm:px-6 overflow-x-auto no-scrollbar flex-nowrap shrink-0">
         {availableTabs.map(t => (
           <button
             key={t}
             onClick={() => { setTab(t); setSelectedPaths(new Set()); }}
-            className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors ${
+            className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors shrink-0 whitespace-nowrap ${
               tab === t
                 ? 'border-white text-white'
                 : 'border-transparent text-[#555] hover:text-[#aaa]'
