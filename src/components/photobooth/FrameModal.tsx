@@ -231,7 +231,7 @@ export default function FrameModal({
                   <div
                     key={frame.id}
                     onClick={() => onSelect(imgUrl, frame)}
-                    className={`relative rounded-2xl overflow-hidden border p-2.5 sm:p-3.5 flex flex-col items-center justify-between cursor-pointer transition-colors group ${tc(
+                    className={`relative rounded-2xl overflow-hidden border p-2 sm:p-3 flex flex-col items-center justify-between cursor-pointer transition-colors group ${tc(
                       'bg-[#0c0c0c] hover:bg-[#161616]',
                       'bg-[#f7f7f7] hover:bg-white'
                     )} ${
@@ -241,8 +241,8 @@ export default function FrameModal({
                     }`}
                   >
                     {/* Frame Image Container (aspect ratio guaranteed) */}
-                    <div className={`w-full flex items-center justify-center overflow-hidden p-2 bg-black/20 rounded-xl ${
-                      isVerticalStrip ? 'aspect-[1/2.2]' : 'aspect-[3/4]'
+                    <div className={`w-full flex items-center justify-center overflow-hidden p-1 bg-black/20 rounded-xl ${
+                      isVerticalStrip ? 'aspect-[1/2.1]' : 'aspect-[3/4]'
                     }`}>
                       <img
                         src={imgUrl}
