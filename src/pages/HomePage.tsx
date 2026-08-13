@@ -309,15 +309,15 @@ export default function HomePage() {
         onClose={handleClosePrivacyModal}
       />
 
-      <div className={`min-h-dvh md:h-dvh md:max-h-dvh md:overflow-hidden flex flex-col ${tc('bg-[#0a0a0a]', 'bg-[#f5f5f5]')}`}>
+      <div className={`h-dvh max-h-dvh overflow-hidden flex flex-col ${tc('bg-[#0a0a0a]', 'bg-[#f5f5f5]')}`}>
         {/* Header - slim & centered */}
-        <header className={`py-2 px-4 sm:px-8 border-b shrink-0 relative flex items-center justify-between ${tc('border-[#141414]', 'border-[#e0e0e0]')}`}>
+        <header className={`py-1.5 sm:py-2 px-3 sm:px-8 border-b shrink-0 relative flex items-center justify-between ${tc('border-[#141414]', 'border-[#e0e0e0]')}`}>
           <div className="w-8" />
           <div className="text-center">
-            <h1 className={`text-xl sm:text-2xl font-bold tracking-tight ${tc('text-white', 'text-black')}`} style={{ letterSpacing: '-0.03em' }}>
+            <h1 className={`text-lg sm:text-2xl font-bold tracking-tight ${tc('text-white', 'text-black')}`} style={{ letterSpacing: '-0.03em' }}>
               Sổ Media
             </h1>
-            <p className={`text-[8px] sm:text-[9px] tracking-[0.35em] uppercase font-medium ${tc('text-[#888]', 'text-[#666]')}`}>
+            <p className={`text-[7px] sm:text-[9px] tracking-[0.35em] uppercase font-medium ${tc('text-[#888]', 'text-[#666]')}`}>
               Photobooth
             </p>
           </div>
@@ -327,10 +327,10 @@ export default function HomePage() {
         </header>
 
         {/* Main Studio Area - Full Width Stretch & Generous Preview */}
-        <div className="flex-1 min-h-0 w-full max-w-[1640px] mx-auto px-2 sm:px-4 lg:px-6 py-2 md:overflow-hidden">
-          <div className="flex flex-col md:flex-row gap-3 sm:gap-5 h-full items-start">
+        <div className="flex-1 min-h-0 w-full max-w-[1640px] mx-auto px-2 sm:px-4 lg:px-6 py-1.5 md:py-2 overflow-hidden flex flex-col justify-between">
+          <div className="flex flex-col md:flex-row gap-2 sm:gap-4 md:gap-5 h-full items-start min-h-0">
             {/* Left: camera (takes available vertical space) + unified capture controls (shrink-0) */}
-            <div className="flex-1 flex flex-col gap-2 h-full min-h-0 min-w-0">
+            <div className="w-full md:flex-1 flex flex-col gap-1.5 sm:gap-2 shrink-0 md:shrink md:h-full min-h-0 min-w-0">
               <CameraView
                 videoRef={videoRef as React.RefObject<HTMLVideoElement>}
                 isMirrored={isMirrored}
@@ -378,7 +378,7 @@ export default function HomePage() {
             </div>
 
             {/* Right: photo strip — wider and comfortable preview */}
-            <div className={`shrink-0 w-full md:self-start pb-4 md:pb-0 ${layout.cols === 2 ? 'md:w-80 lg:w-96 xl:w-[420px]' : 'md:w-52 lg:w-60 xl:w-64'}`}>
+            <div className={`shrink-0 w-full md:self-start flex flex-col justify-center items-center min-h-0 ${layout.cols === 2 ? 'md:w-80 lg:w-96 xl:w-[420px]' : 'md:w-52 lg:w-60 xl:w-64'}`}>
               <PhotoStrip
                 layout={layout}
                 slots={capturedSlots}
