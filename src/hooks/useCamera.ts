@@ -30,6 +30,23 @@ interface UseCameraReturn {
   retryCamera: () => void
 }
 
+// Helper to detect rear/back camera from label
+function isRearCameraDevice(label?: string): boolean {
+  if (!label) return false
+  const l = label.toLowerCase()
+  return (
+    l.includes('back') ||
+    l.includes('rear') ||
+    l.includes('sau') ||
+    l.includes('environment') ||
+    l.includes('kép') ||
+    l.includes('rộng') ||
+    l.includes('wide') ||
+    l.includes('0,5') ||
+    l.includes('0.5')
+  )
+}
+
 export function useCamera(): UseCameraReturn {
   const videoRef = useRef<HTMLVideoElement>(null!)
   const streamRef = useRef<MediaStream | null>(null)
@@ -50,9 +67,21 @@ export function useCamera(): UseCameraReturn {
       streamRef.current = null
     }
 
+    const isPortrait = typeof window !== 'undefined' && window.innerHeight > window.innerWidth && window.innerWidth < 768
+
     const videoConstraint: MediaTrackConstraints = deviceId
-      ? { deviceId: { exact: deviceId }, width: { ideal: 1280 }, height: { ideal: 720 } }
-      : { facingMode: { ideal: 'user' }, width: { ideal: 1280 }, height: { ideal: 720 } }
+      ? {
+          deviceId: { exact: deviceId },
+          width: isPortrait ? { ideal: 1080, max: 1920 } : { ideal: 1920, max: 1920 },
+          height: isPortrait ? { ideal: 1440, max: 2560 } : { ideal: 1080, max: 1080 },
+          aspectRatio: isPortrait ? { ideal: 3 / 4 } : { ideal: 4 / 3 },
+        }
+      : {
+          facingMode: { ideal: 'user' },
+          width: isPortrait ? { ideal: 1080, max: 1920 } : { ideal: 1920, max: 1920 },
+          height: isPortrait ? { ideal: 1440, max: 2560 } : { ideal: 1080, max: 1080 },
+          aspectRatio: isPortrait ? { ideal: 3 / 4 } : { ideal: 4 / 3 },
+        }
 
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({ video: videoConstraint, audio: false })
@@ -66,10 +95,18 @@ export function useCamera(): UseCameraReturn {
         .map((d, i) => ({ deviceId: d.deviceId, label: d.label || `Camera ${i + 1}` }))
       setDevices(videoDevices)
 
-      // Track which device is active
+      // Track active device & auto-detect mirroring for front vs rear camera
       const track = mediaStream.getVideoTracks()[0]
       const currentId = track?.getSettings?.()?.deviceId ?? deviceId ?? null
+      const trackLabel = track?.label ?? ''
       setActiveDeviceId(currentId)
+
+      // Rear camera does NOT mirror by default; front camera DOES mirror
+      if (isRearCameraDevice(trackLabel)) {
+        setIsMirrored(false)
+      } else if (trackLabel.toLowerCase().includes('front') || trackLabel.toLowerCase().includes('trước') || trackLabel.toLowerCase().includes('user')) {
+        setIsMirrored(true)
+      }
 
       const video = videoRef.current
       if (!video) return
@@ -112,8 +149,17 @@ export function useCamera(): UseCameraReturn {
   }, [])
 
   const selectDevice = useCallback((deviceId: string) => {
+    // Check label of selected device from list
+    const found = devices.find(d => d.deviceId === deviceId)
+    if (found) {
+      if (isRearCameraDevice(found.label)) {
+        setIsMirrored(false)
+      } else {
+        setIsMirrored(true)
+      }
+    }
     startCamera(deviceId)
-  }, [startCamera])
+  }, [devices, startCamera])
 
   const retryCamera = useCallback(() => {
     startCamera(activeDeviceId ?? undefined)
@@ -121,7 +167,7 @@ export function useCamera(): UseCameraReturn {
 
   const captureFrame = useCallback((filterCss?: string): string | null => {
     const video = videoRef.current
-    if (!video || !isReady) return null
+    if (!video || !isReady || !video.videoWidth || !video.videoHeight) return null
 
     playShutterSound()
 
@@ -138,6 +184,7 @@ export function useCamera(): UseCameraReturn {
       ctx.scale(-1, 1)
     }
     ctx.drawImage(video, 0, 0)
+
     return canvas.toDataURL('image/jpeg', 0.92)
   }, [isMirrored, isReady])
 
