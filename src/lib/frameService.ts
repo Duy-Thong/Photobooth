@@ -25,6 +25,8 @@ export interface FrameItem {
   /** Frame image dimensions from Firestore metadata */
   width?: number
   height?: number
+  /** Whether the frame is enabled and visible in Photobooth for users */
+  isActive?: boolean
 }
 
 export interface FrameCategory {
@@ -46,10 +48,14 @@ let _framesFetch: Promise<FrameItem[]> | null = null
 /** Load only admin-uploaded frames from Firestore. */
 export async function fetchCustomFrames(): Promise<FrameItem[]> {
   const snap = await getDocs(query(collection(db, FRAMES_COLLECTION), orderBy('id')))
-  return snap.docs.map(d => ({
-    ...(d.data() as Omit<FrameItem, 'firestoreId'>),
-    firestoreId: d.id,
-  }))
+  return snap.docs.map(d => {
+    const data = d.data()
+    return {
+      ...(data as Omit<FrameItem, 'firestoreId'>),
+      firestoreId: d.id,
+      isActive: data.isActive !== false,
+    }
+  })
 }
 
 /**
@@ -57,15 +63,24 @@ export async function fetchCustomFrames(): Promise<FrameItem[]> {
  * Firestore frames with the same filename override their static counterpart
  * so that migrated frames use Storage URLs instead of /frames/.
  * Cached in memory — Firestore is only called once per page load.
+ * @param onlyActive If true, only returns frames that are active (isActive !== false).
  */
-export async function fetchFrames(): Promise<FrameItem[]> {
-  if (_framesCache) return _framesCache
-  if (_framesFetch) return _framesFetch
+export async function fetchFrames(onlyActive: boolean = true): Promise<FrameItem[]> {
+  if (_framesCache) {
+    return onlyActive ? _framesCache.filter(f => f.isActive !== false) : _framesCache
+  }
+  if (_framesFetch) {
+    const all = await _framesFetch
+    return onlyActive ? all.filter(f => f.isActive !== false) : all
+  }
   _framesFetch = (async () => {
     try {
       const firestoreFrames = await fetchCustomFrames()
       const firestoreFilenames = new Set(firestoreFrames.map(f => f.filename))
-      const staticOnly = STATIC_FRAMES.filter(f => !firestoreFilenames.has(f.filename))
+      const staticOnly = STATIC_FRAMES.filter(f => !firestoreFilenames.has(f.filename)).map(f => ({
+        ...f,
+        isActive: f.isActive !== false,
+      }))
       _framesCache = [...staticOnly, ...firestoreFrames]
       return _framesCache
     } catch {
@@ -73,10 +88,11 @@ export async function fetchFrames(): Promise<FrameItem[]> {
       return STATIC_FRAMES
     }
   })()
-  return _framesFetch
+  const all = await _framesFetch
+  return onlyActive ? all.filter(f => f.isActive !== false) : all
 }
 
-/** Invalidate the cache (call after admin upload / delete / update). */
+/** Invalidate the cache (call after admin upload / delete / update / toggle). */
 export function invalidateFramesCache() {
   _framesCache = null
   _framesFetch = null
@@ -95,7 +111,7 @@ export function deriveCategoryId(name: string): number {
  */
 export async function uploadFrame(
   file: File,
-  meta: { name: string; categoryName: string; slots: number; slots_data?: SlotRect[]; layout?: string; frame?: string },
+  meta: { name: string; categoryName: string; slots: number; slots_data?: SlotRect[]; layout?: string; frame?: string; isActive?: boolean },
 ): Promise<FrameItem> {
   const ext = file.name.split('.').pop()?.toLowerCase() ?? 'png'
   const filename = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
@@ -114,8 +130,10 @@ export async function uploadFrame(
     slots_data: meta.slots_data,
     layout: meta.layout,
     frame: meta.frame,
+    isActive: meta.isActive !== false,
   }
   const docRef = await addDoc(collection(db, FRAMES_COLLECTION), frameDoc)
+  invalidateFramesCache()
   return { ...frameDoc, firestoreId: docRef.id }
 }
 
@@ -125,10 +143,11 @@ export async function deleteCustomFrame(firestoreId: string, filename: string): 
     deleteDoc(doc(db, FRAMES_COLLECTION, firestoreId)),
     deleteObject(storageRef(storage, `frames/${filename}`)).catch(() => { /* already deleted */ }),
   ])
+  invalidateFramesCache()
 }
 
 export async function fetchCategories(): Promise<FrameCategory[]> {
-  const frames = await fetchFrames()
+  const frames = await fetchFrames(true)
   const nameToId = new Map<string, number>()
   for (const f of frames) {
     if (!nameToId.has(f.categoryName)) {
@@ -142,9 +161,9 @@ export async function fetchCategories(): Promise<FrameCategory[]> {
 
 export async function updateFrame(
   firestoreId: string,
-  patch: Partial<Pick<FrameItem, 'name' | 'categoryName' | 'slots' | 'slots_data' | 'layout' | 'frame'>>,
+  patch: Partial<Pick<FrameItem, 'name' | 'categoryName' | 'slots' | 'slots_data' | 'layout' | 'frame' | 'isActive'>>,
 ): Promise<void> {
-  const updates: Record<string, string | number> = {}
+  const updates: Record<string, string | number | boolean | any> = {}
   if (patch.name !== undefined) updates.name = patch.name
   if (patch.categoryName !== undefined) {
     updates.categoryName = patch.categoryName
@@ -154,7 +173,15 @@ export async function updateFrame(
   if (patch.slots_data !== undefined) (updates as any).slots_data = patch.slots_data
   if (patch.layout !== undefined) updates.layout = patch.layout
   if (patch.frame !== undefined) updates.frame = patch.frame
+  if (patch.isActive !== undefined) updates.isActive = patch.isActive
   await updateDoc(doc(db, FRAMES_COLLECTION, firestoreId), updates)
+  invalidateFramesCache()
+}
+
+/** Quickly toggle a frame's active status */
+export async function toggleFrameActive(firestoreId: string, isActive: boolean): Promise<void> {
+  await updateDoc(doc(db, FRAMES_COLLECTION, firestoreId), { isActive })
+  invalidateFramesCache()
 }
 
 // ─── Frame contribution requests ──────────────────────────────────────────────
@@ -231,11 +258,13 @@ export async function approveFrameRequest(request: FrameRequest): Promise<void> 
     slots: request.slots,
     storageUrl: request.storageUrl,
     frame: request.suggestedFrame,
+    isActive: true,
   }
   await Promise.all([
     addDoc(collection(db, FRAMES_COLLECTION), frameDoc),
     updateDoc(doc(db, REQUESTS_COLLECTION, request.firestoreId), { status: 'approved' }),
   ])
+  invalidateFramesCache()
 }
 
 /** Admin: reject — just updates status, keeps Storage file for reference. */

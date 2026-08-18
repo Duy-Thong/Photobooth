@@ -11,6 +11,7 @@ import {
   uploadFrame as uploadFrameService,
   deleteCustomFrame as deleteCustomFrameService,
   updateFrame as updateFrameService,
+  toggleFrameActive as toggleFrameActiveService,
   fetchFrameRequests as fetchFrameRequestsService,
   approveFrameRequest as approveFrameRequestService,
   rejectFrameRequest as rejectFrameRequestService,
@@ -23,7 +24,7 @@ import type { Feedback } from '@/types/feedback'
 import { detectFrameSlots, getLayoutFromSlots } from '@/lib/imageProcessing'
 import FrameSlotEditor from '@/components/admin/FrameSlotEditor'
 import { type SlotRect } from '@/types/photobooth'
-import { Button, Input, Modal, Select, Spin, Empty, Tooltip, Table, Tag, Checkbox, Form, DatePicker } from 'antd'
+import { Button, Input, Modal, Select, Spin, Empty, Tooltip, Table, Tag, Checkbox, Form, DatePicker, Switch } from 'antd'
 import dayjs from 'dayjs'
 import { DeleteOutlined, ReloadOutlined, LogoutOutlined, PlayCircleOutlined, DeleteFilled, ClockCircleOutlined, UploadOutlined, PictureOutlined, EditOutlined, CheckOutlined, CloseOutlined, UserOutlined } from '@ant-design/icons'
 import type { AdminUser } from '@/types/admin'
@@ -129,9 +130,14 @@ export default function AdminPage() {
   const [customFrames, setCustomFrames] = useState<FrameItem[]>([])
   const [framesLoading, setFramesLoading] = useState(false)
   const [deletingFrameId, setDeletingFrameId] = useState<string | null>(null)
+  const [togglingFrameId, setTogglingFrameId] = useState<string | null>(null)
   const [frameSearch, setFrameSearch] = useState('')
+  const [frameStatusFilter, setFrameStatusFilter] = useState<'all' | 'active' | 'inactive'>('all')
   const [frameLayoutFilter, setFrameLayoutFilter] = useState<string | null>(null)
   const [frameCategoryFilter, setFrameCategoryFilter] = useState<string | null>(null)
+
+  const activeFramesCount = useMemo(() => customFrames.filter(f => f.isActive !== false).length, [customFrames])
+  const inactiveFramesCount = useMemo(() => customFrames.filter(f => f.isActive === false).length, [customFrames])
 
   const frameLayoutOptions = useMemo(() =>
     [...new Set(customFrames.map(f => f.layout).filter(Boolean) as string[])].sort()
@@ -144,6 +150,8 @@ export default function AdminPage() {
 
   const filteredFrames = useMemo(() => {
     let list = customFrames
+    if (frameStatusFilter === 'active') list = list.filter(f => f.isActive !== false)
+    if (frameStatusFilter === 'inactive') list = list.filter(f => f.isActive === false)
     if (frameLayoutFilter !== null) list = list.filter(f => f.layout === frameLayoutFilter)
     if (frameCategoryFilter !== null) list = list.filter(f => f.categoryName === frameCategoryFilter)
     if (frameSearch.trim()) {
@@ -151,7 +159,22 @@ export default function AdminPage() {
       list = list.filter(f => f.name.toLowerCase().includes(q) || f.categoryName.toLowerCase().includes(q))
     }
     return list
-  }, [customFrames, frameLayoutFilter, frameCategoryFilter, frameSearch])
+  }, [customFrames, frameStatusFilter, frameLayoutFilter, frameCategoryFilter, frameSearch])
+
+  const handleToggleFrameActive = async (frame: FrameItem, nextActive: boolean) => {
+    if (!frame.firestoreId) return
+    setTogglingFrameId(frame.firestoreId)
+    try {
+      await toggleFrameActiveService(frame.firestoreId, nextActive)
+      setCustomFrames(prev => prev.map(f =>
+        f.firestoreId === frame.firestoreId ? { ...f, isActive: nextActive } : f
+      ))
+    } catch {
+      Modal.error({ title: 'Cập nhật trạng thái thất bại', centered: true })
+    } finally {
+      setTogglingFrameId(null)
+    }
+  }
 
   // Upload modal state
   const [showUploadModal, setShowUploadModal] = useState(false)
@@ -163,6 +186,7 @@ export default function AdminPage() {
   const [uploadCategory, setUploadCategory] = useState('')
   const [uploadLayout, setUploadLayout] = useState('')
   const [uploadFrameType, setUploadFrameType] = useState('vertical')
+  const [uploadIsActive, setUploadIsActive] = useState(true)
   const [uploading, setUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -173,6 +197,7 @@ export default function AdminPage() {
   const [editSlotsData, setEditSlotsData] = useState<SlotRect[]>([])
   const [editLayout, setEditLayout] = useState('')
   const [editFrameType, setEditFrameType] = useState('')
+  const [editIsActive, setEditIsActive] = useState(true)
   const [editSaving, setEditSaving] = useState(false)
 
   const openEditFrame = (frame: FrameItem) => {
@@ -182,6 +207,7 @@ export default function AdminPage() {
     setEditSlotsData(frame.slots_data || [])
     setEditLayout(frame.layout || (frame.slots_data ? getLayoutFromSlots(frame.slots_data) : ''))
     setEditFrameType(frame.frame || 'vertical')
+    setEditIsActive(frame.isActive !== false)
   }
 
   const handleSaveEdit = async () => {
@@ -196,10 +222,11 @@ export default function AdminPage() {
         slots_data: editSlotsData,
         layout: newLayout,
         frame: editFrameType,
+        isActive: editIsActive,
       })
       setCustomFrames(prev => prev.map(f =>
         f.firestoreId === editingFrame.firestoreId
-          ? { ...f, name: editName.trim(), categoryName: editCategory.trim(), slots: editSlotsData.length, slots_data: editSlotsData, layout: newLayout, frame: editFrameType }
+          ? { ...f, name: editName.trim(), categoryName: editCategory.trim(), slots: editSlotsData.length, slots_data: editSlotsData, layout: newLayout, frame: editFrameType, isActive: editIsActive }
           : f
       ))
       setEditingFrame(null)
@@ -795,6 +822,7 @@ export default function AdminPage() {
     setUploadCategory('')
     setUploadLayout('')
     setUploadFrameType('vertical')
+    setUploadIsActive(true)
   }
 
   const handleUploadFrame = async () => {
@@ -808,6 +836,7 @@ export default function AdminPage() {
         slots_data: uploadSlotsData,
         layout: uploadLayout || getLayoutFromSlots(uploadSlotsData),
         frame: uploadFrameType,
+        isActive: uploadIsActive,
       })
       setCustomFrames(prev => [...prev, frame].sort((a, b) => a.name.localeCompare(b.name, 'vi')))
       handleCloseUploadModal()
@@ -1117,6 +1146,28 @@ export default function AdminPage() {
             />
           </div>
 
+          {/* Status filter pills */}
+          <div className="flex items-center gap-2 flex-wrap mb-3">
+            <span className="text-[10px] text-white font-semibold uppercase tracking-[0.15em] shrink-0">Trạng thái:</span>
+            {[
+              { key: 'all', label: `Tất cả (${customFrames.length})` },
+              { key: 'active', label: `Đang bật (${activeFramesCount})` },
+              { key: 'inactive', label: `Đang tắt (${inactiveFramesCount})` },
+            ].map(st => (
+              <button
+                key={st.key}
+                onClick={() => setFrameStatusFilter(st.key as any)}
+                className={`text-[11px] px-2.5 py-0.5 rounded-md border transition-all duration-150 ${
+                  frameStatusFilter === st.key
+                    ? 'bg-white text-black border-white font-semibold'
+                    : 'border-[#252525] text-[#5a5a5a] hover:border-[#3a3a3a] hover:text-[#bbb]'
+                }`}
+              >
+                {st.label}
+              </button>
+            ))}
+          </div>
+
           {/* Layout filter pills */}
           {frameLayoutOptions.length > 1 && (
             <div className="flex items-center gap-2 flex-wrap mb-3">
@@ -1166,46 +1217,81 @@ export default function AdminPage() {
               className="mt-20"
             />
           ) : (
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
-              {filteredFrames.map(frame => (
-                <div
-                  key={frame.firestoreId}
-                  className="group relative bg-[#0a0a0a] border border-[#2a2a2a] rounded-xl overflow-hidden hover:border-[#444] transition-colors"
-                >
-                  <div className="p-1 bg-[#111] flex items-center justify-center aspect-3/4">
-                    <img
-                      src={frameImageUrl(frame.filename, frame.storageUrl)}
-                      alt={frame.name}
-                      className="w-full h-full object-contain"
-                      loading="lazy"
-                    />
-                  </div>
-                  <div className="p-2">
-                    <p className="text-white text-xs font-medium truncate">{frame.name}</p>
-                    <p className="text-[#555] text-[10px] truncate">{frame.categoryName}</p>
-                    <p className="text-[#3a3a3a] text-[10px]">{frame.slots} slot · Layout: {frame.layout || 'N/A'} · Loại: {frame.frame || 'vertical'}</p>
-                  </div>
-                  <Tooltip title="Chỉnh sửa">
-                    <button
-                      onClick={() => openEditFrame(frame)}
-                      className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/70 hover:bg-blue-600 text-white rounded-lg p-1.5"
-                    >
-                      <EditOutlined />
-                    </button>
-                  </Tooltip>
-                  {permissions?.canManageAdmins && (
-                    <Tooltip title="Xóa khung">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+              {filteredFrames.map(frame => {
+                const isEnabled = frame.isActive !== false
+                return (
+                  <div
+                    key={frame.firestoreId}
+                    className={`group relative bg-[#0a0a0a] border rounded-xl overflow-hidden transition-all duration-200 ${
+                      !isEnabled
+                        ? 'border-[#222] opacity-75 hover:opacity-100 hover:border-[#3a3a3a]'
+                        : 'border-[#2a2a2a] hover:border-[#444]'
+                    }`}
+                  >
+                    <div className="p-1.5 bg-[#111] flex items-center justify-center aspect-3/4 relative">
+                      <img
+                        src={frameImageUrl(frame.filename, frame.storageUrl)}
+                        alt={frame.name}
+                        className={`w-full h-full object-contain ${!isEnabled ? 'grayscale-[40%]' : ''}`}
+                        loading="lazy"
+                      />
+                      {/* Status indicator badge */}
+                      {!isEnabled ? (
+                        <div className="absolute top-1.5 right-1.5 bg-red-950/80 border border-red-800/60 text-red-300 text-[9px] font-bold px-1.5 py-0.5 rounded shadow">
+                          ĐÃ TẮT
+                        </div>
+                      ) : (
+                        <div className="absolute top-1.5 right-1.5 bg-emerald-950/80 border border-emerald-800/60 text-emerald-300 text-[9px] font-bold px-1.5 py-0.5 rounded shadow">
+                          ĐANG BẬT
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-2.5">
+                      <p className="text-white text-xs font-medium truncate">{frame.name}</p>
+                      <p className="text-[#555] text-[10px] truncate">{frame.categoryName}</p>
+                      <p className="text-[#3a3a3a] text-[10px] mb-2">{frame.slots} slot · {frame.layout || 'N/A'} · {frame.frame || 'vertical'}</p>
+                      
+                      {/* Quick Active Toggle */}
+                      <div className="flex items-center justify-between pt-2 border-t border-[#1a1a1a]" onClick={e => e.stopPropagation()}>
+                        <span className={`text-[10px] font-semibold ${isEnabled ? 'text-emerald-400' : 'text-[#666]'}`}>
+                          {isEnabled ? 'Hiển thị' : 'Đang ẩn'}
+                        </span>
+                        <Tooltip title={isEnabled ? 'Tắt khung (Ẩn khỏi Photobooth)' : 'Bật khung (Hiển thị trong Photobooth)'}>
+                          <Switch
+                            size="small"
+                            checked={isEnabled}
+                            loading={togglingFrameId === frame.firestoreId}
+                            onChange={(checked) => handleToggleFrameActive(frame, checked)}
+                            style={{
+                              backgroundColor: isEnabled ? '#10b981' : '#333'
+                            }}
+                          />
+                        </Tooltip>
+                      </div>
+                    </div>
+                    <Tooltip title="Chỉnh sửa">
                       <button
-                        onClick={() => handleDeleteFrame(frame)}
-                        disabled={deletingFrameId === frame.firestoreId}
-                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/70 hover:bg-red-600 text-white rounded-lg p-1.5"
+                        onClick={() => openEditFrame(frame)}
+                        className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/70 hover:bg-blue-600 text-white rounded-lg p-1.5 z-10"
                       >
-                        {deletingFrameId === frame.firestoreId ? <Spin size="small" /> : <DeleteOutlined />}
+                        <EditOutlined />
                       </button>
                     </Tooltip>
-                  )}
-                </div>
-              ))}
+                    {permissions?.canManageAdmins && (
+                      <Tooltip title="Xóa khung">
+                        <button
+                          onClick={() => handleDeleteFrame(frame)}
+                          disabled={deletingFrameId === frame.firestoreId}
+                          className="absolute bottom-11 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/70 hover:bg-red-600 text-white rounded-lg p-1.5 z-10"
+                        >
+                          {deletingFrameId === frame.firestoreId ? <Spin size="small" /> : <DeleteOutlined />}
+                        </button>
+                      </Tooltip>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           )}
         </div>
@@ -1596,6 +1682,19 @@ export default function AdminPage() {
                 {uploadSlotsData.length}
               </div>
             </div>
+
+            {/* Active Switch */}
+            <div className="flex items-center justify-between bg-[#0a0a0a] border border-[#222] rounded-lg p-2.5 mt-1">
+              <div className="flex flex-col">
+                <span className="text-white text-xs font-semibold">Trạng thái</span>
+                <span className="text-[#666] text-[10px]">Hiển thị ngay trong Photobooth</span>
+              </div>
+              <Switch
+                checked={uploadIsActive}
+                onChange={setUploadIsActive}
+                style={{ backgroundColor: uploadIsActive ? '#10b981' : '#333' }}
+              />
+            </div>
           </div>
         </div>
       </Modal>
@@ -1745,6 +1844,19 @@ export default function AdminPage() {
               <div className="bg-[#050505] border border-[#222] rounded px-3 py-1.5 text-white font-bold h-8 flex items-center">
                 {editSlotsData.length}
               </div>
+            </div>
+
+            {/* Active Switch */}
+            <div className="flex items-center justify-between bg-[#0a0a0a] border border-[#222] rounded-lg p-2.5 mt-1">
+              <div className="flex flex-col">
+                <span className="text-white text-xs font-semibold">Trạng thái khung</span>
+                <span className="text-[#666] text-[10px]">Hiển thị trong Photobooth</span>
+              </div>
+              <Switch
+                checked={editIsActive}
+                onChange={setEditIsActive}
+                style={{ backgroundColor: editIsActive ? '#10b981' : '#333' }}
+              />
             </div>
           </div>
         </div>
