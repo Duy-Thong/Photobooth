@@ -76,10 +76,10 @@ export default function HomePage() {
     const fUrl = selectedFrame.storageUrl ?? `/frames/${selectedFrame.filename}`
     buildStripVideo(recapClips, fUrl, selectedFrame.slots_data, 24, isX2)
       .then(url => setRecapStripUrl(url))
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setBuildingStrip(false))
-  // Re-run only when finalImageUrl changes (clips + frameUrl are stable at that point)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Re-run only when finalImageUrl changes (clips + frameUrl are stable at that point)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [finalImageUrl])
 
   // Auto-open frame modal only if no frame selected. 
@@ -265,7 +265,7 @@ export default function HomePage() {
           setSelectedFrame(frameItem)
           setFrameModalOpen(false)
           setFinalImageUrl(null)
-          
+
           // If all slots are already filled after layout (possibly changed), auto-build
           const refreshed = usePhotoboothStore.getState()
           if (refreshed.capturedSlots.every(s => s !== null)) {
@@ -311,20 +311,60 @@ export default function HomePage() {
 
       <div className={`min-h-dvh md:h-dvh md:max-h-dvh overflow-y-auto md:overflow-hidden flex flex-col ${tc('bg-[#0a0a0a]', 'bg-[#f5f5f5]')}`}>
         {/* Header - slim & centered */}
-        <header className={`py-2 px-4 sm:px-8 border-b shrink-0 relative flex items-center justify-between ${tc('border-[#141414]', 'border-[#e0e0e0]')}`}>
-          <div className="w-8" />
-          <div className="text-center">
-            <h1 className={`text-xl sm:text-2xl font-bold tracking-tight ${tc('text-white', 'text-black')}`} style={{ letterSpacing: '-0.03em' }}>
-              Sổ Media
-            </h1>
-            <p className={`text-[8px] sm:text-[9px] tracking-[0.35em] uppercase font-medium ${tc('text-[#888]', 'text-[#666]')}`}>
-              Photobooth
-            </p>
+        <header className={`py-2.5 px-4 sm:px-8 border-b shrink-0 relative flex items-center justify-between ${tc('border-[#141414]', 'border-[#e0e0e0]')}`}>
+          {/* Desktop News Pill */}
+          <div className="hidden sm:flex items-center">
+            <a
+              href="https://www.somediaclub.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`group flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-semibold transition-all border shadow-xs ${tc(
+                'bg-[#141414] border-[#282828] text-[#ccc] hover:border-[#444] hover:text-white',
+                'bg-[#f0f0f0] border-[#d8d8d8] text-[#333] hover:border-[#bbb] hover:text-black'
+              )}`}
+              title="Tuyển thành viên Gen 10 — Sổ Media"
+            >
+              <span className={`px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider rounded shrink-0 ${tc('bg-white text-black', 'bg-black text-white')}`}>
+                NEWS
+              </span>
+              <span className="text-[11px] font-semibold whitespace-nowrap">
+                Tuyển Gen 10 ↗
+              </span>
+            </a>
           </div>
-          <div>
+
+          {/* Title - Absolutely Centered */}
+          <div className="absolute left-1/2 -translate-x-1/2 text-center pointer-events-none">
+            <a href="/" className="pointer-events-auto">
+              <h1 className={`text-xl sm:text-2xl font-bold tracking-tight ${tc('text-white', 'text-black')}`} style={{ letterSpacing: '-0.03em' }}>
+                Sổ Media
+              </h1>
+              <p className={`text-[8px] sm:text-[9px] tracking-[0.35em] uppercase font-medium ${tc('text-[#888]', 'text-[#666]')}`}>
+                Photobooth
+              </p>
+            </a>
+          </div>
+
+          {/* Theme Toggle Right */}
+          <div className="ml-auto">
             <ThemeToggle />
           </div>
         </header>
+
+        {/* Mobile News Bar (sm:hidden) */}
+        <div className={`sm:hidden py-1.5 px-4 border-b shrink-0 flex items-center justify-center ${tc('bg-[#111] border-[#1e1e1e]', 'bg-[#f5f5f5] border-[#e0e0e0]')}`}>
+          <a
+            href="https://www.somediaclub.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`flex items-center justify-center gap-2 text-[11px] font-medium transition-all ${tc('text-[#ccc] hover:text-white', 'text-[#333] hover:text-black')}`}
+          >
+            <span className={`px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider rounded shrink-0 ${tc('bg-white text-black', 'bg-black text-white')}`}>
+              NEWS
+            </span>
+            <span>CLB Sổ Media mở đơn tuyển Gen 10 ↗</span>
+          </a>
+        </div>
 
         {/* Main Studio Area - Full Width Stretch & Generous Preview */}
         <div className="flex-1 w-full max-w-[1640px] mx-auto px-2 sm:px-4 lg:px-6 py-2 overflow-y-auto md:overflow-hidden flex flex-col justify-between">

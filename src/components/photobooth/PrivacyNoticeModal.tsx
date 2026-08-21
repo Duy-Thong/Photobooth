@@ -31,7 +31,7 @@ export default function PrivacyNoticeModal({ open, onClose }: PrivacyNoticeModal
               'bg-black text-white hover:bg-[#222]'
             )}`}
           >
-            Tôi đã hiểu &amp; Bắt đầu chụp ảnh 📸
+            Tôi đã hiểu
           </button>
         </div>
       }

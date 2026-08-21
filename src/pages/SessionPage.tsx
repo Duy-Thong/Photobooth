@@ -14,6 +14,7 @@ import { fetchSession, type SessionData } from '@/lib/sessionService'
 import { downloadMedia, isMobileDevice } from '@/lib/imageProcessing'
 import { useThemeClass } from '@/stores/themeStore'
 import ThemeToggle from '@/components/photobooth/ThemeToggle'
+import RecruitmentBanner from '@/components/photobooth/RecruitmentBanner'
 
 export default function SessionPage() {
   const tc = useThemeClass()
@@ -217,12 +218,6 @@ export default function SessionPage() {
         >
           <PrinterOutlined /> In ảnh (khổ 10x15cm)
         </button>
-
-        {isMobileDevice() && (
-          <p className={`text-[10px] text-center font-medium opacity-60 ${tc('text-[#777]', 'text-[#888]')}`}>
-            💡 Mẹo: Nhấn giữ ảnh để lưu trực tiếp vào thư viện
-          </p>
-        )}
       </div>
 
       {/* Strip video (if present) */}
@@ -230,7 +225,6 @@ export default function SessionPage() {
         <div className="w-full max-w-xs flex flex-col gap-2.5">
           <div className="flex items-center justify-between px-1">
             <span className={`text-[10px] uppercase tracking-wider font-bold ${tc('text-[#888]', 'text-[#777]')}`}>
-              🎞️ Strip Video Kỷ Niệm
             </span>
           </div>
           <video
@@ -263,10 +257,7 @@ export default function SessionPage() {
       >
         <div className="flex flex-col items-center gap-1 text-center">
           <span className={`text-xs font-bold uppercase tracking-wider ${tc('text-white', 'text-black')}`}>
-            📱 Quét mã để chia sẻ
-          </span>
-          <span className={`text-[11px] ${tc('text-[#666]', 'text-[#888]')}`}>
-            Mở trên điện thoại hoặc gửi cho bạn bè
+            Mã QR
           </span>
         </div>
 
@@ -306,6 +297,11 @@ export default function SessionPage() {
             </button>
           </div>
         </div>
+      </div>
+
+      {/* Recruitment Banner Card */}
+      <div className="w-full max-w-xs">
+        <RecruitmentBanner variant="card" />
       </div>
 
       {/* CTA: Back to Photobooth */}

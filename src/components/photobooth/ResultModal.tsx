@@ -11,7 +11,7 @@ import {
   QrcodeOutlined,
 } from '@ant-design/icons'
 import { uploadSession } from '@/lib/uploadService'
-import { downloadImage, downloadMedia, isMobileDevice } from '@/lib/imageProcessing'
+import { downloadImage, downloadMedia } from '@/lib/imageProcessing'
 import { useThemeClass } from '@/stores/themeStore'
 
 type QrState = 'idle' | 'uploading' | 'ready' | 'error'
@@ -188,23 +188,21 @@ export default function ResultModal({
               <div className={`p-1 rounded-xl border flex items-center justify-center gap-1.5 ${tc('bg-[#080808] border-[#222]', 'bg-[#f0f0f0] border-[#e0e0e0]')}`}>
                 <button
                   onClick={() => setMediaTab('photo')}
-                  className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                    mediaTab === 'photo'
-                      ? tc('bg-[#222] text-white shadow-sm', 'bg-white text-black shadow-sm')
-                      : tc('text-[#777] hover:text-[#bbb]', 'text-[#888] hover:text-[#444]')
-                  }`}
+                  className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${mediaTab === 'photo'
+                    ? tc('bg-[#222] text-white shadow-sm', 'bg-white text-black shadow-sm')
+                    : tc('text-[#777] hover:text-[#bbb]', 'text-[#888] hover:text-[#444]')
+                    }`}
                 >
                   <PictureOutlined /> Ảnh chụp
                 </button>
                 <button
                   onClick={() => setMediaTab('video')}
-                  className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                    mediaTab === 'video'
-                      ? tc('bg-[#222] text-white shadow-sm', 'bg-white text-black shadow-sm')
-                      : tc('text-[#777] hover:text-[#bbb]', 'text-[#888] hover:text-[#444]')
-                  }`}
+                  className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${mediaTab === 'video'
+                    ? tc('bg-[#222] text-white shadow-sm', 'bg-white text-black shadow-sm')
+                    : tc('text-[#777] hover:text-[#bbb]', 'text-[#888] hover:text-[#444]')
+                    }`}
                 >
-                  {buildingStrip && !recapStripUrl ? <LoadingOutlined /> : <span>🎞️ Video Recap</span>}
+                  {buildingStrip && !recapStripUrl ? <LoadingOutlined /> : <span>Video Recap</span>}
                 </button>
               </div>
             )}
@@ -234,28 +232,46 @@ export default function ResultModal({
               )}
             </div>
 
-            {isMobileDevice() && (
-              <p className={`text-xs text-center font-medium opacity-60 ${tc('text-gray-400', 'text-gray-500')}`}>
-                💡 Nhấn giữ ảnh/video để lưu trực tiếp vào thư viện
-              </p>
-            )}
           </div>
 
           {/* Right — Actions & QR Code */}
           <div className="flex-1 w-full flex flex-col gap-5 min-w-0">
             {/* Primary Action Buttons */}
             <div className="flex flex-col gap-2.5">
-              <button
-                onClick={handleDownload}
-                disabled={downloading}
-                className={`w-full h-12 sm:h-13 rounded-2xl font-bold text-sm sm:text-base tracking-wide flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-xl cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed ${tc(
-                  'bg-white text-black hover:bg-[#ececec] shadow-[0_0_20px_rgba(255,255,255,0.15)]',
-                  'bg-black text-white hover:bg-[#222] shadow-[0_0_20px_rgba(0,0,0,0.15)]'
-                )}`}
-              >
-                {downloading ? <LoadingOutlined /> : <DownloadOutlined style={{ fontSize: 18 }} />}
-                Tải ảnh về máy
-              </button>
+              {/* Primary Download Button (Dynamic per active tab: Photo vs Video Recap) */}
+              {mediaTab === 'video' ? (
+                <button
+                  disabled={downloading || !recapStripUrl}
+                  onClick={async () => {
+                    if (!recapStripUrl || downloading) return
+                    setDownloading(true)
+                    try {
+                      await downloadMedia(recapStripUrl, `somedia-strip-${Date.now()}.${recapExt}`)
+                    } finally {
+                      setDownloading(false)
+                    }
+                  }}
+                  className={`w-full h-12 sm:h-13 rounded-2xl font-bold text-sm sm:text-base tracking-wide flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-xl cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed ${tc(
+                    'bg-white text-black hover:bg-[#ececec] shadow-[0_0_20px_rgba(255,255,255,0.15)]',
+                    'bg-black text-white hover:bg-[#222] shadow-[0_0_20px_rgba(0,0,0,0.15)]'
+                  )}`}
+                >
+                  {downloading || !recapStripUrl ? <LoadingOutlined /> : <DownloadOutlined style={{ fontSize: 18 }} />}
+                  {!recapStripUrl ? 'Đang kết xuất Video Recap...' : 'Tải Video Recap'}
+                </button>
+              ) : (
+                <button
+                  onClick={handleDownload}
+                  disabled={downloading}
+                  className={`w-full h-12 sm:h-13 rounded-2xl font-bold text-sm sm:text-base tracking-wide flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-xl cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed ${tc(
+                    'bg-white text-black hover:bg-[#ececec] shadow-[0_0_20px_rgba(255,255,255,0.15)]',
+                    'bg-black text-white hover:bg-[#222] shadow-[0_0_20px_rgba(0,0,0,0.15)]'
+                  )}`}
+                >
+                  {downloading ? <LoadingOutlined /> : <DownloadOutlined style={{ fontSize: 18 }} />}
+                  Tải ảnh về máy
+                </button>
+              )}
 
               {/* Local Storage Privacy Badge */}
               <div className={`p-2 rounded-xl text-center border flex items-center justify-center flex-wrap gap-1 ${tc('bg-emerald-500/10 border-emerald-500/20 text-emerald-400', 'bg-emerald-50 border-emerald-200 text-emerald-700')}`}>
@@ -271,24 +287,6 @@ export default function ResultModal({
                   </button>
                 )}
               </div>
-
-              {recapStripUrl && (
-                <button
-                  disabled={downloading}
-                  onClick={async () => {
-                    if (downloading) return
-                    setDownloading(true)
-                    try {
-                      await downloadMedia(recapStripUrl, `somedia-strip-${Date.now()}.${recapExt}`)
-                    } finally {
-                      setDownloading(false)
-                    }
-                  }}
-                  className={`w-full h-11 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 border transition-all cursor-pointer shadow-md disabled:opacity-50 ${btnSecondaryClass}`}
-                >
-                  <DownloadOutlined /> Tải Video Recap
-                </button>
-              )}
 
               <div className="grid grid-cols-2 gap-2.5">
                 <button
@@ -312,7 +310,7 @@ export default function ResultModal({
                 <div className="w-full flex flex-col items-center gap-3 text-center py-1">
                   <div className="flex flex-col items-center gap-1">
                     <span className={`text-xs sm:text-sm font-bold uppercase tracking-wider ${tc('text-white', 'text-black')}`}>
-                      📱 Quét mã QR để xem &amp; tải trên điện thoại
+                      Quét mã QR để xem &amp; tải trên điện thoại
                     </span>
                     <span className={`text-[11px] ${tc('text-[#888]', 'text-[#777]')}`}>
                       Tạo mã QR nếu bạn muốn chuyển ảnh sang điện thoại hoặc gửi bạn bè.
@@ -345,7 +343,7 @@ export default function ResultModal({
                 <>
                   <div className="flex items-center gap-1.5 text-center">
                     <span className={`text-xs sm:text-sm font-bold uppercase tracking-wider ${tc('text-[#aaa]', 'text-[#555]')}`}>
-                      📱 Quét mã QR để xem &amp; tải trên điện thoại
+                      Quét mã QR để xem &amp; tải trên điện thoại
                     </span>
                   </div>
 
