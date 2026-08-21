@@ -17,7 +17,6 @@ interface FrameModalProps {
 
 export default function FrameModal({
   open,
-  currentLayout,
   selectedFrame,
   onSelect,
   onClear,
@@ -30,13 +29,19 @@ export default function FrameModal({
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [activeCategoryName, setActiveCategoryName] = useState<string | null>(null)
-  const [layoutFilter, setLayoutFilter] = useState<string | null>(currentLayout.type)
+  const [layoutFilter, setLayoutFilter] = useState<string | null>(null)
   const [contributeOpen, setContributeOpen] = useState(false)
 
-  // Sync slotFilter when modal opens
+  // Reset filters when modal opens: layout = 'Tất cả' (null), category = priority 'Sổ Media' if exists
   useEffect(() => {
-    if (open) setLayoutFilter(currentLayout.type)
-  }, [open, currentLayout.type])
+    if (open) {
+      setLayoutFilter(null)
+      if (categories.length > 0) {
+        const soMediaCat = categories.find(c => c.name.toLowerCase().includes('sổ media'))
+        setActiveCategoryName(soMediaCat ? soMediaCat.name : null)
+      }
+    }
+  }, [open, categories])
 
   // Load data when modal opens
   useEffect(() => {
@@ -45,10 +50,15 @@ export default function FrameModal({
     setLoading(true)
     setError(null)
     Promise.all([fetchFrames(), fetchCategories()])
-      .then(([f, c]) => { setFrames(f); setCategories(c) })
+      .then(([f, c]) => {
+        setFrames(f)
+        setCategories(c)
+        const soMediaCat = c.find(cat => cat.name.toLowerCase().includes('sổ media'))
+        setActiveCategoryName(soMediaCat ? soMediaCat.name : null)
+      })
       .catch(() => setError('Không tải được danh sách khung. Kiểm tra kết nối mạng.'))
       .finally(() => setLoading(false))
-  }, [open])
+  }, [open, frames.length])
 
   const filtered = useMemo(() => {
     let list = layoutFilter

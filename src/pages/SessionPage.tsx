@@ -11,7 +11,7 @@ import {
   CameraOutlined,
 } from '@ant-design/icons'
 import { fetchSession, type SessionData } from '@/lib/sessionService'
-import { downloadMedia, isMobileDevice } from '@/lib/imageProcessing'
+import { downloadMedia } from '@/lib/imageProcessing'
 import { useThemeClass } from '@/stores/themeStore'
 import ThemeToggle from '@/components/photobooth/ThemeToggle'
 import RecruitmentBanner from '@/components/photobooth/RecruitmentBanner'
