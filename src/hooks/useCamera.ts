@@ -47,11 +47,23 @@ function isRearCameraDevice(label?: string): boolean {
   )
 }
 
+const CAMERA_MIRROR_KEY = 'pb_camera_mirrored'
+
+function getInitialMirror(): boolean {
+  try {
+    const saved = localStorage.getItem(CAMERA_MIRROR_KEY)
+    if (saved !== null) {
+      return saved === 'true'
+    }
+  } catch { /* noop */ }
+  return false
+}
+
 export function useCamera(): UseCameraReturn {
   const videoRef = useRef<HTMLVideoElement>(null!)
   const streamRef = useRef<MediaStream | null>(null)
   const [stream, setStream] = useState<MediaStream | null>(null)
-  const [isMirrored, setIsMirrored] = useState(true)
+  const [isMirrored, setIsMirrored] = useState<boolean>(getInitialMirror)
   const [soundEnabled, setSoundEnabled] = useState(true)
   const [isReady, setIsReady] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -95,17 +107,17 @@ export function useCamera(): UseCameraReturn {
         .map((d, i) => ({ deviceId: d.deviceId, label: d.label || `Camera ${i + 1}` }))
       setDevices(videoDevices)
 
-      // Track active device & auto-detect mirroring for front vs rear camera
+      // Track active device
       const track = mediaStream.getVideoTracks()[0]
       const currentId = track?.getSettings?.()?.deviceId ?? deviceId ?? null
       const trackLabel = track?.label ?? ''
       setActiveDeviceId(currentId)
 
-      // Rear camera does NOT mirror by default; front camera DOES mirror
-      if (isRearCameraDevice(trackLabel)) {
-        setIsMirrored(false)
-      } else if (trackLabel.toLowerCase().includes('front') || trackLabel.toLowerCase().includes('trước') || trackLabel.toLowerCase().includes('user')) {
-        setIsMirrored(true)
+      // Only auto-detect if user has not explicitly set a preference in localStorage
+      if (localStorage.getItem(CAMERA_MIRROR_KEY) === null) {
+        if (isRearCameraDevice(trackLabel)) {
+          setIsMirrored(false)
+        }
       }
 
       const video = videoRef.current
@@ -141,7 +153,15 @@ export function useCamera(): UseCameraReturn {
     return () => { streamRef.current?.getTracks().forEach(t => t.stop()) }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const toggleMirror = useCallback(() => setIsMirrored(m => !m), [])
+  const toggleMirror = useCallback(() => {
+    setIsMirrored(prev => {
+      const next = !prev
+      try {
+        localStorage.setItem(CAMERA_MIRROR_KEY, String(next))
+      } catch { /* noop */ }
+      return next
+    })
+  }, [])
 
   const toggleSound = useCallback(() => {
     _soundEnabled = !_soundEnabled
@@ -149,13 +169,10 @@ export function useCamera(): UseCameraReturn {
   }, [])
 
   const selectDevice = useCallback((deviceId: string) => {
-    // Check label of selected device from list
     const found = devices.find(d => d.deviceId === deviceId)
-    if (found) {
+    if (found && localStorage.getItem(CAMERA_MIRROR_KEY) === null) {
       if (isRearCameraDevice(found.label)) {
         setIsMirrored(false)
-      } else {
-        setIsMirrored(true)
       }
     }
     startCamera(deviceId)
