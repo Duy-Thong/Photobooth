@@ -367,7 +367,7 @@ export async function buildStripVideo(
   fps: 12 | 24 = 12,
   isX2?: boolean,
 ): Promise<string | null> {
-  if (!clipUrls.length) return null
+  if (!clipUrls.length || clipUrls.some(c => !c)) return null
 
   const frameImg = await loadImage(frameUrl)
   const frameSlots = slots_data || detectSlotsFromImg(frameImg)

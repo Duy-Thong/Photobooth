@@ -34,7 +34,7 @@ export default function HomePage() {
   const [countdownValue, setCountdownValue] = useState<number | null>(null)
   const [showFlash, setShowFlash] = useState(false)
   const [videoRecap, setVideoRecap] = useState(false)
-  const [recapClips, setRecapClips] = useState<string[]>([])
+  const [recapClips, setRecapClips] = useState<(string | null)[]>([])
   const [recapMimeType, setRecapMimeType] = useState<string>('video/webm')
   const [recapStripUrl, setRecapStripUrl] = useState<string | null>(null)
   const [buildingStrip, setBuildingStrip] = useState(false)
@@ -47,6 +47,23 @@ export default function HomePage() {
   const abortRef = useRef(false)
   const capturedCount = capturedSlots.filter(Boolean).length
   const tc = useThemeClass()
+
+  // Helper to clear & revoke all video recap clips
+  const clearRecapClips = useCallback(() => {
+    setRecapClips(prev => {
+      prev.forEach(url => { if (url) URL.revokeObjectURL(url) })
+      return []
+    })
+    setRecapStripUrl(null)
+    setBuildingStrip(false)
+  }, [])
+
+  const handleToggleVideoRecap = useCallback((enabled: boolean) => {
+    setVideoRecap(enabled)
+    if (!enabled) {
+      clearRecapClips()
+    }
+  }, [clearRecapClips])
 
   // First time visit privacy notice popup
   useEffect(() => {
@@ -70,17 +87,28 @@ export default function HomePage() {
 
   // Build the combined strip video once we have all clips + a frame
   useEffect(() => {
-    if (!finalImageUrl || recapClips.length === 0 || !selectedFrame) return
+    // Only build if videoRecap is active, final image exists, frame is selected,
+    // and all slots have valid non-null video clips matching the layout slot count.
+    if (!videoRecap || !finalImageUrl || !selectedFrame) {
+      setRecapStripUrl(null)
+      return
+    }
+    if (recapClips.length !== layout.slots || recapClips.some(c => !c)) {
+      setRecapStripUrl(null)
+      return
+    }
+
     setRecapStripUrl(null)
     setBuildingStrip(true)
     const fUrl = selectedFrame.storageUrl ?? `/frames/${selectedFrame.filename}`
-    buildStripVideo(recapClips, fUrl, selectedFrame.slots_data, 24, isX2)
+    const validClips = recapClips as string[]
+    buildStripVideo(validClips, fUrl, selectedFrame.slots_data, 24, isX2)
       .then(url => setRecapStripUrl(url))
       .catch(() => { })
       .finally(() => setBuildingStrip(false))
     // Re-run only when finalImageUrl changes (clips + frameUrl are stable at that point)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [finalImageUrl])
+  }, [finalImageUrl, videoRecap, recapClips, selectedFrame, layout.slots, isX2])
 
   // Auto-open frame modal only if no frame selected. 
   // Auto-build is now DISABLED per user request (manual only).
@@ -94,9 +122,10 @@ export default function HomePage() {
 
   // ---------- Single shot with countdown ----------
   // If videoRecap is on: start recording when countdown begins, stop when photo is taken.
-  // This produces one clip per slot.
+  // This produces one clip per slot, stored at the exact slot index.
   const takeOnePhoto = useCallback((): Promise<void> => {
     return new Promise((resolve) => {
+      const targetIndex = usePhotoboothStore.getState().capturedSlots.findIndex(s => s === null)
       if (videoRecap) startRecording(30)
       let count = countdown
       setCountdownValue(count)
@@ -112,8 +141,14 @@ export default function HomePage() {
           if (dataUrl) addPhoto(dataUrl, true)
           if (videoRecap) {
             stopRecording().then(url => {
-              if (url) {
-                setRecapClips(prev => [...prev, url])
+              if (url && targetIndex !== -1) {
+                setRecapClips(prev => {
+                  const next = [...prev]
+                  while (next.length < layout.slots) next.push(null)
+                  if (next[targetIndex]) URL.revokeObjectURL(next[targetIndex]!)
+                  next[targetIndex] = url
+                  return next
+                })
                 setRecapMimeType(getVideoMimeType())
               }
               resolve()
@@ -126,7 +161,7 @@ export default function HomePage() {
         }
       }, 1000)
     })
-  }, [countdown, captureFrame, addPhoto, videoRecap, startRecording, stopRecording, getVideoMimeType, activeFilter])
+  }, [countdown, captureFrame, addPhoto, videoRecap, startRecording, stopRecording, getVideoMimeType, activeFilter, layout.slots])
 
   // ---------- Manual single capture ----------
   const handleManualCapture = useCallback(async () => {
@@ -165,14 +200,12 @@ export default function HomePage() {
     abortRef.current = true
     setIsCapturing(false)
     cancelRecording()
-    setRecapClips([])
+    clearRecapClips()
     setRecapMimeType('video/webm')
-    setRecapStripUrl(null)
-    setBuildingStrip(false)
     resetPhotos()
     setFinalImageUrl(null)
     setCountdownValue(null)
-  }, [resetPhotos, setFinalImageUrl, setIsCapturing, cancelRecording])
+  }, [resetPhotos, setFinalImageUrl, setIsCapturing, cancelRecording, clearRecapClips])
 
   // ---------- Build final strip ----------
   const handleBuildStrip = useCallback(async () => {
@@ -189,7 +222,7 @@ export default function HomePage() {
     } catch {
       messageApi.error('Tạo ảnh thất bại, thử lại nhé!')
     }
-  }, [capturedSlots, layout, activeEffects, selectedFrame, setFinalImageUrl, messageApi])
+  }, [capturedSlots, layout, activeEffects, selectedFrame, isX2, videoRecap, setFinalImageUrl, messageApi])
 
   // ---------- Download / Show Result ----------
   const handleDownload = useCallback(() => {
@@ -200,6 +233,16 @@ export default function HomePage() {
   const handleUploadSlot = useCallback((index: number, dataUrl: string) => {
     replaceSlot(index, dataUrl)
     setFinalImageUrl(null)
+    // Uploaded photo does not have a video clip, revoke & clear this slot's clip
+    setRecapClips(prev => {
+      const next = [...prev]
+      if (next[index]) {
+        URL.revokeObjectURL(next[index]!)
+        next[index] = null
+      }
+      return next
+    })
+    setRecapStripUrl(null)
   }, [replaceSlot, setFinalImageUrl])
 
   const handleRemoveSlot = useCallback((index: number) => {
@@ -208,6 +251,16 @@ export default function HomePage() {
       next[index] = null
       return { capturedSlots: next, finalImageUrl: null }
     })
+    // Revoke & clear this slot's clip
+    setRecapClips(prev => {
+      const next = [...prev]
+      if (next[index]) {
+        URL.revokeObjectURL(next[index]!)
+        next[index] = null
+      }
+      return next
+    })
+    setRecapStripUrl(null)
   }, [])
 
   const handleUploadAll = useCallback((dataUrl: string) => {
@@ -218,7 +271,8 @@ export default function HomePage() {
     }
     addPhoto(dataUrl, false)
     setFinalImageUrl(null)
-  }, [selectedFrame, addPhoto, setFinalImageUrl, messageApi])
+    clearRecapClips()
+  }, [selectedFrame, addPhoto, setFinalImageUrl, clearRecapClips, messageApi])
 
   return (
     <>
@@ -256,6 +310,7 @@ export default function HomePage() {
                 // Slot count changed — must reset photos
                 store.setLayout(match)
                 store.setFinalImageUrl(null)
+                clearRecapClips()
               }
               messageApi.info(`Đã chuyển layout sang ${match.label} để khớp với khung (${detectedSlots} ảnh)`)
               targetLayout = match
@@ -265,6 +320,7 @@ export default function HomePage() {
           setSelectedFrame(frameItem)
           setFrameModalOpen(false)
           setFinalImageUrl(null)
+          setRecapStripUrl(null)
 
           // If all slots are already filled after layout (possibly changed), auto-build
           const refreshed = usePhotoboothStore.getState()
@@ -283,6 +339,7 @@ export default function HomePage() {
         onClear={() => {
           setSelectedFrame(null)
           setFinalImageUrl(null)
+          clearRecapClips()
         }}
         onClose={() => setFrameModalOpen(false)}
       />
@@ -401,11 +458,12 @@ export default function HomePage() {
                   onAutoCapture={handleAutoCapture}
                   onRetake={handleRetake}
                   onUploadAll={handleUploadAll}
-                  onToggleVideoRecap={setVideoRecap}
+                  onToggleVideoRecap={handleToggleVideoRecap}
                   onChooseFrame={() => setFrameModalOpen(true)}
                   onClearFrame={() => {
                     setSelectedFrame(null)
                     setFinalImageUrl(null)
+                    clearRecapClips()
                   }}
                   onContributeFrame={() => setContributeOpen(true)}
                   onCountdownChange={setCountdown}
