@@ -1,35 +1,611 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Feedback: Ai cũng có thể tạo, chỉ Admin có thể đọc và xóa
-    match /feedback/{id} {
-      allow create: if true;
-      allow read, delete: if request.auth != null;
+
+    // ═══════════════════════════════════════════════════════════════
+    //  HELPER FUNCTIONS
+    //  Tất cả role checks dựa trên field `_roleKeys` (mảng string)
+    //  được tự động duy trì bởi service layer mỗi khi roles thay đổi.
+    // ═══════════════════════════════════════════════════════════════
+
+    // User đã đăng nhập
+    function isAuth() {
+      return request.auth != null;
     }
 
-    // Admins: Chỉ những ai đã là admin (có canManageAdmins) mới có thể đọc/ghi danh sách admin
-    // Để khởi tạo super admin ban đầu, cho phép read nếu là chính mình
-    match /admins/{uid} {
-      allow read: if request.auth != null && (request.auth.uid == uid || get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.permissions.canManageAdmins == true);
-      allow write: if request.auth != null && (get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.permissions.canManageAdmins == true || (request.auth.uid == uid && !exists(/databases/$(database)/documents/admins/$(uid))));
+    // Lấy user document data (cached trong 1 lần evaluation)
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
 
-    // Sessions: Đọc public theo ID, tạo public, chỉ Admin có thể xóa/list/update
-    match /sessions/{id} {
-      allow create, get: if true;
-      allow list, delete, update: if request.auth != null;
+    // Kiểm tra user có role cụ thể đang active
+    function hasRole(role) {
+      return isAuth()
+        && '_roleKeys' in getUserData()
+        && role in getUserData()._roleKeys;
     }
 
-    // Frames: Ai cũng có thể đọc, chỉ Admin có thể viết
+    // Kiểm tra user có ít nhất 1 trong các roles
+    function hasAnyRole(roles) {
+      return isAuth()
+        && '_roleKeys' in getUserData()
+        && getUserData()._roleKeys.hasAny(roles);
+    }
+
+    // Admin cấp CLB: admin, chủ nhiệm, phó chủ nhiệm
+    function isGlobalAdmin() {
+      return hasAnyRole(['admin', 'president', 'vice_president']);
+    }
+
+    // Ban Điều Hành (BĐH): admin + CN + PCN + Trưởng ban + Phó ban
+    function isExecutive() {
+      return hasAnyRole(['admin', 'president', 'vice_president', 'department_head', 'department_deputy']);
+    }
+
+    // Thành viên chính thức (không phải guest, trainee)
+    function isActiveMember() {
+      return hasAnyRole(['admin', 'president', 'vice_president', 'department_head', 'department_deputy', 'member', 'mentor']);
+    }
+
+    // Kiểm tra các field nhạy cảm về role KHÔNG bị thay đổi (chống tự nâng quyền)
+    function roleFieldsUnchanged() {
+      return !request.resource.data.diff(resource.data).affectedKeys()
+        .hasAny(['roles', '_roleKeys', 'role', 'status']);
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  PHOTOBOOTH COLLECTIONS
+    // ═══════════════════════════════════════════════════════════════
+    
+    // Kiểm tra user là Admin Photobooth (có document trong /admins/ hoặc là BĐH CLB)
+    function isPhotoboothAdmin() {
+      return isAuth() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && isExecutive())
+      );
+    }
+
+    // 1. FRAMES: Mở đọc công khai, chỉ Admin Photobooth / BĐH mới thêm/sửa/xóa frame
     match /frames/{id} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if isPhotoboothAdmin();
     }
-
-    // Frame Requests: Ai cũng có thể tạo đề xuất, chỉ Admin có thể quản lý
+    // 2. SESSIONS: Khách tạo session & xem ảnh qua ID/QR; chỉ Admin Photobooth / BĐH mới list/xóa
+    match /sessions/{id} {
+      allow create, get: if true;
+      allow list, update, delete: if isPhotoboothAdmin();
+    }
+    // 3. FEEDBACK: Khách gửi góp ý không cần login
+    match /feedback/{id} {
+      allow create: if true;
+      allow read, delete: if isPhotoboothAdmin();
+    }
+    // 4. FRAME REQUESTS: Khách gửi đề xuất khung ảnh
     match /frame_requests/{id} {
       allow create: if true;
-      allow read, update, delete: if request.auth != null;
+      allow read, update, delete: if isPhotoboothAdmin();
     }
+    // 5. ADMINS: Quản trị viên Photobooth
+    match /admins/{uid} {
+      allow read: if isAuth();
+      allow write: if isPhotoboothAdmin() || (isAuth() && request.auth.uid == uid);
+    }
+    
+    // ═══════════════════════════════════════════════════════════════
+    //  1. USERS — Quản lý tài khoản thành viên
+    // ═══════════════════════════════════════════════════════════════
+    match /users/{userId} {
+      // Tất cả user đã đăng nhập đọc được (member directory, assignee selectors)
+      allow read: if isAuth();
+
+      // Chỉ tạo document cho chính mình (register / login Google)
+      // HOẶC BĐH tạo tài khoản cho thành viên khác (khi cấp tài khoản)
+      allow create: if isAuth() && (
+        request.auth.uid == userId ||
+        isExecutive()
+      );
+
+      // Self-update profile (KHÔNG được sửa roles, _roleKeys, status)
+      // HOẶC Executive update (sửa roles cho người khác)
+      allow update: if isAuth() && (
+        (request.auth.uid == userId && roleFieldsUnchanged()) ||
+        isExecutive()
+      );
+
+      // Chỉ admin cấp CLB mới xóa user
+      allow delete: if isGlobalAdmin();
+    }
+
+
+    // ═══════════════════════════════════════════════════════════════
+    //  2. ACTIVITIES — Sự kiện, buổi họp, workshop
+    // ═══════════════════════════════════════════════════════════════
+    match /activities/{activityId} {
+      allow read: if isAuth();
+      allow create: if isExecutive();
+      allow update: if isExecutive();
+      allow delete: if isExecutive();
+
+      // Participants — Đăng ký / điểm danh / nộp bài tập
+      match /participants/{participantId} {
+        allow read: if isAuth();
+        // Tự join (participantId == uid) hoặc BĐH thêm
+        allow create: if isAuth() && (
+          request.auth.uid == participantId || isExecutive()
+        );
+        // Tự update (homework, etc.) hoặc BĐH (attendance, grading)
+        allow update: if isAuth() && (
+          request.auth.uid == participantId || isExecutive()
+        );
+        // Tự rời hoặc BĐH xóa
+        allow delete: if isAuth() && (
+          request.auth.uid == participantId || isExecutive()
+        );
+      }
+
+      // Drink Orders — Order nước cho sự kiện
+      match /drink_orders/{orderId} {
+        allow read: if isAuth();
+        // Tạo và sửa order: user tạo cho mình hoặc BĐH quản lý
+        allow create: if isAuth();
+        allow update: if isAuth() && (
+          resource.data.userId == request.auth.uid || isExecutive()
+        );
+        allow delete: if isExecutive();
+      }
+    }
+
+    // Collection Group Query cho participants (getUserActivities)
+    match /{path=**}/participants/{participantId} {
+      allow read: if isAuth();
+    }
+
+
+    // ═══════════════════════════════════════════════════════════════
+    //  3. PROJECTS — Dự án Kanban
+    // ═══════════════════════════════════════════════════════════════
+    match /projects/{projectId} {
+      allow read: if isAuth();
+      allow create, update, delete: if isExecutive();
+    }
+
+
+    // ═══════════════════════════════════════════════════════════════
+    //  4. TASKS — Công việc (Kanban board)
+    // ═══════════════════════════════════════════════════════════════
+    match /tasks/{taskId} {
+      allow read: if isAuth();
+
+      // Chỉ BĐH tạo task
+      allow create: if isExecutive();
+
+      // BĐH sửa task HOẶC assignee tick checklist
+      allow update: if isExecutive() || (
+        isAuth()
+        && 'assignees' in resource.data
+        && request.auth.uid in resource.data.assignees
+      );
+
+      // Chỉ BĐH xóa task
+      allow delete: if isExecutive();
+
+      // Activity Logs — Lịch sử thao tác (immutable)
+      match /activityLogs/{logId} {
+        allow read: if isAuth();
+        allow create: if isAuth();
+        allow update, delete: if false;
+      }
+    }
+
+
+    // ═══════════════════════════════════════════════════════════════
+    //  5. APPLICATIONS — Đơn ứng tuyển + subcollections
+    // ═══════════════════════════════════════════════════════════════
+    match /applications/{applicationId} {
+      // Thành viên đã đăng nhập xem hồ sơ ứng viên
+      allow read: if isAuth();
+
+      // ⚠️ PUBLIC CREATE — Form tuyển dụng không cần đăng nhập
+      allow create: if true;
+
+      // Chấm CV, cập nhật status — chỉ thành viên chính thức
+      // HOẶC Ứng viên tự cập nhật ban chính (finalTrainingDepartment)
+      allow update: if isActiveMember() || (
+        isAuth() && 
+        resource.data.linkedUid == request.auth.uid &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['finalTrainingDepartment'])
+      );
+
+      // Chỉ admin cấp CLB xóa hồ sơ
+      allow delete: if isGlobalAdmin();
+
+      // Phiếu bình chọn theo vòng (cv, interview, training)
+      match /rounds/{roundId}/votes/{voterId} {
+        allow read: if isActiveMember();
+        allow create, update: if isActiveMember() && request.auth.uid == voterId;
+        allow delete: if isActiveMember() && request.auth.uid == voterId;
+      }
+
+      // Nhận xét chung
+      match /comments/{commentId} {
+        allow read: if isActiveMember();
+        allow create: if isActiveMember();
+        allow update, delete: if isAuth() && resource.data.adminId == request.auth.uid;
+      }
+
+      // Nhận xét phỏng vấn
+      match /interview_comments/{commentId} {
+        allow read: if isActiveMember();
+        allow create: if isActiveMember();
+        allow update, delete: if isAuth() && resource.data.adminId == request.auth.uid;
+      }
+
+      // Nhận xét training
+      match /training_comments/{commentId} {
+        allow read: if isActiveMember();
+        allow create: if isActiveMember();
+        allow update, delete: if isAuth() && resource.data.adminId == request.auth.uid;
+      }
+    }
+
+
+    // ═══════════════════════════════════════════════════════════════
+    //  6. RECRUITMENT PERIODS — Đợt tuyển dụng
+    // ═══════════════════════════════════════════════════════════════
+    match /recruitment_periods/{periodId} {
+      // Public chỉ đọc đợt đang mở, auth user đọc tất cả
+      allow read: if isAuth() || resource.data.status == 'open';
+      allow create, update, delete: if isGlobalAdmin();
+
+      // Câu hỏi form tuyển dụng — public read
+      match /questions/{questionId} {
+        allow read: if true;
+        allow create, update, delete: if isGlobalAdmin();
+      }
+    }
+
+
+    // ═══════════════════════════════════════════════════════════════
+    //  7. ARCHIVED RECRUITMENT PERIODS — Lưu trữ đợt tuyển
+    // ═══════════════════════════════════════════════════════════════
+    match /archived_recruitment_periods/{periodId} {
+      allow read, create, delete: if isGlobalAdmin();
+      allow update: if false;
+    }
+
+
+    // ═══════════════════════════════════════════════════════════════
+    //  8. RECRUITMENT SCHEDULES — Lịch phỏng vấn
+    // ═══════════════════════════════════════════════════════════════
+    match /recruitment_schedules/{scheduleId} {
+      allow read: if isAuth();
+      allow create, delete: if isGlobalAdmin();
+      allow update: if isActiveMember();
+
+      match /slots/{slotId}/tables/{tableId} {
+        allow read: if isAuth();
+        allow write: if isActiveMember();
+      }
+
+      match /checkins/{checkinId} {
+        allow read: if isAuth();
+        allow write: if isActiveMember();
+      }
+
+      match /assignments/{assignmentId} {
+        allow read: if isAuth();
+        allow write: if isActiveMember();
+      }
+
+      match /interview_notes/{noteId} {
+        allow read: if isAuth();
+        allow write: if isActiveMember();
+      }
+    }
+
+
+    // ═══════════════════════════════════════════════════════════════
+    //  9. INTERVIEW DAYS — Ngày phỏng vấn
+    // ═══════════════════════════════════════════════════════════════
+    match /interview_days/{dayId} {
+      allow read: if isAuth();
+      allow create, delete: if isGlobalAdmin();
+      allow update: if isActiveMember();
+
+      match /checkins/{checkinId} {
+        allow read: if isAuth();
+        allow write: if isActiveMember();
+      }
+    }
+
+
+    // ═══════════════════════════════════════════════════════════════
+    //  10. INTERVIEWER STATUS — Trạng thái giám khảo
+    // ═══════════════════════════════════════════════════════════════
+    match /interviewer_status/{statusId} {
+      allow read: if isAuth();
+      allow create, update, delete: if isActiveMember();
+    }
+
+
+    // ═══════════════════════════════════════════════════════════════
+    //  11. RECRUITMENT QUESTIONS (standalone)
+    // ═══════════════════════════════════════════════════════════════
+    match /recruitment_questions/{questionId} {
+      allow read: if true;
+      allow write: if isGlobalAdmin();
+    }
+
+
+    // ═══════════════════════════════════════════════════════════════
+    //  12. MENTOR / TRAINING GROUPS
+    // ═══════════════════════════════════════════════════════════════
+    match /mentor_groups/{groupId} {
+      allow read: if isAuth();
+      allow write: if isExecutive();
+    }
+
+    match /recruitment_training_groups/{groupId} {
+      allow read: if isAuth();
+      allow write: if isExecutive();
+    }
+
+
+    // ═══════════════════════════════════════════════════════════════
+    //  13. RECRUITMENT EVALUATIONS
+    // ═══════════════════════════════════════════════════════════════
+    match /recruitment_evaluations/{evalId} {
+      allow read: if isAuth();
+      allow write: if isActiveMember();
+    }
+
+
+    // ═══════════════════════════════════════════════════════════════
+    //  14. RECRUITMENT INTERVIEWS
+    // ═══════════════════════════════════════════════════════════════
+    match /recruitment_interviews/{interviewId} {
+      allow read: if isAuth();
+      allow write: if isActiveMember();
+    }
+
+
+    // ═══════════════════════════════════════════════════════════════
+    //  15. RECRUITMENT INTERVIEWERS
+    // ═══════════════════════════════════════════════════════════════
+    match /recruitment_interviewers/{interviewerId} {
+      allow read: if isAuth();
+      allow write: if isActiveMember();
+    }
+
+
+    // ═══════════════════════════════════════════════════════════════
+    //  16. RECRUITMENT MAIL
+    // ═══════════════════════════════════════════════════════════════
+    match /recruitment_mail_templates/{templateId} {
+      allow read, write: if isGlobalAdmin();
+    }
+
+    match /recruitment_mail_logs/{logId} {
+      allow read: if isGlobalAdmin();
+      allow create: if isGlobalAdmin();
+      allow update, delete: if false;
+    }
+
+
+    // ═══════════════════════════════════════════════════════════════
+    //  17-20. OKR SYSTEM — Quản trị mục tiêu
+    // ═══════════════════════════════════════════════════════════════
+    match /okr_cycles/{cycleId} {
+      allow read: if isAuth();
+      allow write: if isGlobalAdmin();
+    }
+
+    match /okr_objectives/{objectiveId} {
+      allow read: if isAuth();
+      // Objective cấp CLB chỉ admin cấp CLB tạo, cấp khác ai cũng tạo được
+      allow create: if isAuth() && (
+        request.resource.data.level != 'club' || isGlobalAdmin()
+      );
+      allow update: if isAuth();
+      allow delete: if isGlobalAdmin();
+    }
+
+    match /okr_key_results/{krId} {
+      allow read: if isAuth();
+      allow create, update: if isAuth();
+      allow delete: if isGlobalAdmin();
+    }
+
+    match /okr_checkins/{checkinId} {
+      allow read: if isAuth();
+      allow create: if isAuth();
+      allow update, delete: if false;
+    }
+
+
+    // ═══════════════════════════════════════════════════════════════
+    //  21-25. ELECTION SYSTEM — Bầu cử Ban Điều Hành
+    // ═══════════════════════════════════════════════════════════════
+    match /elections/{electionId} {
+      allow read: if isAuth();
+      allow write: if hasRole('president');
+    }
+
+    match /election_candidates/{candidateId} {
+      allow read: if isAuth();
+      allow create: if isAuth();
+      allow update: if isAuth() && (
+        resource.data.userId == request.auth.uid || hasRole('president')
+      );
+      allow delete: if hasRole('president');
+    }
+
+    match /election_notes/{noteId} {
+      // Private — chỉ đọc/sửa/xóa note của chính mình
+      allow read, update, delete: if isAuth() && resource.data.userId == request.auth.uid;
+      allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
+    }
+
+    match /election_votes/{voteId} {
+      // Đọc phiếu của mình hoặc Chủ nhiệm xem kết quả
+      allow read: if isAuth() && (
+        resource.data.userId == request.auth.uid || hasRole('president')
+      );
+      // Tạo phiếu 1 lần, không sửa/xóa
+      allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    match /election_logs/{logId} {
+      allow read: if isAuth();
+      allow create: if isAuth();
+      allow update, delete: if false;
+    }
+
+
+    // ═══════════════════════════════════════════════════════════════
+    //  26-31. ACADEMIC SYSTEM — Góc học tập
+    // ═══════════════════════════════════════════════════════════════
+    match /academic_majors/{majorId} {
+      allow read: if isAuth();
+      allow create, update: if isAuth();
+      allow delete: if isGlobalAdmin();
+    }
+
+    match /academic_subjects/{subjectId} {
+      allow read: if isAuth();
+      allow create, update: if isAuth();
+      allow delete: if isGlobalAdmin();
+    }
+
+    match /academic_teachers/{teacherId} {
+      allow read: if isAuth();
+      allow create, update: if isAuth();
+      allow delete: if isGlobalAdmin();
+    }
+
+    match /academic_materials/{materialId} {
+      allow read: if isAuth();
+      allow create: if isAuth();
+      // Chỉ người upload mới sửa
+      allow update: if isAuth() && resource.data.uploadedBy == request.auth.uid;
+      // Người upload hoặc admin xóa
+      allow delete: if isAuth() && (
+        resource.data.uploadedBy == request.auth.uid || isGlobalAdmin()
+      );
+    }
+
+    match /academic_reviews/{reviewId} {
+      allow read: if isAuth();
+      allow create: if isAuth();
+      // Update cho phép upvote toggle
+      allow update: if isAuth();
+      // Người tạo hoặc admin xóa
+      allow delete: if isAuth() && (
+        resource.data.userId == request.auth.uid || isGlobalAdmin()
+      );
+    }
+
+    match /academic_logs/{logId} {
+      allow read: if isAuth();
+      allow create: if isAuth();
+      allow update, delete: if false;
+    }
+
+
+    // ═══════════════════════════════════════════════════════════════
+    //  32-33. NOTIFICATIONS — Thông báo nội bộ
+    // ═══════════════════════════════════════════════════════════════
+    match /notifications/{notificationId} {
+      allow read: if isAuth();
+      allow create, update, delete: if isExecutive();
+    }
+
+    match /notificationReads/{userId} {
+      // Chỉ đọc/sửa trạng thái đọc của chính mình
+      allow read, create, update: if isAuth() && request.auth.uid == userId;
+      allow delete: if false;
+    }
+
+
+    // ═══════════════════════════════════════════════════════════════
+    //  34. MAIL — Firebase Trigger Email Extension
+    // ═══════════════════════════════════════════════════════════════
+    match /mail/{mailId} {
+      allow read: if isGlobalAdmin();
+      allow create: if isGlobalAdmin();
+      // Extension (admin SDK) tự update delivery status — bypass rules
+      allow update, delete: if false;
+    }
+
+
+    // ═══════════════════════════════════════════════════════════════
+    //  35. DOCUMENTS — Tài liệu nội bộ
+    // ═══════════════════════════════════════════════════════════════
+    match /documents/{docId} {
+      allow read: if isAuth();
+      allow create, update, delete: if isExecutive();
+    }
+
+
+    // ═══════════════════════════════════════════════════════════════
+    //  36. GUIDES — Hướng dẫn sử dụng
+    // ═══════════════════════════════════════════════════════════════
+    match /guides/{guideId} {
+      allow read: if isAuth();
+      allow write: if isGlobalAdmin();
+    }
+
+
+    // ═══════════════════════════════════════════════════════════════
+    //  37. AVATAR FRAMES — Khung avatar (public)
+    // ═══════════════════════════════════════════════════════════════
+    match /avatar_frames/{frameId} {
+      allow read: if true;
+      allow write: if isExecutive();
+    }
+
+
+    // ═══════════════════════════════════════════════════════════════
+    //  38. BUGS — Báo cáo lỗi
+    // ═══════════════════════════════════════════════════════════════
+    match /bugs/{bugId} {
+      allow read: if isGlobalAdmin();
+      allow create: if isAuth();
+      allow update: if isGlobalAdmin();
+      allow delete: if false;
+    }
+
+
+    // ═══════════════════════════════════════════════════════════════
+    //  39. LANDING PAGE CMS — Nội dung website công khai
+    // ═══════════════════════════════════════════════════════════════
+    match /landingpage/{collectionName} {
+      allow read: if true;
+      allow write: if isGlobalAdmin();
+
+      match /items/{itemId} {
+        allow read: if true;
+        allow write: if isGlobalAdmin();
+      }
+    }
+
+
+    // ═══════════════════════════════════════════════════════════════
+    //  40. MEMBER MESSAGES — Lời nhắn thành viên gửi CLB (Công khai)
+    // ═══════════════════════════════════════════════════════════════
+    match /member_messages/{userId} {
+      // Website ngoài (somediaclub.com) và khách vãng lai đọc công khai
+      allow read: if true;
+
+      // Thành viên tự tạo / cập nhật lời nhắn của chính mình
+      allow create, update: if isAuth() && request.auth.uid == userId;
+
+      // Thành viên tự xóa hoặc Ban Lãnh đạo cấp CLB xóa
+      allow delete: if isAuth() && (
+        request.auth.uid == userId || isGlobalAdmin()
+      );
+    }
+
   }
 }

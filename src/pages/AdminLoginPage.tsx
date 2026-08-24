@@ -24,7 +24,7 @@ export default function AdminLoginPage() {
       <div className="w-full max-w-sm">
         {/* Logo / brand */}
         <div className="text-center mb-8">
-          <h1 className={`text-2xl font-bold ${tc('text-white', 'text-slate-900')}`} style={{ letterSpacing: '-0.03em' }}>Photobooth</h1>
+          <h1 className={`text-2xl font-bold ${tc('text-white', 'text-slate-900')}`} style={{ letterSpacing: '-0.03em' }}>Sổ Media Photobooth</h1>
           <p className={`text-[10px] uppercase tracking-widest font-semibold mt-1 ${tc('text-slate-500', 'text-slate-400')}`}>Admin Panel</p>
         </div>
 

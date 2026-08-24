@@ -69,17 +69,24 @@ export async function deleteSession(id: string): Promise<void> {
 export function listenToSessions(callback: (sessions: SessionData[]) => void): () => void {
   const q = query(collection(db, SESSIONS_COLLECTION), orderBy('createdAt', 'desc'))
   
-  return onSnapshot(q, (snap: any) => {
-    const sessions = snap.docs.map((doc: any) => {
-      const d = doc.data()
-      return {
-        id: doc.id,
-        imageUrl: d.imageUrl,
-        videoUrl: d.videoUrl ?? null,
-        createdAt: d.createdAt?.toDate?.()?.toISOString() ?? new Date().toISOString(),
-        printedAt: d.printedAt?.toDate?.()?.toISOString() ?? null,
-      }
-    })
-    callback(sessions)
-  })
+  return onSnapshot(
+    q, 
+    (snap: any) => {
+      const sessions = snap.docs.map((doc: any) => {
+        const d = doc.data()
+        return {
+          id: doc.id,
+          imageUrl: d.imageUrl,
+          videoUrl: d.videoUrl ?? null,
+          createdAt: d.createdAt?.toDate?.()?.toISOString() ?? new Date().toISOString(),
+          printedAt: d.printedAt?.toDate?.()?.toISOString() ?? null,
+        }
+      })
+      callback(sessions)
+    },
+    (err: any) => {
+      console.warn('Session snapshot listener error:', err)
+      callback([])
+    }
+  )
 }

@@ -1041,7 +1041,7 @@ export default function AdminPage() {
       <header className={`px-6 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b ${tc('bg-[#111] border-[#1f1f1f]', 'bg-white border-slate-200 shadow-xs')}`}>
         <div className="flex items-center gap-3">
           <div>
-            <h1 className={`font-bold text-lg leading-tight ${tc('text-white', 'text-slate-900')}`} style={{ letterSpacing: '-0.02em' }}>Photobooth</h1>
+            <h1 className={`font-bold text-lg leading-tight ${tc('text-white', 'text-slate-900')}`} style={{ letterSpacing: '-0.02em' }}>Sổ Media Photobooth</h1>
             <p className={`text-[10px] uppercase tracking-widest font-semibold ${tc('text-slate-500', 'text-slate-400')}`}>Admin Panel</p>
           </div>
         </div>
