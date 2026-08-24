@@ -112,11 +112,25 @@ export default function FrameSlotEditor({ imageUrl, slots, onChange }: FrameSlot
       }
     }
 
+    const rawX = Math.round(minX / canvasScale)
+    const rawY = Math.round(minY / canvasScale)
+    const rawW = Math.round((maxX - minX + 1) / canvasScale)
+    const rawH = Math.round((maxY - minY + 1) / canvasScale)
+
+    // Add padding (bleed outward)
+    const pad = Math.max(6, Math.round(Math.min(rawW, rawH) * 0.015))
+    const finalX = Math.max(0, rawX - pad)
+    const finalY = Math.max(0, rawY - pad)
+    const maxW = (imgSize.w || finalX + rawW) - finalX
+    const maxH = (imgSize.h || finalY + rawH) - finalY
+    const finalW = Math.min(maxW, rawW + (rawX - finalX) + pad)
+    const finalH = Math.min(maxH, rawH + (rawY - finalY) + pad)
+
     const newRect: SlotRect = {
-      x: Math.round(minX / canvasScale),
-      y: Math.round(minY / canvasScale),
-      w: Math.round((maxX - minX + 1) / canvasScale),
-      h: Math.round((maxY - minY + 1) / canvasScale),
+      x: finalX,
+      y: finalY,
+      w: finalW,
+      h: finalH,
     }
 
     addSlot(newRect)

@@ -161,11 +161,23 @@ function detectSlotsFromImg(img: HTMLImageElement): SlotRect[] {
     }
 
     if (area >= minArea) {
+      const rawX = Math.round(minX / SCALE)
+      const rawY = Math.round(minY / SCALE)
+      const rawW = Math.round((maxX - minX + 1) / SCALE)
+      const rawH = Math.round((maxY - minY + 1) / SCALE)
+
+      // Add padding (bleed outward) so photos tuck cleanly under frame edges
+      const pad = Math.max(6, Math.round(Math.min(rawW, rawH) * 0.015))
+      const finalX = Math.max(0, rawX - pad)
+      const finalY = Math.max(0, rawY - pad)
+      const finalW = Math.min(W - finalX, rawW + (rawX - finalX) + pad)
+      const finalH = Math.min(H - finalY, rawH + (rawY - finalY) + pad)
+
       slots.push({
-        x: Math.round(minX / SCALE),
-        y: Math.round(minY / SCALE),
-        w: Math.round((maxX - minX + 1) / SCALE),
-        h: Math.round((maxY - minY + 1) / SCALE),
+        x: finalX,
+        y: finalY,
+        w: finalW,
+        h: finalH,
       })
     }
   }
@@ -176,12 +188,19 @@ function detectSlotsFromImg(img: HTMLImageElement): SlotRect[] {
 }
 
 /**
- * Inferred layout string (e.g., '1x4', '2x2') based on slot coordinates.
+ * Inferred layout string (e.g., '1x4', '2x2', '1x2') based on slot coordinates.
  */
 export function getLayoutFromSlots(slots: SlotRect[]): string {
   if (!slots || slots.length === 0) return '0x0'
-  
-  const getUniqueGroups = (coords: number[], tolerance = 60) => {
+  const count = slots.length
+  if (count === 1) return '1x1'
+
+  const avgW = slots.reduce((sum, s) => sum + s.w, 0) / count
+  const avgH = slots.reduce((sum, s) => sum + s.h, 0) / count
+  const tolX = Math.max(80, avgW * 0.35)
+  const tolY = Math.max(80, avgH * 0.35)
+
+  const getUniqueGroups = (coords: number[], tolerance: number) => {
     const sorted = [...coords].sort((a, b) => a - b)
     const groups: number[] = []
     sorted.forEach(c => {
@@ -192,14 +211,30 @@ export function getLayoutFromSlots(slots: SlotRect[]): string {
     return groups.length
   }
 
-  const cols = getUniqueGroups(slots.map(s => s.x))
-  const rows = getUniqueGroups(slots.map(s => s.y))
-  
-  // Final count check
-  if (cols * rows < slots.length || (cols === 1 && rows === 1 && slots.length > 1)) {
-    const finalCols = Math.min(slots.length, cols > 0 ? cols : 1)
-    const finalRows = Math.ceil(slots.length / finalCols)
-    return `${finalCols}x${finalRows}`
+  let cols = getUniqueGroups(slots.map(s => s.x), tolX)
+  let rows = getUniqueGroups(slots.map(s => s.y), tolY)
+
+  // Smart rules based on standard photobooth slot counts
+  if (count === 2) {
+    const dy = Math.abs(slots[0].y - slots[1].y)
+    const dx = Math.abs(slots[0].x - slots[1].x)
+    return dy >= dx ? '1x2' : '2x1'
+  }
+  if (count === 3) {
+    return cols > 1 && rows === 1 ? '3x1' : '1x3'
+  }
+  if (count === 4) {
+    if (cols >= 2 && rows >= 2) return '2x2'
+    return '1x4'
+  }
+  if (count === 6) {
+    if (cols >= 2) return '2x3'
+    return '1x6'
+  }
+
+  if (cols * rows < count || cols * rows > count * 1.5) {
+    cols = cols > 1 ? cols : 1
+    rows = Math.ceil(count / cols)
   }
 
   return `${cols}x${rows}`

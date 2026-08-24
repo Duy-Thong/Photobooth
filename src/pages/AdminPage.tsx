@@ -247,6 +247,66 @@ export default function AdminPage() {
   const [processingId, setProcessingId] = useState<string | null>(null)
   const [previewRequest, setPreviewRequest] = useState<FrameRequest | null>(null)
 
+  // Request edit/review modal state
+  const [reqSlotsData, setReqSlotsData] = useState<SlotRect[]>([])
+  const [reqName, setReqName] = useState('')
+  const [reqCategory, setReqCategory] = useState('')
+  const [reqLayout, setReqLayout] = useState('1x4')
+  const [reqFrameType, setReqFrameType] = useState('vertical')
+  const [approvingReq, setApprovingReq] = useState(false)
+
+  const openPreviewRequest = async (req: FrameRequest) => {
+    setPreviewRequest(req)
+    setReqName(req.suggestedName || '')
+    setReqCategory(req.suggestedCategory || 'Frame Amazing ⭐️')
+    let slots = req.slots_data || []
+    if (slots.length === 0 && req.storageUrl) {
+      try {
+        slots = await detectFrameSlots(req.storageUrl)
+      } catch {
+        slots = []
+      }
+    }
+    setReqSlotsData(slots)
+    const ly = req.layout || getLayoutFromSlots(slots)
+    setReqLayout(ly)
+    setReqFrameType(req.suggestedFrame || inferFrameType(ly, slots))
+  }
+
+  const handleReqSlotsChange = (slots: SlotRect[]) => {
+    setReqSlotsData(slots)
+    const layoutStr = getLayoutFromSlots(slots)
+    if (layoutStr && layoutStr !== '0x0') {
+      setReqLayout(layoutStr)
+      setReqFrameType(inferFrameType(layoutStr, slots))
+    }
+  }
+
+  const handleApproveCustomRequest = async () => {
+    if (!previewRequest) return
+    setApprovingReq(true)
+    try {
+      const layoutToSave = reqLayout || getLayoutFromSlots(reqSlotsData)
+      const updatedReq: FrameRequest = {
+        ...previewRequest,
+        suggestedName: reqName.trim() || previewRequest.suggestedName,
+        suggestedCategory: reqCategory.trim() || previewRequest.suggestedCategory,
+        slots: reqSlotsData.length,
+        slots_data: reqSlotsData,
+        layout: layoutToSave,
+        suggestedFrame: reqFrameType || inferFrameType(layoutToSave, reqSlotsData),
+      }
+      await approveFrameRequestService(updatedReq)
+      setRequests(prev => prev.filter(r => r.firestoreId !== previewRequest.firestoreId))
+      loadCustomFrames()
+      setPreviewRequest(null)
+    } catch {
+      Modal.error({ title: 'Duyệt thất bại', centered: true })
+    } finally {
+      setApprovingReq(false)
+    }
+  }
+
   const loadRequests = useCallback(async (status: typeof requestStatusFilter = requestStatusFilter) => {
     setRequestsLoading(true)
     try {
@@ -760,6 +820,38 @@ export default function AdminPage() {
 
   // ── Frame upload / delete handlers ─────────────────────────────────────────
 
+  const inferFrameType = (layout: string, slots: SlotRect[]) => {
+    if (layout === '2x2' || layout === '2x3' || layout.startsWith('2x') || layout.startsWith('3x')) {
+      return 'grid'
+    }
+    if (layout === '1x1') {
+      return 'square'
+    }
+    if (layout === '1x4' || layout === '1x3' || layout === '1x2') {
+      return 'vertical'
+    }
+    if (slots.length >= 4 && layout.includes('2')) return 'grid'
+    return 'vertical'
+  }
+
+  const handleUploadSlotsChange = (slots: SlotRect[]) => {
+    setUploadSlotsData(slots)
+    const layoutStr = getLayoutFromSlots(slots)
+    if (layoutStr && layoutStr !== '0x0') {
+      setUploadLayout(layoutStr)
+      setUploadFrameType(inferFrameType(layoutStr, slots))
+    }
+  }
+
+  const handleEditSlotsChange = (slots: SlotRect[]) => {
+    setEditSlotsData(slots)
+    const layoutStr = getLayoutFromSlots(slots)
+    if (layoutStr && layoutStr !== '0x0') {
+      setEditLayout(layoutStr)
+      setEditFrameType(inferFrameType(layoutStr, slots))
+    }
+  }
+
   const handleFileSelect = async (file: File) => {
     if (!file.type.includes('png') && !file.name.endsWith('.png')) {
       Modal.error({ title: 'Chỉ hỗ trợ file PNG', centered: true })
@@ -769,12 +861,31 @@ export default function AdminPage() {
     const url = URL.createObjectURL(file)
     setUploadFile(file)
     setUploadPreviewUrl(url)
+
+    // Auto-fill frame name from file name if empty
+    if (!uploadName.trim()) {
+      const cleanName = file.name
+        .replace(/\.[^/.]+$/, '')
+        .replace(/[-_]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+      if (cleanName) setUploadName(cleanName)
+    }
+
+    // Auto-fill category if empty
+    if (!uploadCategory.trim()) {
+      setUploadCategory('Frame Amazing ⭐️')
+    }
+
     setDetectingSlots(true)
     try {
       const slots = await detectFrameSlots(url)
       setUploadSlotsData(slots)
       const layoutStr = getLayoutFromSlots(slots)
-      setUploadLayout(layoutStr)
+      if (layoutStr && layoutStr !== '0x0') {
+        setUploadLayout(layoutStr)
+        setUploadFrameType(inferFrameType(layoutStr, slots))
+      }
     } finally {
       setDetectingSlots(false)
     }
@@ -797,13 +908,14 @@ export default function AdminPage() {
     if (!uploadFile || !uploadName.trim() || !uploadCategory.trim()) return
     setUploading(true)
     try {
+      const layoutToSave = uploadLayout || getLayoutFromSlots(uploadSlotsData)
       const frame = await uploadFrameService(uploadFile, {
         name: uploadName.trim(),
         categoryName: uploadCategory.trim(),
         slots: uploadSlotsData.length,
         slots_data: uploadSlotsData,
-        layout: uploadLayout || getLayoutFromSlots(uploadSlotsData),
-        frame: uploadFrameType,
+        layout: layoutToSave,
+        frame: uploadFrameType || inferFrameType(layoutToSave, uploadSlotsData),
         isActive: uploadIsActive,
       })
       setCustomFrames(prev => [...prev, frame].sort((a, b) => a.name.localeCompare(b.name, 'vi')))
@@ -1296,7 +1408,7 @@ export default function AdminPage() {
                   {/* Preview */}
                   <div
                     className={`flex items-center justify-center aspect-3/4 cursor-pointer p-2 ${tc('bg-[#0a0a0a]', 'bg-slate-50')}`}
-                    onClick={() => setPreviewRequest(req)}
+                    onClick={() => openPreviewRequest(req)}
                   >
                     <img src={req.storageUrl} alt={req.suggestedName} className="w-full h-full object-contain" loading="lazy" />
                   </div>
@@ -1575,7 +1687,7 @@ export default function AdminPage() {
               <FrameSlotEditor 
                 imageUrl={uploadPreviewUrl} 
                 slots={uploadSlotsData} 
-                onChange={setUploadSlotsData} 
+                onChange={handleUploadSlotsChange} 
               />
             ) : (
               <div
@@ -1771,7 +1883,7 @@ export default function AdminPage() {
               <FrameSlotEditor 
                 imageUrl={frameImageUrl(editingFrame.filename, editingFrame.storageUrl)} 
                 slots={editSlotsData} 
-                onChange={setEditSlotsData} 
+                onChange={handleEditSlotsChange} 
               />
             )}
           </div>
@@ -1840,33 +1952,137 @@ export default function AdminPage() {
         </div>
       </Modal>
 
-      {/* Request preview modal */}
+      {/* Request preview / review modal */}
       <Modal
         open={!!previewRequest}
         onCancel={() => setPreviewRequest(null)}
-        title={previewRequest?.suggestedName}
+        title={
+          <div className="flex items-center gap-2">
+            <span>Duyệt Đề Xuất Khung: {previewRequest?.suggestedName}</span>
+            {previewRequest?.status === 'approved' && <Tag color="success">Đã duyệt</Tag>}
+            {previewRequest?.status === 'rejected' && <Tag color="error">Đã từ chối</Tag>}
+            {previewRequest?.status === 'pending' && <Tag color="processing">Chờ duyệt</Tag>}
+          </div>
+        }
         footer={
-          previewRequest?.status === 'pending' ? (
-            <div className="flex justify-end gap-2">
-              <Button danger onClick={() => { handleRejectRequest(previewRequest!); setPreviewRequest(null) }}
-                icon={<CloseOutlined />}>Từ chối</Button>
-              <Button type="primary" onClick={() => { handleApproveRequest(previewRequest!); setPreviewRequest(null) }}
-                icon={<CheckOutlined />}>Duyệt</Button>
-            </div>
-          ) : null
+          <div className="flex justify-end gap-2">
+            <Button onClick={() => setPreviewRequest(null)}>
+              Đóng
+            </Button>
+            {previewRequest?.status === 'pending' && (
+              <>
+                <Button 
+                  danger 
+                  icon={<CloseOutlined />}
+                  onClick={() => {
+                    handleRejectRequest(previewRequest!)
+                    setPreviewRequest(null)
+                  }}
+                >
+                  Từ chối
+                </Button>
+                <Button
+                  type="primary"
+                  icon={<CheckOutlined />}
+                  loading={approvingReq}
+                  disabled={!reqName.trim() || !reqCategory.trim()}
+                  onClick={handleApproveCustomRequest}
+                >
+                  Duyệt & Xuất Bản
+                </Button>
+              </>
+            )}
+          </div>
         }
         centered
-        width={380}
+        width="min(1240px, 96vw)"
+        styles={{
+          body: { maxHeight: 'calc(90vh - 100px)', overflow: 'hidden', padding: '16px 20px' }
+        }}
       >
         {previewRequest && (
-          <div>
-            <img src={previewRequest.storageUrl} alt={previewRequest.suggestedName} className="w-full rounded-lg" />
-            <div className="p-3 flex flex-col gap-1">
-              <p className={`text-xs ${tc('text-slate-400', 'text-slate-600')}`}>Danh mục: <span className={`font-medium ${tc('text-white', 'text-slate-900')}`}>{previewRequest.suggestedCategory}</span></p>
-              <p className={`text-xs ${tc('text-slate-400', 'text-slate-600')}`}>Slot: <span className={`font-medium ${tc('text-white', 'text-slate-900')}`}>{previewRequest.slots}</span></p>
-              <p className={`text-xs ${tc('text-slate-400', 'text-slate-600')}`}>Từ: <span className={`font-medium ${tc('text-white', 'text-slate-900')}`}>{previewRequest.submitterName || 'Ẩn danh'}</span> · {previewRequest.submitterContact}</p>
-              {previewRequest.note && <p className={`text-xs ${tc('text-slate-400', 'text-slate-600')}`}>Ghi chú: <span className={tc('text-slate-300', 'text-slate-700')}>{previewRequest.note}</span></p>}
-              <p className={`text-[10px] mt-1 ${tc('text-slate-500', 'text-slate-400')}`}>{previewRequest.submittedAt ? new Date(previewRequest.submittedAt).toLocaleString('vi-VN') : ''}</p>
+          <div className="flex flex-col md:flex-row gap-6 h-[70vh] max-h-[640px] overflow-hidden py-1">
+            {/* Left - Slot Editor */}
+            <div className="flex-1 min-w-0 flex flex-col h-full overflow-hidden">
+              <FrameSlotEditor 
+                imageUrl={previewRequest.storageUrl} 
+                slots={reqSlotsData} 
+                onChange={handleReqSlotsChange} 
+              />
+            </div>
+
+            {/* Right - Form Data & Submitter Info */}
+            <div className="w-80 shrink-0 flex flex-col gap-3.5 h-full overflow-y-auto pr-1">
+              {/* Submitter Info Card */}
+              <div className={`p-3 rounded-xl border flex flex-col gap-1.5 ${tc('bg-[#101010] border-[#222]', 'bg-slate-50 border-slate-200')}`}>
+                <div className="flex items-center justify-between">
+                  <span className={`text-[10px] uppercase font-bold tracking-wider ${tc('text-slate-400', 'text-slate-500')}`}>Người đóng góp</span>
+                  <span className={`text-[10px] ${tc('text-slate-500', 'text-slate-400')}`}>{new Date(previewRequest.submittedAt).toLocaleDateString('vi-VN')}</span>
+                </div>
+                <div className="flex flex-col">
+                  <span className={`text-xs font-semibold ${tc('text-white', 'text-slate-900')}`}>{previewRequest.submitterName || 'Ẩn danh'}</span>
+                  <span className={`text-xs font-mono truncate ${tc('text-blue-400', 'text-blue-600')}`}>{previewRequest.submitterContact}</span>
+                </div>
+                {previewRequest.note && (
+                  <div className={`mt-1 pt-1.5 border-t text-[11px] ${tc('border-[#222] text-slate-300', 'border-slate-200 text-slate-600')}`}>
+                    <span className="font-semibold">Ghi chú:</span> {previewRequest.note}
+                  </div>
+                )}
+              </div>
+
+              {/* Editable Name */}
+              <div className="flex flex-col gap-1">
+                <label className={`text-xs font-semibold uppercase tracking-wider ${tc('text-slate-400', 'text-slate-600')}`}>Tên Khung *</label>
+                <Input value={reqName} onChange={e => setReqName(e.target.value)}
+                  placeholder="Ví dụ: 1x4, 2x2..." />
+              </div>
+
+              {/* Editable Category */}
+              <div className="flex flex-col gap-1">
+                <label className={`text-xs font-semibold uppercase tracking-wider ${tc('text-slate-400', 'text-slate-600')}`}>Danh Mục *</label>
+                <Input value={reqCategory} onChange={e => setReqCategory(e.target.value)}
+                  list="req-categories"
+                  placeholder="Ví dụ: Frame Basic, Frame Cartoon..." />
+                <datalist id="req-categories">
+                  <option value="Frame Basic" />
+                  <option value="Frame Cartoon" />
+                  <option value="Frame Amazing ⭐️" />
+                  <option value="Frame IDOL Hoạt Họa" />
+                </datalist>
+              </div>
+
+              {/* Layout */}
+              <div className="flex flex-col gap-1">
+                <label className={`text-xs font-semibold uppercase tracking-wider ${tc('text-slate-400', 'text-slate-600')}`}>Layout (Bố cục)</label>
+                <Select
+                  value={reqLayout}
+                  onChange={v => {
+                    setReqLayout(v)
+                    setReqFrameType(inferFrameType(v, reqSlotsData))
+                  }}
+                  placeholder="Chọn bố cục..."
+                  options={LAYOUT_OPTIONS}
+                  showSearch
+                />
+              </div>
+
+              {/* Frame Type */}
+              <div className="flex flex-col gap-1">
+                <label className={`text-xs font-semibold uppercase tracking-wider ${tc('text-slate-400', 'text-slate-600')}`}>Loại khung</label>
+                <Select
+                  value={reqFrameType}
+                  onChange={v => setReqFrameType(v)}
+                  options={FRAME_TYPE_OPTIONS}
+                />
+              </div>
+
+              {/* Slot count */}
+              <div className="flex flex-col gap-1">
+                <label className={`text-xs font-semibold uppercase tracking-wider ${tc('text-slate-400', 'text-slate-600')}`}>Số Slot</label>
+                <div className={`border rounded-lg px-3 py-1.5 font-bold h-8 flex items-center ${tc('bg-[#050505] border-[#222] text-white', 'bg-slate-50 border-slate-200 text-slate-900')}`}>
+                  {reqSlotsData.length} slot
+                </div>
+              </div>
             </div>
           </div>
         )}

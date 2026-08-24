@@ -200,6 +200,8 @@ export interface FrameRequest {
   suggestedCategory: string
   suggestedFrame?: string
   slots: number
+  slots_data?: SlotRect[]
+  layout?: string
   note: string
   status: FrameRequestStatus
   submittedAt: string  // ISO
@@ -215,6 +217,8 @@ export async function submitFrameRequest(
     suggestedCategory: string
     suggestedFrame?: string
     slots: number
+    slots_data?: SlotRect[]
+    layout?: string
     note: string
   },
 ): Promise<void> {
@@ -233,6 +237,8 @@ export async function submitFrameRequest(
     suggestedCategory: meta.suggestedCategory,
     suggestedFrame: meta.suggestedFrame,
     slots: meta.slots,
+    slots_data: meta.slots_data || [],
+    layout: meta.layout || '',
     note: meta.note,
     status: 'pending' as FrameRequestStatus,
     submittedAt: new Date().toISOString(),
@@ -256,6 +262,8 @@ export async function approveFrameRequest(request: FrameRequest): Promise<void> 
     categoryId: deriveCategoryId(request.suggestedCategory),
     categoryName: request.suggestedCategory,
     slots: request.slots,
+    slots_data: request.slots_data,
+    layout: request.layout,
     storageUrl: request.storageUrl,
     frame: request.suggestedFrame,
     isActive: true,
