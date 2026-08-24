@@ -2,6 +2,7 @@ import { Navigate } from 'react-router-dom'
 import { Button, Input, Form } from 'antd'
 import { useAdminAuth } from '@/hooks/useAdminAuth'
 import { useThemeClass } from '@/stores/themeStore'
+import ThemeToggle from '@/components/photobooth/ThemeToggle'
 
 export default function AdminLoginPage() {
   const { user, permissions, login, loginError, loggingIn } = useAdminAuth()
@@ -14,22 +15,20 @@ export default function AdminLoginPage() {
     login(email, password)
   }
 
-  const inputStyle = {
-    background: tc('#111', '#fff') === '#111' ? '#111' : '#fff',
-    border: `1px solid ${tc('#2a2a2a', '#d9d9d9') === '#2a2a2a' ? '#2a2a2a' : '#d9d9d9'}`,
-    color: tc('#e5e5e5', '#1a1a1a') === '#e5e5e5' ? '#e5e5e5' : '#1a1a1a',
-  }
-
   return (
-    <div className={`min-h-dvh flex items-center justify-center px-4 ${tc('bg-[#111]', 'bg-[#f5f5f5]')}`}>
+    <div className={`min-h-dvh flex items-center justify-center px-4 relative transition-colors duration-200 ${tc('bg-[#0a0a0a]', 'bg-[#f8fafc]')}`}>
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
+
       <div className="w-full max-w-sm">
         {/* Logo / brand */}
         <div className="text-center mb-8">
-          <h1 className={`text-2xl font-bold ${tc('text-white', 'text-black')}`} style={{ letterSpacing: '-0.03em' }}>Sổ Media</h1>
-          <p className={`text-[10px] uppercase tracking-widest mt-1 ${tc('text-[#555]', 'text-[#999]')}`}>Admin Panel</p>
+          <h1 className={`text-2xl font-bold ${tc('text-white', 'text-slate-900')}`} style={{ letterSpacing: '-0.03em' }}>Photobooth</h1>
+          <p className={`text-[10px] uppercase tracking-widest font-semibold mt-1 ${tc('text-slate-500', 'text-slate-400')}`}>Admin Panel</p>
         </div>
 
-        <div className={`rounded-2xl p-6 border ${tc('bg-[#0a0a0a] border-[#2a2a2a]', 'bg-white border-[#d9d9d9]')}`}>
+        <div className={`rounded-2xl p-7 border shadow-sm ${tc('bg-[#141414] border-[#262626]', 'bg-white border-slate-200')}`}>
           <Form
             form={form}
             layout="vertical"
@@ -38,41 +37,37 @@ export default function AdminLoginPage() {
           >
             <Form.Item
               name="email"
-              label={<span className={`text-sm ${tc('text-[#aaa]', 'text-[#666]')}`}>Email</span>}
+              label={<span className={`text-xs font-semibold uppercase tracking-wider ${tc('text-slate-400', 'text-slate-600')}`}>Email</span>}
               rules={[{ required: true, message: 'Nhập email' }, { type: 'email', message: 'Email không hợp lệ' }]}
             >
               <Input
                 size="large"
                 placeholder="admin@example.com"
-                style={inputStyle}
               />
             </Form.Item>
 
             <Form.Item
               name="password"
-              label={<span className={`text-sm ${tc('text-[#aaa]', 'text-[#666]')}`}>Mật khẩu</span>}
+              label={<span className={`text-xs font-semibold uppercase tracking-wider ${tc('text-slate-400', 'text-slate-600')}`}>Mật khẩu</span>}
               rules={[{ required: true, message: 'Nhập mật khẩu' }]}
             >
               <Input.Password
                 size="large"
                 placeholder="••••••••"
-                style={inputStyle}
               />
             </Form.Item>
 
             {loginError && (
-              <p className="text-red-400 text-sm mb-4 text-center">{loginError}</p>
+              <p className="text-red-500 text-xs mb-4 text-center font-medium">{loginError}</p>
             )}
 
             <Button
+              type="primary"
               block
               size="large"
               htmlType="submit"
               loading={loggingIn}
               style={{
-                background: tc('#fff', '#000') === '#fff' ? '#fff' : '#000',
-                color: tc('#000', '#fff') === '#000' ? '#000' : '#fff',
-                border: 'none',
                 fontWeight: 600,
                 height: 44,
               }}

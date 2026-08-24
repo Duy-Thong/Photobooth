@@ -29,6 +29,8 @@ import dayjs from 'dayjs'
 import { DeleteOutlined, ReloadOutlined, LogoutOutlined, PlayCircleOutlined, DeleteFilled, ClockCircleOutlined, UploadOutlined, PictureOutlined, EditOutlined, CheckOutlined, CloseOutlined, UserOutlined } from '@ant-design/icons'
 import type { AdminUser } from '@/types/admin'
 import { fetchAllAdmins, createOrUpdateAdmin, DEFAULT_PERMISSIONS } from '@/lib/adminService'
+import ThemeToggle from '@/components/photobooth/ThemeToggle'
+import { useThemeClass } from '@/stores/themeStore'
 const LAYOUT_OPTIONS = [
   { value: '1x1', label: '1x1' },
   { value: '1x2', label: '1x2' },
@@ -79,6 +81,7 @@ const getPathFromUrl = (url: string) => {
 
 export default function AdminPage() {
   const { logout, permissions, user } = useAdminAuth()
+  const tc = useThemeClass()
   const [photos, setPhotos] = useState<MediaItem[]>([])
   const [videos, setVideos] = useState<MediaItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -278,12 +281,6 @@ export default function AdminPage() {
       okButtonProps: { danger: true },
       cancelText: 'Hủy',
       centered: true,
-      styles: {
-        body: { background: '#000', color: '#e5e5e5' },
-        header: { background: '#000' },
-        footer: { background: '#000' },
-        mask: { backdropFilter: 'blur(4px)' },
-      },
       onOk: async () => {
         setProcessingId(req.firestoreId)
         try {
@@ -419,12 +416,6 @@ export default function AdminPage() {
       okButtonProps: { danger: true },
       cancelText: 'Hủy',
       centered: true,
-      styles: {
-        body: { background: '#000', color: '#e5e5e5' },
-        header: { background: '#000' },
-        footer: { background: '#000' },
-        mask: { backdropFilter: 'blur(4px)' },
-      },
       onOk: async () => {
         setDeletingPath(item.fullPath)
         try {
@@ -451,12 +442,6 @@ export default function AdminPage() {
       okButtonProps: { danger: true },
       cancelText: 'Hủy',
       centered: true,
-      styles: {
-        body: { background: '#000', color: '#e5e5e5' },
-        header: { background: '#000' },
-        footer: { background: '#000' },
-        mask: { backdropFilter: 'blur(4px)' },
-      },
       onOk: async () => {
         setBulkDeleting(true)
         try {
@@ -483,11 +468,6 @@ export default function AdminPage() {
         content: 'Tất cả file đều trong vòng 7 ngày gần nhất.',
         centered: true,
         okText: 'Đóng',
-        styles: {
-          body: { background: '#000', color: '#e5e5e5' },
-          header: { background: '#000' },
-          footer: { background: '#000' },
-        },
       })
       return
     }
@@ -498,12 +478,6 @@ export default function AdminPage() {
       okButtonProps: { danger: true },
       cancelText: 'Hủy',
       centered: true,
-      styles: {
-        body: { background: '#000', color: '#e5e5e5' },
-        header: { background: '#000' },
-        footer: { background: '#000' },
-        mask: { backdropFilter: 'blur(4px)' },
-      },
       onOk: async () => {
         setBulkDeleting(true)
         try {
@@ -531,12 +505,6 @@ export default function AdminPage() {
       okButtonProps: { danger: true },
       cancelText: 'Hủy',
       centered: true,
-      styles: {
-        body: { background: '#000', color: '#e5e5e5' },
-        header: { background: '#000' },
-        footer: { background: '#000' },
-        mask: { backdropFilter: 'blur(4px)' },
-      },
       onOk: async () => {
         setBulkDeleting(true)
         try {
@@ -856,12 +824,6 @@ export default function AdminPage() {
       okButtonProps: { danger: true },
       cancelText: 'Hủy',
       centered: true,
-      styles: {
-        body: { background: '#000', color: '#e5e5e5' },
-        header: { background: '#000' },
-        footer: { background: '#000' },
-        mask: { backdropFilter: 'blur(4px)' },
-      },
       onOk: async () => {
         setDeletingFrameId(frame.firestoreId!)
         try {
@@ -962,20 +924,22 @@ export default function AdminPage() {
   const items = tab === 'photos' ? photos : videos
 
   return (
-    <div className="min-h-dvh bg-[#111] flex flex-col">
+    <div className={`min-h-dvh flex flex-col transition-colors duration-200 ${tc('bg-[#0a0a0a] text-[#e5e5e5]', 'bg-[#f8fafc] text-slate-800')}`}>
       {/* Header */}
-      <header className="border-b border-[#1f1f1f] px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-white font-bold text-lg" style={{ letterSpacing: '-0.02em' }}>Sổ Media</h1>
-          <p className="text-[#555] text-[10px] uppercase tracking-widest">Admin Panel</p>
+      <header className={`px-6 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b ${tc('bg-[#111] border-[#1f1f1f]', 'bg-white border-slate-200 shadow-xs')}`}>
+        <div className="flex items-center gap-3">
+          <div>
+            <h1 className={`font-bold text-lg leading-tight ${tc('text-white', 'text-slate-900')}`} style={{ letterSpacing: '-0.02em' }}>Photobooth</h1>
+            <p className={`text-[10px] uppercase tracking-widest font-semibold ${tc('text-slate-500', 'text-slate-400')}`}>Admin Panel</p>
+          </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {selectedPaths.size > 0 && (
-            <div className="flex items-center gap-2 bg-[#0a0a0a] border border-blue-900/50 rounded-lg px-2 py-1 mr-2">
-              <span className="text-blue-400 text-[10px] font-bold px-1 uppercase tracking-wider">Đã chọn {selectedPaths.size}</span>
+            <div className={`flex items-center gap-2 rounded-lg px-2.5 py-1 mr-2 border ${tc('bg-[#0a0a0a] border-blue-900/50', 'bg-blue-50 border-blue-200')}`}>
+              <span className={`text-[11px] font-bold px-1 uppercase tracking-wider ${tc('text-blue-400', 'text-blue-600')}`}>Đã chọn {selectedPaths.size}</span>
               
               {tab === 'photos' && (
-                <Button size="small" type="primary" icon={<PictureOutlined />} onClick={handlePrintSelected} style={{ background: '#27ae60', borderColor: '#27ae60' }}>
+                <Button size="small" type="primary" icon={<PictureOutlined />} onClick={handlePrintSelected} style={{ background: '#10b981', borderColor: '#10b981' }}>
                   In {selectedPaths.size} ảnh
                 </Button>
               )}
@@ -985,20 +949,18 @@ export default function AdminPage() {
                   Xóa {selectedPaths.size}
                 </Button>
               )}
-              <Button size="small" ghost onClick={deselectAll} style={{ color: '#888', borderColor: '#333' }}>
+              <Button size="small" onClick={deselectAll}>
                 Bỏ chọn
               </Button>
             </div>
           )}
 
-          <Button size="small" icon={<ReloadOutlined />} onClick={() => window.location.reload()} disabled={bulkDeleting}
-            style={{ background: '#1e1e1e', border: '1px solid #2a2a2a', color: '#888' }}>
+          <Button size="small" icon={<ReloadOutlined />} onClick={() => window.location.reload()} disabled={bulkDeleting}>
             Tải lại
           </Button>
 
           {(tab === 'photos' || tab === 'videos') && items.length > 0 && (
-            <Button size="small" onClick={selectedPaths.size === items.length ? deselectAll : selectAll}
-              style={{ background: '#1e1e1e', border: '1px solid #2a2a2a', color: '#888' }}>
+            <Button size="small" onClick={selectedPaths.size === items.length ? deselectAll : selectAll}>
               {selectedPaths.size === items.length ? 'Bỏ chọn hết' : 'Chọn tất cả'}
             </Button>
           )}
@@ -1006,45 +968,41 @@ export default function AdminPage() {
           {permissions?.canManageAdmins && (
             <>
               <Tooltip title="Xóa dữ liệu cũ hơn 7 ngày (cả ảnh & video)">
-                <Button size="small" icon={<ClockCircleOutlined />} onClick={handleDeleteOlderThan7Days}
-                  loading={bulkDeleting}
-                  style={{ background: '#1e1e1e', border: '1px solid #2a2a2a', color: '#e67e22' }}>
+                <Button size="small" icon={<ClockCircleOutlined />} onClick={handleDeleteOlderThan7Days} loading={bulkDeleting} className={tc('text-amber-500 border-amber-900/40', 'text-amber-600 border-amber-300')}>
                   <span className="hidden sm:inline">Cũ &gt; 7 ngày</span>
                 </Button>
               </Tooltip>
               <Tooltip title="Quét và xóa các bản ghi không còn file ảnh/video thực tế">
-                <Button size="small" icon={<ReloadOutlined />} onClick={handleCleanupSessions}
-                  loading={bulkDeleting}
-                  style={{ background: '#1e1e1e', border: '1px solid #2a2a2a', color: '#3498db' }}>
+                <Button size="small" icon={<ReloadOutlined />} onClick={handleCleanupSessions} loading={bulkDeleting} className={tc('text-sky-400 border-sky-900/40', 'text-sky-600 border-sky-300')}>
                   <span className="hidden sm:inline">Dọn dẹp DB</span>
                 </Button>
               </Tooltip>
               <Tooltip title="Xóa tất cả trong tab hiện tại">
-                <Button size="small" icon={<DeleteFilled />} onClick={handleDeleteAll}
-                  loading={bulkDeleting} danger
-                  style={{ background: '#1e1e1e', border: '1px solid #3a1a1a' }}>
+                <Button size="small" icon={<DeleteFilled />} onClick={handleDeleteAll} loading={bulkDeleting} danger>
                   <span className="hidden sm:inline">Xóa tất cả</span>
                 </Button>
               </Tooltip>
             </>
           )}
-          <Button size="small" icon={<LogoutOutlined />} onClick={logout}
-            style={{ background: '#1e1e1e', border: '1px solid #2a2a2a', color: '#888' }}>
+
+          <ThemeToggle />
+
+          <Button size="small" icon={<LogoutOutlined />} onClick={logout}>
             Đăng xuất
           </Button>
         </div>
       </header>
 
       {/* Tabs */}
-      <div className="flex border-b border-[#1f1f1f] px-4 sm:px-6 overflow-x-auto no-scrollbar flex-nowrap shrink-0">
+      <div className={`flex px-4 sm:px-6 overflow-x-auto no-scrollbar flex-nowrap shrink-0 border-b ${tc('bg-[#111] border-[#1f1f1f]', 'bg-white border-slate-200')}`}>
         {availableTabs.map(t => (
           <button
             key={t}
             onClick={() => { setTab(t); setSelectedPaths(new Set()); }}
-            className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors shrink-0 whitespace-nowrap ${
+            className={`py-3 px-4 text-sm font-semibold border-b-2 transition-colors shrink-0 whitespace-nowrap cursor-pointer ${
               tab === t
-                ? 'border-white text-white'
-                : 'border-transparent text-[#555] hover:text-[#aaa]'
+                ? tc('border-white text-white', 'border-blue-600 text-blue-600')
+                : tc('border-transparent text-slate-500 hover:text-slate-300', 'border-transparent text-slate-500 hover:text-slate-800')
             }`}
           >
             {t === 'photos' ? `Ảnh (${photos.length})`
@@ -1061,67 +1019,78 @@ export default function AdminPage() {
       {tab === 'admins' ? (
         <div className="flex-1 p-6 overflow-auto">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-white font-bold text-xl">Quản lý Admin</h2>
+            <div>
+              <h2 className={`font-bold text-xl ${tc('text-white', 'text-slate-900')}`}>Quản lý Admin</h2>
+              <p className={`text-xs mt-0.5 ${tc('text-slate-400', 'text-slate-500')}`}>Danh sách tài khoản quản trị và phân quyền hệ thống</p>
+            </div>
             <div className="flex gap-2">
               <Button type="primary" icon={<UserOutlined />} onClick={() => setShowAddAdminModal(true)}>Thêm Admin Mới</Button>
               <Button icon={<ReloadOutlined />} onClick={loadAdmins} loading={adminsLoading}>Làm mới</Button>
             </div>
           </div>
           
-          <Table
-            dataSource={admins}
-            loading={adminsLoading}
-            rowKey="uid"
-            pagination={false}
-            columns={[
-              { title: 'Email', dataIndex: 'email', key: 'email', render: (t) => <span className="text-white font-medium">{t}</span> },
-              { 
-                title: 'Quyền hạn', 
-                key: 'permissions',
-                render: (_, record) => (
-                  <div className="flex flex-wrap gap-1">
-                    {record.permissions.canViewPhotos && <Tag color="blue">Ảnh</Tag>}
-                    {record.permissions.canViewVideos && <Tag color="cyan">Video</Tag>}
-                    {record.permissions.canManageFrames && <Tag color="purple">Khung</Tag>}
-                    {record.permissions.canManageRequests && <Tag color="orange">Đề xuất</Tag>}
-                    {record.permissions.canManageFeedback && <Tag color="green">Góp ý</Tag>}
-                    {record.permissions.canManageAdmins && <Tag color="red">Super Admin</Tag>}
-                  </div>
-                )
-              },
-              {
-                title: 'Giới hạn thời gian',
-                key: 'ranges',
-                render: (_, record) => (
-                  <div className="text-[10px] text-[#888]">
-                    {record.permissions.photoDateRange && <div>Ảnh: {formatDate(record.permissions.photoDateRange.start)} - {formatDate(record.permissions.photoDateRange.end)}</div>}
-                    {record.permissions.videoDateRange && <div>Video: {formatDate(record.permissions.videoDateRange.start)} - {formatDate(record.permissions.videoDateRange.end)}</div>}
-                    {!record.permissions.photoDateRange && !record.permissions.videoDateRange && "Không giới hạn"}
-                  </div>
-                )
-              },
-              {
-                title: 'Hành động',
-                key: 'action',
-                render: (_, record) => (
-                  <Button 
-                    icon={<EditOutlined />} 
-                    onClick={() => setEditingAdmin(record)}
-                    disabled={record.email === import.meta.env.VITE_ADMIN_EMAIL && user?.email !== record.email}
-                  >Sửa</Button>
-                )
-              }
-            ]}
-          />
+          <div className={`rounded-xl border overflow-hidden shadow-xs ${tc('bg-[#141414] border-[#222]', 'bg-white border-slate-200')}`}>
+            <Table
+              dataSource={admins}
+              loading={adminsLoading}
+              rowKey="uid"
+              pagination={false}
+              columns={[
+                { 
+                  title: 'Email', 
+                  dataIndex: 'email', 
+                  key: 'email', 
+                  render: (t) => <span className={`font-medium ${tc('text-white', 'text-slate-900')}`}>{t}</span> 
+                },
+                { 
+                  title: 'Quyền hạn', 
+                  key: 'permissions',
+                  render: (_, record) => (
+                    <div className="flex flex-wrap gap-1.5">
+                      {record.permissions.canViewPhotos && <Tag color="blue">Ảnh</Tag>}
+                      {record.permissions.canViewVideos && <Tag color="cyan">Video</Tag>}
+                      {record.permissions.canManageFrames && <Tag color="purple">Khung</Tag>}
+                      {record.permissions.canManageRequests && <Tag color="orange">Đề xuất</Tag>}
+                      {record.permissions.canManageFeedback && <Tag color="green">Góp ý</Tag>}
+                      {record.permissions.canManageAdmins && <Tag color="red">Super Admin</Tag>}
+                    </div>
+                  )
+                },
+                {
+                  title: 'Giới hạn thời gian',
+                  key: 'ranges',
+                  render: (_, record) => (
+                    <div className={`text-xs ${tc('text-slate-400', 'text-slate-500')}`}>
+                      {record.permissions.photoDateRange && <div>Ảnh: {formatDate(record.permissions.photoDateRange.start)} - {formatDate(record.permissions.photoDateRange.end)}</div>}
+                      {record.permissions.videoDateRange && <div>Video: {formatDate(record.permissions.videoDateRange.start)} - {formatDate(record.permissions.videoDateRange.end)}</div>}
+                      {!record.permissions.photoDateRange && !record.permissions.videoDateRange && "Không giới hạn"}
+                    </div>
+                  )
+                },
+                {
+                  title: 'Hành động',
+                  key: 'action',
+                  render: (_, record) => (
+                    <Button 
+                      size="small"
+                      icon={<EditOutlined />} 
+                      onClick={() => setEditingAdmin(record)}
+                      disabled={record.email === import.meta.env.VITE_ADMIN_EMAIL && user?.email !== record.email}
+                    >Sửa</Button>
+                  )
+                }
+              ]}
+            />
+          </div>
         </div>
       ) : tab === 'frames' ? (
         <div className="flex-1 p-6">
           {/* Toolbar */}
           <div className="flex items-center gap-3 mb-4">
             <Button
+              type="primary"
               icon={<UploadOutlined />}
               onClick={() => setShowUploadModal(true)}
-              style={{ background: '#1e1e1e', border: '1px solid #2a2a2a', color: '#e5e5e5' }}
             >
               Tải Khung Lên
             </Button>
@@ -1130,7 +1099,6 @@ export default function AdminPage() {
               icon={<ReloadOutlined />}
               onClick={loadCustomFrames}
               loading={framesLoading}
-              style={{ background: '#1e1e1e', border: '1px solid #2a2a2a', color: '#888' }}
             >
               Tải lại
             </Button>
@@ -1142,13 +1110,13 @@ export default function AdminPage() {
               onSearch={() => {}}
               allowClear
               size="small"
-              style={{ maxWidth: 200 }}
+              style={{ maxWidth: 220 }}
             />
           </div>
 
           {/* Status filter pills */}
           <div className="flex items-center gap-2 flex-wrap mb-3">
-            <span className="text-[10px] text-white font-semibold uppercase tracking-[0.15em] shrink-0">Trạng thái:</span>
+            <span className={`text-[11px] font-bold uppercase tracking-wider shrink-0 ${tc('text-slate-400', 'text-slate-500')}`}>Trạng thái:</span>
             {[
               { key: 'all', label: `Tất cả (${customFrames.length})` },
               { key: 'active', label: `Đang bật (${activeFramesCount})` },
@@ -1157,10 +1125,10 @@ export default function AdminPage() {
               <button
                 key={st.key}
                 onClick={() => setFrameStatusFilter(st.key as any)}
-                className={`text-[11px] px-2.5 py-0.5 rounded-md border transition-all duration-150 ${
+                className={`text-xs px-3 py-1 rounded-lg border font-medium transition-all cursor-pointer ${
                   frameStatusFilter === st.key
-                    ? 'bg-white text-black border-white font-semibold'
-                    : 'border-[#252525] text-[#5a5a5a] hover:border-[#3a3a3a] hover:text-[#bbb]'
+                    ? tc('bg-white text-black border-white font-semibold shadow-xs', 'bg-blue-600 text-white border-blue-600 shadow-xs')
+                    : tc('border-[#252525] bg-[#111] text-slate-400 hover:border-[#444] hover:text-slate-200', 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900')
                 }`}
               >
                 {st.label}
@@ -1171,15 +1139,15 @@ export default function AdminPage() {
           {/* Layout filter pills */}
           {frameLayoutOptions.length > 1 && (
             <div className="flex items-center gap-2 flex-wrap mb-3">
-              <span className="text-[10px] text-white font-semibold uppercase tracking-[0.15em] shrink-0">Layout:</span>
+              <span className={`text-[11px] font-bold uppercase tracking-wider shrink-0 ${tc('text-slate-400', 'text-slate-500')}`}>Layout:</span>
               {[null, ...frameLayoutOptions].map(ly => (
                 <button
                   key={ly ?? 'all'}
                   onClick={() => { setFrameLayoutFilter(ly); setFrameCategoryFilter(null) }}
-                  className={`text-[11px] px-2.5 py-0.5 rounded-md border transition-all duration-150 ${
+                  className={`text-xs px-3 py-1 rounded-lg border font-medium transition-all cursor-pointer ${
                     frameLayoutFilter === ly
-                      ? 'bg-white text-black border-white font-semibold'
-                      : 'border-[#252525] text-[#5a5a5a] hover:border-[#3a3a3a] hover:text-[#bbb]'
+                      ? tc('bg-white text-black border-white font-semibold shadow-xs', 'bg-blue-600 text-white border-blue-600 shadow-xs')
+                      : tc('border-[#252525] bg-[#111] text-slate-400 hover:border-[#444] hover:text-slate-200', 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900')
                   }`}
                 >
                   {ly === null ? 'Tất cả' : ly}
@@ -1191,15 +1159,15 @@ export default function AdminPage() {
           {/* Category filter pills */}
           {frameCategoryOptions.length > 1 && (
             <div className="flex items-center gap-2 flex-wrap mb-4">
-              <span className="text-[10px] text-white font-semibold uppercase tracking-[0.15em] shrink-0">Danh mục:</span>
+              <span className={`text-[11px] font-bold uppercase tracking-wider shrink-0 ${tc('text-slate-400', 'text-slate-500')}`}>Danh mục:</span>
               {[null, ...frameCategoryOptions].map(cat => (
                 <button
                   key={cat ?? 'all'}
                   onClick={() => setFrameCategoryFilter(cat)}
-                  className={`text-[11px] px-3 py-0.5 rounded-md border transition-all duration-150 ${
+                  className={`text-xs px-3 py-1 rounded-lg border font-medium transition-all cursor-pointer ${
                     frameCategoryFilter === cat
-                      ? 'bg-white text-black border-white font-semibold'
-                      : 'border-[#252525] text-[#5a5a5a] hover:border-[#3a3a3a] hover:text-[#bbb]'
+                      ? tc('bg-white text-black border-white font-semibold shadow-xs', 'bg-blue-600 text-white border-blue-600 shadow-xs')
+                      : tc('border-[#252525] bg-[#111] text-slate-400 hover:border-[#444] hover:text-slate-200', 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900')
                   }`}
                 >
                   {cat === null ? 'Tất cả' : cat}
@@ -1212,24 +1180,24 @@ export default function AdminPage() {
             <div className="flex justify-center items-center h-64"><Spin size="large" /></div>
           ) : filteredFrames.length === 0 ? (
             <Empty
-              image={<PictureOutlined style={{ fontSize: 48, color: '#333' }} />}
-              description={<span className="text-[#555]">{customFrames.length === 0 ? 'Chưa có khung nào được upload' : 'Không tìm thấy khung phù hợp'}</span>}
+              image={<PictureOutlined style={{ fontSize: 48, color: '#999' }} />}
+              description={<span className={tc('text-slate-500', 'text-slate-400')}>{customFrames.length === 0 ? 'Chưa có khung nào được upload' : 'Không tìm thấy khung phù hợp'}</span>}
               className="mt-20"
             />
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3.5">
               {filteredFrames.map(frame => {
                 const isEnabled = frame.isActive !== false
                 return (
                   <div
                     key={frame.firestoreId}
-                    className={`group relative bg-[#0a0a0a] border rounded-xl overflow-hidden transition-all duration-200 ${
+                    className={`group relative rounded-xl overflow-hidden transition-all duration-200 border shadow-xs hover:shadow-md ${
                       !isEnabled
-                        ? 'border-[#222] opacity-75 hover:opacity-100 hover:border-[#3a3a3a]'
-                        : 'border-[#2a2a2a] hover:border-[#444]'
+                        ? tc('bg-[#0f0f0f] border-[#222] opacity-75 hover:opacity-100 hover:border-[#3a3a3a]', 'bg-white border-slate-200 opacity-75 hover:opacity-100 hover:border-slate-300')
+                        : tc('bg-[#141414] border-[#262626] hover:border-[#444]', 'bg-white border-slate-200 hover:border-blue-400')
                     }`}
                   >
-                    <div className="p-1.5 bg-[#111] flex items-center justify-center aspect-3/4 relative">
+                    <div className={`p-2 flex items-center justify-center aspect-3/4 relative ${tc('bg-[#0a0a0a]', 'bg-slate-50')}`}>
                       <img
                         src={frameImageUrl(frame.filename, frame.storageUrl)}
                         alt={frame.name}
@@ -1238,23 +1206,23 @@ export default function AdminPage() {
                       />
                       {/* Status indicator badge */}
                       {!isEnabled ? (
-                        <div className="absolute top-1.5 right-1.5 bg-red-950/80 border border-red-800/60 text-red-300 text-[9px] font-bold px-1.5 py-0.5 rounded shadow">
+                        <div className="absolute top-2 right-2 bg-red-500/90 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-xs">
                           ĐÃ TẮT
                         </div>
                       ) : (
-                        <div className="absolute top-1.5 right-1.5 bg-emerald-950/80 border border-emerald-800/60 text-emerald-300 text-[9px] font-bold px-1.5 py-0.5 rounded shadow">
+                        <div className="absolute top-2 right-2 bg-emerald-500/90 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-xs">
                           ĐANG BẬT
                         </div>
                       )}
                     </div>
-                    <div className="p-2.5">
-                      <p className="text-white text-xs font-medium truncate">{frame.name}</p>
-                      <p className="text-[#555] text-[10px] truncate">{frame.categoryName}</p>
-                      <p className="text-[#3a3a3a] text-[10px] mb-2">{frame.slots} slot · {frame.layout || 'N/A'} · {frame.frame || 'vertical'}</p>
+                    <div className="p-3">
+                      <p className={`font-semibold text-xs truncate ${tc('text-white', 'text-slate-900')}`}>{frame.name}</p>
+                      <p className={`text-[11px] truncate mt-0.5 ${tc('text-slate-400', 'text-slate-500')}`}>{frame.categoryName}</p>
+                      <p className={`text-[10px] mb-2.5 ${tc('text-slate-500', 'text-slate-400')}`}>{frame.slots} slot · {frame.layout || 'N/A'} · {frame.frame || 'vertical'}</p>
                       
                       {/* Quick Active Toggle */}
-                      <div className="flex items-center justify-between pt-2 border-t border-[#1a1a1a]" onClick={e => e.stopPropagation()}>
-                        <span className={`text-[10px] font-semibold ${isEnabled ? 'text-emerald-400' : 'text-[#666]'}`}>
+                      <div className={`flex items-center justify-between pt-2 border-t ${tc('border-[#222]', 'border-slate-100')}`} onClick={e => e.stopPropagation()}>
+                        <span className={`text-[11px] font-semibold ${isEnabled ? 'text-emerald-500' : tc('text-slate-500', 'text-slate-400')}`}>
                           {isEnabled ? 'Hiển thị' : 'Đang ẩn'}
                         </span>
                         <Tooltip title={isEnabled ? 'Tắt khung (Ẩn khỏi Photobooth)' : 'Bật khung (Hiển thị trong Photobooth)'}>
@@ -1264,7 +1232,7 @@ export default function AdminPage() {
                             loading={togglingFrameId === frame.firestoreId}
                             onChange={(checked) => handleToggleFrameActive(frame, checked)}
                             style={{
-                              backgroundColor: isEnabled ? '#10b981' : '#333'
+                              backgroundColor: isEnabled ? '#10b981' : undefined
                             }}
                           />
                         </Tooltip>
@@ -1273,7 +1241,7 @@ export default function AdminPage() {
                     <Tooltip title="Chỉnh sửa">
                       <button
                         onClick={() => openEditFrame(frame)}
-                        className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/70 hover:bg-blue-600 text-white rounded-lg p-1.5 z-10"
+                        className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/70 hover:bg-blue-600 text-white rounded-lg p-1.5 z-10 cursor-pointer"
                       >
                         <EditOutlined />
                       </button>
@@ -1283,7 +1251,7 @@ export default function AdminPage() {
                         <button
                           onClick={() => handleDeleteFrame(frame)}
                           disabled={deletingFrameId === frame.firestoreId}
-                          className="absolute bottom-11 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/70 hover:bg-red-600 text-white rounded-lg p-1.5 z-10"
+                          className="absolute bottom-12 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/70 hover:bg-red-600 text-white rounded-lg p-1.5 z-10 cursor-pointer"
                         >
                           {deletingFrameId === frame.firestoreId ? <Spin size="small" /> : <DeleteOutlined />}
                         </button>
@@ -1303,17 +1271,16 @@ export default function AdminPage() {
               <button
                 key={s}
                 onClick={() => { setRequestStatusFilter(s); loadRequests(s) }}
-                className={`text-[11px] px-3 py-1 rounded-md border transition-all duration-150 ${
+                className={`text-xs px-3 py-1 rounded-lg border font-medium transition-all cursor-pointer ${
                   requestStatusFilter === s
-                    ? 'bg-white text-black border-white font-semibold'
-                    : 'border-[#252525] text-[#5a5a5a] hover:border-[#3a3a3a] hover:text-[#bbb]'
+                    ? tc('bg-white text-black border-white font-semibold shadow-xs', 'bg-blue-600 text-white border-blue-600 shadow-xs')
+                    : tc('border-[#252525] bg-[#111] text-slate-400 hover:border-[#444] hover:text-slate-200', 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900')
                 }`}
               >
                 {s === 'pending' ? 'Chờ duyệt' : s === 'approved' ? 'Đã duyệt' : s === 'rejected' ? 'Từ chối' : 'Tất cả'}
               </button>
             ))}
-            <Button size="small" icon={<ReloadOutlined />} onClick={() => loadRequests()} loading={requestsLoading}
-              style={{ background: '#1e1e1e', border: '1px solid #2a2a2a', color: '#888', marginLeft: 4 }}>
+            <Button size="small" icon={<ReloadOutlined />} onClick={() => loadRequests()} loading={requestsLoading} style={{ marginLeft: 4 }}>
               Tải lại
             </Button>
           </div>
@@ -1321,48 +1288,48 @@ export default function AdminPage() {
           {requestsLoading ? (
             <div className="flex justify-center items-center h-64"><Spin size="large" /></div>
           ) : requests.length === 0 ? (
-            <Empty description={<span className="text-[#555]">Không có đề xuất nào</span>} className="mt-20" />
+            <Empty description={<span className={tc('text-slate-500', 'text-slate-400')}>Không có đề xuất nào</span>} className="mt-20" />
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
               {requests.map(req => (
-                <div key={req.firestoreId} className="bg-[#0a0a0a] border border-[#2a2a2a] rounded-xl overflow-hidden hover:border-[#363636] transition-colors">
+                <div key={req.firestoreId} className={`border rounded-xl overflow-hidden shadow-xs hover:shadow-md transition-all ${tc('bg-[#141414] border-[#262626] hover:border-[#444]', 'bg-white border-slate-200 hover:border-slate-300')}`}>
                   {/* Preview */}
                   <div
-                    className="bg-[#111] flex items-center justify-center aspect-3/4 cursor-pointer"
+                    className={`flex items-center justify-center aspect-3/4 cursor-pointer p-2 ${tc('bg-[#0a0a0a]', 'bg-slate-50')}`}
                     onClick={() => setPreviewRequest(req)}
                   >
                     <img src={req.storageUrl} alt={req.suggestedName} className="w-full h-full object-contain" loading="lazy" />
                   </div>
                   {/* Info */}
-                  <div className="p-2 flex flex-col gap-0.5">
-                    <p className="text-white text-xs font-medium truncate">{req.suggestedName}</p>
-                    <p className="text-[#555] text-[10px] truncate">{req.suggestedCategory}</p>
-                    <p className="text-[#3a3a3a] text-[10px]">{req.slots} slot · {req.suggestedFrame}</p>
-                    <p className="text-[#3a3a3a] text-[10px] truncate mt-0.5">{req.submitterContact}</p>
-                    <p className="text-[#2a2a2a] text-[10px]">{new Date(req.submittedAt).toLocaleDateString('vi-VN')}</p>
+                  <div className="p-3 flex flex-col gap-0.5">
+                    <p className={`font-semibold text-xs truncate ${tc('text-white', 'text-slate-900')}`}>{req.suggestedName}</p>
+                    <p className={`text-[11px] truncate ${tc('text-slate-400', 'text-slate-500')}`}>{req.suggestedCategory}</p>
+                    <p className={`text-[10px] ${tc('text-slate-500', 'text-slate-400')}`}>{req.slots} slot · {req.suggestedFrame}</p>
+                    <p className={`text-[10px] truncate mt-0.5 ${tc('text-slate-500', 'text-slate-400')}`}>{req.submitterContact}</p>
+                    <p className={`text-[10px] ${tc('text-slate-600', 'text-slate-400')}`}>{new Date(req.submittedAt).toLocaleDateString('vi-VN')}</p>
                   </div>
                   {/* Actions */}
                   {req.status === 'pending' && (
-                    <div className="flex border-t border-[#1f1f1f]">
+                    <div className={`flex border-t ${tc('border-[#222]', 'border-slate-100')}`}>
                       <button
                         onClick={() => handleApproveRequest(req)}
                         disabled={processingId === req.firestoreId}
-                        className="flex-1 flex items-center justify-center gap-1 py-1.5 text-[11px] text-green-400 hover:bg-green-900/30 transition-colors"
+                        className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-colors cursor-pointer"
                       >
                         {processingId === req.firestoreId ? <Spin size="small" /> : <><CheckOutlined /> Duyệt</>}
                       </button>
-                      <div className="w-px bg-[#1f1f1f]" />
+                      <div className={`w-px ${tc('bg-[#222]', 'bg-slate-100')}`} />
                       <button
                         onClick={() => handleRejectRequest(req)}
                         disabled={processingId === req.firestoreId}
-                        className="flex-1 flex items-center justify-center gap-1 py-1.5 text-[11px] text-red-400 hover:bg-red-900/30 transition-colors"
+                        className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors cursor-pointer"
                       >
                         <CloseOutlined /> Từ chối
                       </button>
                     </div>
                   )}
                   {req.status !== 'pending' && (
-                    <div className={`text-center py-1.5 text-[10px] ${req.status === 'approved' ? 'text-green-500' : 'text-red-500'}`}>
+                    <div className={`text-center py-2 text-xs font-medium ${req.status === 'approved' ? 'text-emerald-600' : 'text-red-500'}`}>
                       {req.status === 'approved' ? '✓ Đã duyệt' : '✗ Từ chối'}
                     </div>
                   )}
@@ -1374,211 +1341,215 @@ export default function AdminPage() {
       ) : tab === 'feedback' ? (
         <div className="flex-1 p-6">
           <div className="flex items-center gap-3 mb-4">
-            <h2 className="text-white text-base font-semibold">Phản hồi từ người dùng</h2>
-            <Button size="small" icon={<ReloadOutlined />} onClick={loadFeedbacks} loading={feedbacksLoading}
-              style={{ background: '#1e1e1e', border: '1px solid #2a2a2a', color: '#888' }}>
+            <div>
+              <h2 className={`font-bold text-lg ${tc('text-white', 'text-slate-900')}`}>Phản hồi từ người dùng</h2>
+              <p className={`text-xs ${tc('text-slate-400', 'text-slate-500')}`}>Tổng hợp đánh giá, báo lỗi và ý kiến đóng góp</p>
+            </div>
+            <div className="flex-1" />
+            <Button size="small" icon={<ReloadOutlined />} onClick={loadFeedbacks} loading={feedbacksLoading}>
               Tải lại
             </Button>
           </div>
 
-          <Table
-            dataSource={feedbacks}
-            loading={feedbacksLoading}
-            rowKey="id"
-            pagination={{ pageSize: 10, size: 'small' }}
-            scroll={{ x: 800 }}
-            className="feedback-table"
-            columns={[
-              {
-                title: 'Thời gian',
-                dataIndex: 'createdAt',
-                key: 'createdAt',
-                width: 160,
-                render: (date) => <span className="text-[#888] text-xs">{formatDate(date)}</span>,
-                sorter: (a, b) => a.createdAt.localeCompare(b.createdAt),
-                defaultSortOrder: 'descend',
-              },
-              {
-                title: 'Loại',
-                dataIndex: 'type',
-                key: 'type',
-                width: 100,
-                render: (type: string) => {
-                  const colors: Record<string, string> = { bug: 'red', feature: 'blue', other: 'default' }
-                  const labels: Record<string, string> = { bug: 'Lỗi', feature: 'Tính năng', other: 'Khác' }
-                  return <Tag color={colors[type] || 'default'}>{labels[type] || type}</Tag>
+          <div className={`rounded-xl border overflow-hidden shadow-xs ${tc('bg-[#141414] border-[#222]', 'bg-white border-slate-200')}`}>
+            <Table
+              dataSource={feedbacks}
+              loading={feedbacksLoading}
+              rowKey="id"
+              pagination={{ pageSize: 10, size: 'small' }}
+              scroll={{ x: 800 }}
+              columns={[
+                {
+                  title: 'Thời gian',
+                  dataIndex: 'createdAt',
+                  key: 'createdAt',
+                  width: 160,
+                  render: (date) => <span className={`text-xs ${tc('text-slate-400', 'text-slate-500')}`}>{formatDate(date)}</span>,
+                  sorter: (a, b) => a.createdAt.localeCompare(b.createdAt),
+                  defaultSortOrder: 'descend',
                 },
-                filters: [
-                  { text: 'Lỗi', value: 'bug' },
-                  { text: 'Tính năng', value: 'feature' },
-                  { text: 'Khác', value: 'other' },
-                ],
-                onFilter: (value, record) => record.type === value,
-              },
-              {
-                title: 'Người gửi',
-                dataIndex: 'name',
-                key: 'name',
-                width: 150,
-                render: (name) => <span className="text-white font-medium">{name || 'Ẩn danh'}</span>,
-              },
-              {
-                title: 'Nội dung',
-                dataIndex: 'message',
-                key: 'message',
-                render: (msg) => <div className="text-[#aaa] max-w-md whitespace-pre-wrap">{msg}</div>,
-              },
-              {
-                title: 'Thao tác',
-                key: 'action',
-                width: 80,
-                fixed: 'right',
-                render: (_, record) => (
-                  permissions?.canManageAdmins ? (
-                    <Button 
-                      type="text" 
-                      danger 
-                      icon={<DeleteOutlined />} 
-                      onClick={() => handleDeleteFeedback(record)}
-                    />
-                  ) : null
-                ),
-              },
-            ]}
-          />
+                {
+                  title: 'Loại',
+                  dataIndex: 'type',
+                  key: 'type',
+                  width: 110,
+                  render: (type: string) => {
+                    const colors: Record<string, string> = { bug: 'red', feature: 'blue', other: 'default' }
+                    const labels: Record<string, string> = { bug: 'Lỗi', feature: 'Tính năng', other: 'Khác' }
+                    return <Tag color={colors[type] || 'default'}>{labels[type] || type}</Tag>
+                  },
+                  filters: [
+                    { text: 'Lỗi', value: 'bug' },
+                    { text: 'Tính năng', value: 'feature' },
+                    { text: 'Khác', value: 'other' },
+                  ],
+                  onFilter: (value, record) => record.type === value,
+                },
+                {
+                  title: 'Người gửi',
+                  dataIndex: 'name',
+                  key: 'name',
+                  width: 150,
+                  render: (name) => <span className={`font-semibold ${tc('text-white', 'text-slate-900')}`}>{name || 'Ẩn danh'}</span>,
+                },
+                {
+                  title: 'Nội dung',
+                  dataIndex: 'message',
+                  key: 'message',
+                  render: (msg) => <div className={`text-xs whitespace-pre-wrap max-w-md ${tc('text-slate-300', 'text-slate-700')}`}>{msg}</div>,
+                },
+                {
+                  title: 'Thao tác',
+                  key: 'action',
+                  width: 80,
+                  fixed: 'right',
+                  render: (_, record) => (
+                    permissions?.canManageAdmins ? (
+                      <Button 
+                        type="text" 
+                        danger 
+                        icon={<DeleteOutlined />} 
+                        onClick={() => handleDeleteFeedback(record)}
+                      />
+                    ) : null
+                  ),
+                },
+              ]}
+            />
+          </div>
         </div>
       ) : (
-      <div className="flex-1 p-6">
-        {loading ? (
-          <div className="flex justify-center items-center h-64">
-            <Spin size="large" />
-          </div>
-        ) : items.length === 0 ? (
-          <Empty description={<span className="text-[#555]">Chưa có dữ liệu</span>} className="mt-20" />
-        ) : (
-          <div className={`grid gap-4 ${tab === 'photos' ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5' : 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3'}`}>
-            {items.map(item => (
-              <div
-                key={item.fullPath}
-                className={`group relative bg-[#0a0a0a] border rounded-xl overflow-hidden transition-all duration-200 ${
-                  selectedPaths.has(item.fullPath) 
-                    ? 'border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.2)]' 
-                    : 'border-[#2a2a2a] hover:border-[#444]'
-                }`}
-              >
-                {/* Thumbnail */}
+        <div className="flex-1 p-6">
+          {loading ? (
+            <div className="flex justify-center items-center h-64">
+              <Spin size="large" />
+            </div>
+          ) : items.length === 0 ? (
+            <Empty description={<span className={tc('text-slate-500', 'text-slate-400')}>Chưa có dữ liệu</span>} className="mt-20" />
+          ) : (
+            <div className={`grid gap-4 ${tab === 'photos' ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5' : 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3'}`}>
+              {items.map(item => (
                 <div
-                  className="relative cursor-pointer"
-                  onClick={() => {
-                    if (selectedPaths.size > 0) toggleSelect(item.fullPath)
-                    else if (!brokenPaths.has(item.fullPath)) setPreviewItem(item)
-                  }}
+                  key={item.fullPath}
+                  className={`group relative rounded-xl overflow-hidden transition-all duration-200 border shadow-xs hover:shadow-md ${
+                    selectedPaths.has(item.fullPath) 
+                      ? 'border-blue-500 ring-2 ring-blue-500/30' 
+                      : tc('bg-[#141414] border-[#262626] hover:border-[#444]', 'bg-white border-slate-200 hover:border-slate-300')
+                  }`}
                 >
-                  {item.type === 'photo' ? (
-                    brokenPaths.has(item.fullPath) ? (
-                      <div className="w-full aspect-3/4 bg-[#111] flex flex-col items-center justify-center text-[#333] gap-2">
-                        <CloseOutlined style={{ fontSize: 24 }} />
-                        <span className="text-[10px] uppercase">File missing</span>
-                      </div>
-                    ) : (
-                      <img
-                        src={item.url}
-                        alt={item.name}
-                        className="w-full aspect-3/4 object-cover"
-                        loading="lazy"
-                        onError={() => setBrokenPaths(prev => new Set(prev).add(item.fullPath))}
-                      />
-                    )
-                  ) : (
-                    <div className="w-full aspect-video bg-black flex items-center justify-center overflow-hidden">
-                      {brokenPaths.has(item.fullPath) ? (
-                        <div className="flex flex-col items-center justify-center text-[#333] gap-2">
+                  {/* Thumbnail */}
+                  <div
+                    className="relative cursor-pointer"
+                    onClick={() => {
+                      if (selectedPaths.size > 0) toggleSelect(item.fullPath)
+                      else if (!brokenPaths.has(item.fullPath)) setPreviewItem(item)
+                    }}
+                  >
+                    {item.type === 'photo' ? (
+                      brokenPaths.has(item.fullPath) ? (
+                        <div className={`w-full aspect-3/4 flex flex-col items-center justify-center gap-2 ${tc('bg-[#0a0a0a] text-slate-600', 'bg-slate-100 text-slate-400')}`}>
                           <CloseOutlined style={{ fontSize: 24 }} />
-                          <span className="text-[10px] uppercase">Video missing</span>
+                          <span className="text-[10px] uppercase font-semibold">File missing</span>
                         </div>
                       ) : (
-                        <>
-                          <video 
-                            src={item.url} 
-                            className="w-full h-full object-cover" 
-                            onError={() => setBrokenPaths(prev => new Set(prev).add(item.fullPath))}
-                          />
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                            <PlayCircleOutlined className="text-white text-4xl" />
+                        <img
+                          src={item.url}
+                          alt={item.name}
+                          className="w-full aspect-3/4 object-cover"
+                          loading="lazy"
+                          onError={() => setBrokenPaths(prev => new Set(prev).add(item.fullPath))}
+                        />
+                      )
+                    ) : (
+                      <div className="w-full aspect-video bg-black flex items-center justify-center overflow-hidden">
+                        {brokenPaths.has(item.fullPath) ? (
+                          <div className="flex flex-col items-center justify-center text-slate-500 gap-2">
+                            <CloseOutlined style={{ fontSize: 24 }} />
+                            <span className="text-[10px] uppercase font-semibold">Video missing</span>
                           </div>
-                        </>
-                      )}
-                    </div>
-                  )}
+                        ) : (
+                          <>
+                            <video 
+                              src={item.url} 
+                              className="w-full h-full object-cover" 
+                              onError={() => setBrokenPaths(prev => new Set(prev).add(item.fullPath))}
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                              <PlayCircleOutlined className="text-white text-4xl opacity-80 group-hover:opacity-100 transition-opacity" />
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    )}
 
-                  {/* Checkbox indicator */}
-                  <div 
-                    className={`absolute top-2 left-2 w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
-                      selectedPaths.has(item.fullPath)
-                        ? 'bg-blue-500 border-blue-500'
-                        : 'bg-black/40 border-white/40 opacity-0 group-hover:opacity-100'
-                    }`}
-                    onClick={(e) => { e.stopPropagation(); toggleSelect(item.fullPath); }}
-                  >
-                    {selectedPaths.has(item.fullPath) && <CheckOutlined className="text-white text-[10px]" />}
+                    {/* Checkbox indicator */}
+                    <div 
+                      className={`absolute top-2 left-2 w-5 h-5 rounded-md border flex items-center justify-center transition-all ${
+                        selectedPaths.has(item.fullPath)
+                          ? 'bg-blue-600 border-blue-600 text-white'
+                          : 'bg-black/40 border-white/50 opacity-0 group-hover:opacity-100 text-white'
+                      }`}
+                      onClick={(e) => { e.stopPropagation(); toggleSelect(item.fullPath); }}
+                    >
+                      {selectedPaths.has(item.fullPath) && <CheckOutlined className="text-[10px]" />}
+                    </div>
+
+                    {/* Printed badge */}
+                    {printedPaths.has(item.fullPath) && (
+                      <div className="absolute bottom-2 left-2 bg-emerald-600 text-white text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded shadow-xs">
+                        Đã in
+                      </div>
+                    )}
                   </div>
 
-                  {/* Printed badge */}
-                  {printedPaths.has(item.fullPath) && (
-                    <div className="absolute bottom-2 left-2 bg-green-600/90 text-white text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded">
-                      Đã in
-                    </div>
-                  )}
-                </div>
+                  {/* Info */}
+                  <div className="p-2.5">
+                    <p className={`text-[11px] truncate ${tc('text-slate-400', 'text-slate-500')}`}>{formatDate(item.timeCreated)}</p>
+                    <p className={`text-[11px] font-medium ${tc('text-white', 'text-slate-800')}`}>{formatBytes(item.size)}</p>
+                  </div>
 
-                {/* Info */}
-                <div className="p-2">
-                  <p className="text-[#666] text-[10px] truncate">{formatDate(item.timeCreated)}</p>
-                  <p className="text-white text-[10px]">{formatBytes(item.size)}</p>
+                  {/* Actions btn */}
+                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1.5">
+                    {item.type === 'photo' && (
+                      <Tooltip title="In ảnh">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handlePrint(item); }}
+                          className="bg-black/70 hover:bg-emerald-600 text-white rounded-lg p-1.5 transition-colors cursor-pointer"
+                        >
+                          <PictureOutlined />
+                        </button>
+                      </Tooltip>
+                    )}
+                    
+                    {permissions?.canManageAdmins && (
+                      <Tooltip title="Xóa">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleDelete(item); }}
+                          disabled={deletingPath === item.fullPath}
+                          className="bg-black/70 hover:bg-red-600 text-white rounded-lg p-1.5 transition-colors cursor-pointer"
+                        >
+                          {deletingPath === item.fullPath
+                            ? <Spin size="small" />
+                            : <DeleteOutlined />}
+                        </button>
+                      </Tooltip>
+                    )}
+                  </div>
                 </div>
-
-                {/* Actions btn */}
-                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
-                  {item.type === 'photo' && (
-                    <Tooltip title="In ảnh">
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handlePrint(item); }}
-                        className="bg-black/70 hover:bg-green-600 text-white rounded-lg p-1.5"
-                      >
-                        <PictureOutlined />
-                      </button>
-                    </Tooltip>
-                  )}
-                  
-                  {permissions?.canManageAdmins && (
-                    <Tooltip title="Xóa">
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleDelete(item); }}
-                        disabled={deletingPath === item.fullPath}
-                        className="bg-black/70 hover:bg-red-600 text-white rounded-lg p-1.5"
-                      >
-                        {deletingPath === item.fullPath
-                          ? <Spin size="small" />
-                          : <DeleteOutlined />}
-                      </button>
-                    </Tooltip>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+              ))}
+            </div>
+          )}
+        </div>
       )}
 
       {/* Frame upload modal */}
       <Modal
         open={showUploadModal}
         onCancel={handleCloseUploadModal}
-        title={<span className="text-[#aaa] text-sm font-medium">Tải Khung Lên</span>}
+        title="Tải Khung Lên"
         footer={
           <div className="flex justify-end gap-2">
-            <Button onClick={handleCloseUploadModal} style={{ background: '#1e1e1e', border: '1px solid #2a2a2a', color: '#888' }}>
+            <Button onClick={handleCloseUploadModal}>
               Hủy
             </Button>
             <Button
@@ -1592,11 +1563,14 @@ export default function AdminPage() {
           </div>
         }
         centered
-        width={940}
+        width="min(1240px, 96vw)"
+        styles={{
+          body: { maxHeight: 'calc(90vh - 100px)', overflow: 'hidden', padding: '16px 20px' }
+        }}
       >
-        <div className="flex flex-col md:flex-row gap-6 py-2">
+        <div className="flex flex-col md:flex-row gap-6 h-[70vh] max-h-[640px] overflow-hidden py-1">
           {/* Left - Slot Editor */}
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 flex flex-col h-full overflow-hidden">
             {uploadPreviewUrl ? (
               <FrameSlotEditor 
                 imageUrl={uploadPreviewUrl} 
@@ -1605,17 +1579,18 @@ export default function AdminPage() {
               />
             ) : (
               <div
-                className="border-2 border-dashed border-[#2a2a2a] rounded-xl flex flex-col items-center justify-center gap-2 py-20 text-[#3a3a3a] cursor-pointer hover:border-[#444] transition-colors"
+                className={`h-full border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors ${tc('border-[#2a2a2a] text-slate-500 hover:border-[#444] bg-[#0a0a0a]', 'border-slate-300 text-slate-400 hover:border-blue-500 bg-slate-50')}`}
                 onClick={() => fileInputRef.current?.click()}
               >
-                <PictureOutlined style={{ fontSize: 36 }} />
-                <span className="text-xs">Chọn file PNG để bắt đầu</span>
+                <PictureOutlined style={{ fontSize: 42 }} />
+                <span className="text-xs font-semibold">Chọn file PNG để bắt đầu</span>
+                <span className="text-[10px] text-slate-400">Hỗ trợ PNG trong suốt để tự nhận diện slot</span>
               </div>
             )}
           </div>
 
           {/* Right - Form */}
-          <div className="w-80 flex flex-col gap-4">
+          <div className="w-80 shrink-0 flex flex-col gap-3.5 h-full overflow-y-auto pr-1">
             <input
               ref={fileInputRef}
               type="file"
@@ -1625,25 +1600,23 @@ export default function AdminPage() {
             />
 
             {/* Name */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[#888] text-xs font-semibold uppercase tracking-wider">Tên Khung *</label>
+            <div className="flex flex-col gap-1">
+              <label className={`text-xs font-semibold uppercase tracking-wider ${tc('text-slate-400', 'text-slate-600')}`}>Tên Khung *</label>
               <Input
                 value={uploadName}
                 onChange={e => setUploadName(e.target.value)}
                 placeholder="Ví dụ: HelloKitty, Y2K..."
-                style={{ borderColor: '#222' }}
               />
             </div>
 
             {/* Category */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[#888] text-xs font-semibold uppercase tracking-wider">Danh Mục *</label>
+            <div className="flex flex-col gap-1">
+              <label className={`text-xs font-semibold uppercase tracking-wider ${tc('text-slate-400', 'text-slate-600')}`}>Danh Mục *</label>
               <Input
                 value={uploadCategory}
                 onChange={e => setUploadCategory(e.target.value)}
                 placeholder="Ví dụ: Frame Basic, Frame Cartoon..."
                 list="known-categories"
-                style={{ borderColor: '#222' }}
               />
               <datalist id="known-categories">
                 <option value="Frame Basic" />
@@ -1654,8 +1627,8 @@ export default function AdminPage() {
             </div>
 
             {/* Layout */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[#888] text-xs font-semibold uppercase tracking-wider">Layout (Bố cục)</label>
+            <div className="flex flex-col gap-1">
+              <label className={`text-xs font-semibold uppercase tracking-wider ${tc('text-slate-400', 'text-slate-600')}`}>Layout (Bố cục)</label>
               <Select
                 value={uploadLayout}
                 onChange={v => setUploadLayout(v)}
@@ -1666,8 +1639,8 @@ export default function AdminPage() {
             </div>
 
             {/* Frame Type */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[#888] text-xs font-semibold uppercase tracking-wider">Loại khung</label>
+            <div className="flex flex-col gap-1">
+              <label className={`text-xs font-semibold uppercase tracking-wider ${tc('text-slate-400', 'text-slate-600')}`}>Loại khung</label>
               <Select
                 value={uploadFrameType}
                 onChange={v => setUploadFrameType(v)}
@@ -1676,23 +1649,23 @@ export default function AdminPage() {
             </div>
 
             {/* Slot count info */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[#888] text-xs font-semibold uppercase tracking-wider">Số Slot</label>
-              <div className="bg-[#050505] border border-[#222] rounded px-3 py-1.5 text-white font-bold h-8 flex items-center">
+            <div className="flex flex-col gap-1">
+              <label className={`text-xs font-semibold uppercase tracking-wider ${tc('text-slate-400', 'text-slate-600')}`}>Số Slot</label>
+              <div className={`border rounded-lg px-3 py-1.5 font-bold h-8 flex items-center ${tc('bg-[#050505] border-[#222] text-white', 'bg-slate-50 border-slate-200 text-slate-900')}`}>
                 {uploadSlotsData.length}
               </div>
             </div>
 
             {/* Active Switch */}
-            <div className="flex items-center justify-between bg-[#0a0a0a] border border-[#222] rounded-lg p-2.5 mt-1">
+            <div className={`flex items-center justify-between border rounded-lg p-2.5 mt-auto ${tc('bg-[#0a0a0a] border-[#222]', 'bg-slate-50 border-slate-200')}`}>
               <div className="flex flex-col">
-                <span className="text-white text-xs font-semibold">Trạng thái</span>
-                <span className="text-[#666] text-[10px]">Hiển thị ngay trong Photobooth</span>
+                <span className={`text-xs font-semibold ${tc('text-white', 'text-slate-900')}`}>Trạng thái</span>
+                <span className={`text-[10px] ${tc('text-slate-500', 'text-slate-500')}`}>Hiển thị trong Photobooth</span>
               </div>
               <Switch
                 checked={uploadIsActive}
                 onChange={setUploadIsActive}
-                style={{ backgroundColor: uploadIsActive ? '#10b981' : '#333' }}
+                style={{ backgroundColor: uploadIsActive ? '#10b981' : undefined }}
               />
             </div>
           </div>
@@ -1706,33 +1679,30 @@ export default function AdminPage() {
         footer={null}
         centered
         width="min(90vw, 700px)"
-        styles={{
-          body: { background: '#111', padding: 0 },
-          header: { background: '#111', borderBottom: '1px solid #1f1f1f' },
-        }}
-        title={<span className="text-[#aaa] text-sm font-normal truncate">{previewItem?.name}</span>}
+        title={<span className="font-medium text-sm truncate">{previewItem?.name}</span>}
       >
         {previewItem?.type === 'photo' ? (
           <img
             src={previewItem.url}
             alt={previewItem.name}
-            className="w-full"
-            style={{ maxHeight: '80vh', objectFit: 'contain', display: 'block' }}
+            className="w-full rounded-lg"
+            style={{ maxHeight: '75vh', objectFit: 'contain', display: 'block' }}
           />
         ) : previewItem?.type === 'video' ? (
-          <video src={previewItem.url} controls autoPlay className="w-full" style={{ maxHeight: '80vh' }} />
+          <video src={previewItem.url} controls autoPlay className="w-full rounded-lg" style={{ maxHeight: '75vh' }} />
         ) : null}
-        <div className="p-3 flex justify-between items-center flex-wrap gap-2">
-          <span className="text-[#555] text-xs">{previewItem ? formatDate(previewItem.timeCreated) : ''} · {previewItem ? formatBytes(previewItem.size) : ''}</span>
+        <div className="pt-3 flex justify-between items-center flex-wrap gap-2">
+          <span className={`text-xs ${tc('text-slate-400', 'text-slate-500')}`}>{previewItem ? formatDate(previewItem.timeCreated) : ''} · {previewItem ? formatBytes(previewItem.size) : ''}</span>
           <div className="flex gap-2 items-center flex-wrap">
             {previewItem?.sessionId && (
               <a href={`/session/${previewItem.sessionId}`} target="_blank" rel="noopener noreferrer">
-                <Button style={{ background: '#1a2a3a', borderColor: '#1e4a7a', color: '#4da6ff' }}>
+                <Button type="link" size="small">
                   Trang Session ↗
                 </Button>
               </a>
             )}
-            <Button style={{ background: '#1e1e1e', borderColor: '#2a2a2a', color: '#aaa' }}
+            <Button
+              size="small"
               onClick={async () => {
                 if (!previewItem) return
                 const res = await fetch(previewItem.url)
@@ -1747,14 +1717,19 @@ export default function AdminPage() {
               Tải ảnh ↓
             </Button>
             {previewItem?.type === 'photo' && (
-              <Button style={{ background: '#1a3a1a', borderColor: '#27ae60', color: '#27ae60' }}
+              <Button 
+                size="small"
+                type="primary"
+                style={{ background: '#10b981', borderColor: '#10b981' }}
                 onClick={() => { if (previewItem) handlePrint(previewItem) }}
                 icon={<PictureOutlined />}
               >
                 In ảnh
               </Button>
             )}
-            <Button danger
+            <Button 
+              size="small"
+              danger
               onClick={() => { if (previewItem) handleDelete(previewItem); setPreviewItem(null) }}
             >
               Xóa
@@ -1767,10 +1742,10 @@ export default function AdminPage() {
       <Modal
         open={!!editingFrame}
         onCancel={() => setEditingFrame(null)}
-        title={<span className="text-[#aaa] text-sm font-medium">Chỉnh Sửa Khung</span>}
+        title="Chỉnh Sửa Khung"
         footer={
           <div className="flex justify-end gap-2">
-            <Button onClick={() => setEditingFrame(null)} style={{ background: '#1e1e1e', border: '1px solid #2a2a2a', color: '#888' }}>
+            <Button onClick={() => setEditingFrame(null)}>
               Hủy
             </Button>
             <Button
@@ -1784,11 +1759,14 @@ export default function AdminPage() {
           </div>
         }
         centered
-        width={940}
+        width="min(1240px, 96vw)"
+        styles={{
+          body: { maxHeight: 'calc(90vh - 100px)', overflow: 'hidden', padding: '16px 20px' }
+        }}
       >
-        <div className="flex flex-col md:flex-row gap-6 py-2">
+        <div className="flex flex-col md:flex-row gap-6 h-[70vh] max-h-[640px] overflow-hidden py-1">
           {/* Left - Slot Editor */}
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 flex flex-col h-full overflow-hidden">
             {editingFrame && (
               <FrameSlotEditor 
                 imageUrl={frameImageUrl(editingFrame.filename, editingFrame.storageUrl)} 
@@ -1799,14 +1777,14 @@ export default function AdminPage() {
           </div>
 
           {/* Right - Form */}
-          <div className="w-80 flex flex-col gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[#888] text-xs font-semibold uppercase tracking-wider">Tên Khung</label>
+          <div className="w-80 shrink-0 flex flex-col gap-3.5 h-full overflow-y-auto pr-1">
+            <div className="flex flex-col gap-1">
+              <label className={`text-xs font-semibold uppercase tracking-wider ${tc('text-slate-400', 'text-slate-600')}`}>Tên Khung</label>
               <Input value={editName} onChange={e => setEditName(e.target.value)}
                 placeholder="Ví dụ: 1x4, 2x2..." />
             </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[#888] text-xs font-semibold uppercase tracking-wider">Danh Mục</label>
+            <div className="flex flex-col gap-1">
+              <label className={`text-xs font-semibold uppercase tracking-wider ${tc('text-slate-400', 'text-slate-600')}`}>Danh Mục</label>
               <Input value={editCategory} onChange={e => setEditCategory(e.target.value)}
                 list="edit-categories"
                 placeholder="Ví dụ: 1x4, 2x2..." />
@@ -1818,8 +1796,8 @@ export default function AdminPage() {
               </datalist>
             </div>
             {/* Layout */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[#888] text-xs font-semibold uppercase tracking-wider">Layout (Bố cục)</label>
+            <div className="flex flex-col gap-1">
+              <label className={`text-xs font-semibold uppercase tracking-wider ${tc('text-slate-400', 'text-slate-600')}`}>Layout (Bố cục)</label>
               <Select
                 value={editLayout}
                 onChange={v => setEditLayout(v)}
@@ -1830,8 +1808,8 @@ export default function AdminPage() {
             </div>
 
             {/* Frame Type */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[#888] text-xs font-semibold uppercase tracking-wider">Loại khung</label>
+            <div className="flex flex-col gap-1">
+              <label className={`text-xs font-semibold uppercase tracking-wider ${tc('text-slate-400', 'text-slate-600')}`}>Loại khung</label>
               <Select
                 value={editFrameType}
                 onChange={v => setEditFrameType(v)}
@@ -1839,23 +1817,23 @@ export default function AdminPage() {
               />
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[#888] text-xs font-semibold uppercase tracking-wider">Số Slot</label>
-              <div className="bg-[#050505] border border-[#222] rounded px-3 py-1.5 text-white font-bold h-8 flex items-center">
+            <div className="flex flex-col gap-1">
+              <label className={`text-xs font-semibold uppercase tracking-wider ${tc('text-slate-400', 'text-slate-600')}`}>Số Slot</label>
+              <div className={`border rounded-lg px-3 py-1.5 font-bold h-8 flex items-center ${tc('bg-[#050505] border-[#222] text-white', 'bg-slate-50 border-slate-200 text-slate-900')}`}>
                 {editSlotsData.length}
               </div>
             </div>
 
             {/* Active Switch */}
-            <div className="flex items-center justify-between bg-[#0a0a0a] border border-[#222] rounded-lg p-2.5 mt-1">
+            <div className={`flex items-center justify-between border rounded-lg p-2.5 mt-auto ${tc('bg-[#0a0a0a] border-[#222]', 'bg-slate-50 border-slate-200')}`}>
               <div className="flex flex-col">
-                <span className="text-white text-xs font-semibold">Trạng thái khung</span>
-                <span className="text-[#666] text-[10px]">Hiển thị trong Photobooth</span>
+                <span className={`text-xs font-semibold ${tc('text-white', 'text-slate-900')}`}>Trạng thái khung</span>
+                <span className={`text-[10px] ${tc('text-slate-500', 'text-slate-500')}`}>Hiển thị trong Photobooth</span>
               </div>
               <Switch
                 checked={editIsActive}
                 onChange={setEditIsActive}
-                style={{ backgroundColor: editIsActive ? '#10b981' : '#333' }}
+                style={{ backgroundColor: editIsActive ? '#10b981' : undefined }}
               />
             </div>
           </div>
@@ -1866,7 +1844,7 @@ export default function AdminPage() {
       <Modal
         open={!!previewRequest}
         onCancel={() => setPreviewRequest(null)}
-        title={<span className="text-[#aaa] text-sm font-normal">{previewRequest?.suggestedName}</span>}
+        title={previewRequest?.suggestedName}
         footer={
           previewRequest?.status === 'pending' ? (
             <div className="flex justify-end gap-2">
@@ -1878,22 +1856,19 @@ export default function AdminPage() {
           ) : null
         }
         centered
-        width={360}
-        styles={{
-          body: { padding: 0 },
-        }}
+        width={380}
       >
         {previewRequest && (
-          <>
-            <img src={previewRequest.storageUrl} alt={previewRequest.suggestedName} className="w-full" />
+          <div>
+            <img src={previewRequest.storageUrl} alt={previewRequest.suggestedName} className="w-full rounded-lg" />
             <div className="p-3 flex flex-col gap-1">
-              <p className="text-[#888] text-xs">Danh mục: <span className="text-white">{previewRequest.suggestedCategory}</span></p>
-              <p className="text-[#888] text-xs">Slot: <span className="text-white">{previewRequest.slots}</span></p>
-              <p className="text-[#888] text-xs">Từ: <span className="text-white">{previewRequest.submitterName || 'Ẩn danh'}</span> · {previewRequest.submitterContact}</p>
-              {previewRequest.note && <p className="text-[#888] text-xs">Ghi chú: <span className="text-[#aaa]">{previewRequest.note}</span></p>}
-              <p className="text-white text-[10px]">{previewRequest.submittedAt ? new Date(previewRequest.submittedAt).toLocaleString('vi-VN') : ''}</p>
+              <p className={`text-xs ${tc('text-slate-400', 'text-slate-600')}`}>Danh mục: <span className={`font-medium ${tc('text-white', 'text-slate-900')}`}>{previewRequest.suggestedCategory}</span></p>
+              <p className={`text-xs ${tc('text-slate-400', 'text-slate-600')}`}>Slot: <span className={`font-medium ${tc('text-white', 'text-slate-900')}`}>{previewRequest.slots}</span></p>
+              <p className={`text-xs ${tc('text-slate-400', 'text-slate-600')}`}>Từ: <span className={`font-medium ${tc('text-white', 'text-slate-900')}`}>{previewRequest.submitterName || 'Ẩn danh'}</span> · {previewRequest.submitterContact}</p>
+              {previewRequest.note && <p className={`text-xs ${tc('text-slate-400', 'text-slate-600')}`}>Ghi chú: <span className={tc('text-slate-300', 'text-slate-700')}>{previewRequest.note}</span></p>}
+              <p className={`text-[10px] mt-1 ${tc('text-slate-500', 'text-slate-400')}`}>{previewRequest.submittedAt ? new Date(previewRequest.submittedAt).toLocaleString('vi-VN') : ''}</p>
             </div>
-          </>
+          </div>
         )}
       </Modal>
 
@@ -1916,29 +1891,29 @@ export default function AdminPage() {
             }}
             onFinish={handleSaveAdmin}
           >
-            <div className="grid grid-cols-2 gap-4">
-              <Form.Item name="canViewPhotos" valuePropName="checked">
+            <div className={`grid grid-cols-2 gap-x-4 gap-y-2.5 p-4 rounded-xl border ${tc('bg-[#0d0d0d] border-[#222]', 'bg-slate-50 border-slate-200')}`}>
+              <Form.Item name="canViewPhotos" valuePropName="checked" className="mb-0">
                 <Checkbox>Xem ảnh</Checkbox>
               </Form.Item>
-              <Form.Item name="canViewVideos" valuePropName="checked">
+              <Form.Item name="canViewVideos" valuePropName="checked" className="mb-0">
                 <Checkbox>Xem video</Checkbox>
               </Form.Item>
-              <Form.Item name="canManageFrames" valuePropName="checked">
+              <Form.Item name="canManageFrames" valuePropName="checked" className="mb-0">
                 <Checkbox>Quản lý khung</Checkbox>
               </Form.Item>
-              <Form.Item name="canManageRequests" valuePropName="checked">
+              <Form.Item name="canManageRequests" valuePropName="checked" className="mb-0">
                 <Checkbox>Duyệt đề xuất</Checkbox>
               </Form.Item>
-              <Form.Item name="canManageFeedback" valuePropName="checked">
+              <Form.Item name="canManageFeedback" valuePropName="checked" className="mb-0">
                 <Checkbox>Góp ý</Checkbox>
               </Form.Item>
-              <Form.Item name="canManageAdmins" valuePropName="checked">
+              <Form.Item name="canManageAdmins" valuePropName="checked" className="mb-0">
                 <Checkbox>Quản lý Admin</Checkbox>
               </Form.Item>
             </div>
 
-            <div className="mt-4 border-t border-[#333] pt-4">
-              <p className="text-[#888] text-xs font-semibold mb-4 uppercase tracking-wider">Giới hạn thời gian truy cập</p>
+            <div className={`mt-5 border-t pt-4 ${tc('border-[#222]', 'border-slate-200')}`}>
+              <p className={`text-xs font-semibold mb-3 uppercase tracking-wider ${tc('text-slate-400', 'text-slate-600')}`}>Giới hạn thời gian truy cập</p>
               <Form.Item name="photoDateRange" label="Khoảng thời gian được xem Ảnh">
                 <DatePicker.RangePicker className="w-full" placeholder={['Ngày bắt đầu', 'Ngày kết thúc']} />
               </Form.Item>
@@ -1962,7 +1937,7 @@ export default function AdminPage() {
         onCancel={() => setShowAddAdminModal(false)}
         footer={null}
         centered
-        width={500}
+        width={520}
       >
         <Form
           layout="vertical"
@@ -1976,7 +1951,7 @@ export default function AdminPage() {
             <Input.Password placeholder="Tối thiểu 6 ký tự" />
           </Form.Item>
           
-          <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-4 p-4 bg-[#111] rounded border border-[#222]">
+          <div className={`grid grid-cols-2 gap-x-4 gap-y-2.5 mt-4 p-4 rounded-xl border ${tc('bg-[#0d0d0d] border-[#222]', 'bg-slate-50 border-slate-200')}`}>
             <Form.Item name="canViewPhotos" valuePropName="checked" className="mb-0">
               <Checkbox>Xem ảnh</Checkbox>
             </Form.Item>
@@ -1997,8 +1972,8 @@ export default function AdminPage() {
             </Form.Item>
           </div>
 
-          <div className="mt-4 border-t border-[#333] pt-4">
-            <p className="text-[#888] text-xs font-semibold mb-3 uppercase tracking-wider">Giới hạn thời gian truy cập</p>
+          <div className={`mt-5 border-t pt-4 ${tc('border-[#222]', 'border-slate-200')}`}>
+            <p className={`text-xs font-semibold mb-3 uppercase tracking-wider ${tc('text-slate-400', 'text-slate-600')}`}>Giới hạn thời gian truy cập</p>
             <Form.Item name="photoDateRange" label="Khoảng thời gian được xem Ảnh">
               <DatePicker.RangePicker className="w-full" placeholder={['Ngày bắt đầu', 'Ngày kết thúc']} />
             </Form.Item>
