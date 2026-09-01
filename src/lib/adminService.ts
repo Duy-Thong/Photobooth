@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc, collection, getDocs } from 'firebase/firestore'
+import { doc, getDoc, setDoc, collection, getDocs, deleteDoc } from 'firebase/firestore'
 import { db } from './firebase'
 import type { AdminUser, AdminPermissions } from '@/types/admin'
 
@@ -17,6 +17,10 @@ export async function createOrUpdateAdmin(uid: string, data: Partial<AdminUser>)
 export async function fetchAllAdmins(): Promise<AdminUser[]> {
   const snap = await getDocs(collection(db, ADMINS_COLLECTION))
   return snap.docs.map(d => ({ uid: d.id, ...(d.data() as Omit<AdminUser, 'uid'>) }))
+}
+
+export async function deleteAdmin(uid: string): Promise<void> {
+  await deleteDoc(doc(db, ADMINS_COLLECTION, uid))
 }
 
 export const DEFAULT_PERMISSIONS: AdminPermissions = {

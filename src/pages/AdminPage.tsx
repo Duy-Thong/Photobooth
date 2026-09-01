@@ -28,7 +28,7 @@ import { Button, Input, Modal, Select, Spin, Empty, Tooltip, Table, Tag, Checkbo
 import dayjs from 'dayjs'
 import { DeleteOutlined, ReloadOutlined, LogoutOutlined, PlayCircleOutlined, DeleteFilled, ClockCircleOutlined, UploadOutlined, PictureOutlined, EditOutlined, CheckOutlined, CloseOutlined, UserOutlined } from '@ant-design/icons'
 import type { AdminUser } from '@/types/admin'
-import { fetchAllAdmins, createOrUpdateAdmin, DEFAULT_PERMISSIONS } from '@/lib/adminService'
+import { fetchAllAdmins, createOrUpdateAdmin, deleteAdmin as deleteAdminService, DEFAULT_PERMISSIONS } from '@/lib/adminService'
 import ThemeToggle from '@/components/photobooth/ThemeToggle'
 import { useThemeClass } from '@/stores/themeStore'
 const LAYOUT_OPTIONS = [
@@ -1033,6 +1033,39 @@ export default function AdminPage() {
     }
   }
 
+  const handleDeleteAdmin = (record: AdminUser) => {
+    // Prevent deleting the root super admin or yourself
+    const isSelf = user?.email === record.email
+    const isSuperAdmin = record.email === import.meta.env.VITE_ADMIN_EMAIL
+    if (isSuperAdmin) {
+      Modal.warning({ title: 'Không thể xóa Super Admin gốc', centered: true })
+      return
+    }
+    Modal.confirm({
+      title: 'Xóa tài khoản Admin này?',
+      content: (
+        <div>
+          <p>Email: <strong>{record.email}</strong></p>
+          {isSelf && <p style={{ color: '#ef4444', marginTop: 4 }}>⚠️ Bạn đang xóa chính mình — bạn sẽ bị đăng xuất.</p>}
+        </div>
+      ),
+      okText: 'Xóa',
+      okButtonProps: { danger: true },
+      cancelText: 'Hủy',
+      centered: true,
+      onOk: async () => {
+        try {
+          await deleteAdminService(record.uid)
+          setAdmins(prev => prev.filter(a => a.uid !== record.uid))
+          if (isSelf) logout()
+          else Modal.success({ title: 'Đã xóa Admin', centered: true })
+        } catch {
+          Modal.error({ title: 'Xóa thất bại', centered: true })
+        }
+      },
+    })
+  }
+
   const items = tab === 'photos' ? photos : videos
 
   return (
@@ -1182,13 +1215,23 @@ export default function AdminPage() {
                 {
                   title: 'Hành động',
                   key: 'action',
+                  width: 120,
                   render: (_, record) => (
-                    <Button 
-                      size="small"
-                      icon={<EditOutlined />} 
-                      onClick={() => setEditingAdmin(record)}
-                      disabled={record.email === import.meta.env.VITE_ADMIN_EMAIL && user?.email !== record.email}
-                    >Sửa</Button>
+                    <div className="flex gap-1.5">
+                      <Button 
+                        size="small"
+                        icon={<EditOutlined />} 
+                        onClick={() => setEditingAdmin(record)}
+                        disabled={record.email === import.meta.env.VITE_ADMIN_EMAIL && user?.email !== record.email}
+                      >Sửa</Button>
+                      <Button
+                        size="small"
+                        danger
+                        icon={<DeleteOutlined />}
+                        onClick={() => handleDeleteAdmin(record)}
+                        disabled={record.email === import.meta.env.VITE_ADMIN_EMAIL}
+                      />
+                    </div>
                   )
                 }
               ]}
