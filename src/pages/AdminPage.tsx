@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { initializeApp, getApps } from 'firebase/app'
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth'
 import { firebaseConfig } from '@/lib/firebase'
-import { ref, deleteObject, getMetadata } from 'firebase/storage'
+import { ref, deleteObject, getMetadata, listAll } from 'firebase/storage'
 import { storage } from '@/lib/firebase'
 import { listenToSessions, deleteSession, markSessionPrinted } from '@/lib/sessionService'
 import { useAdminAuth } from '@/hooks/useAdminAuth'
@@ -79,6 +79,96 @@ const getPathFromUrl = (url: string) => {
   } catch { return null }
 }
 
+function parseTimeFromSessionId(sessionId: string): string {
+  try {
+    const base36Part = sessionId.split('-')[0]
+    const ts = parseInt(base36Part, 36)
+    if (!isNaN(ts) && ts > 1_500_000_000_000 && ts < 2_500_000_000_000) {
+      return new Date(ts).toISOString()
+    }
+  } catch { /* ignore */ }
+  return new Date().toISOString()
+}
+
+function parseTimeFromPhotoboothFilename(filename: string): string {
+  try {
+    const match = filename.match(/^(\d{12,14})_/)
+    if (match) {
+      const ts = Number(match[1])
+      if (!isNaN(ts) && ts > 1_500_000_000_000 && ts < 2_500_000_000_000) {
+        return new Date(ts).toISOString()
+      }
+    }
+  } catch { /* ignore */ }
+  return new Date().toISOString()
+}
+
+async function fetchStorageOnlyMedia(
+  knownPhotoPaths: Set<string>,
+  knownVideoPaths: Set<string>,
+  bucket: string,
+): Promise<{ storagePhotos: MediaItem[]; storageVideos: MediaItem[] }> {
+  const stableUrl = (path: string) =>
+    `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodeURIComponent(path)}?alt=media`
+
+  const storagePhotos: MediaItem[] = []
+  const storageVideos: MediaItem[] = []
+
+  // 1. photobooth/ folder
+  try {
+    const pbList = await listAll(ref(storage, 'photobooth'))
+    for (const item of pbList.items) {
+      if (!knownPhotoPaths.has(item.fullPath)) {
+        storagePhotos.push({
+          name: item.name,
+          fullPath: item.fullPath,
+          url: stableUrl(item.fullPath),
+          timeCreated: parseTimeFromPhotoboothFilename(item.name),
+          size: 0,
+          type: 'photo',
+        })
+      }
+    }
+  } catch { /* ignore if folder missing */ }
+
+  // 2. sessions/ subfolders not in Firestore
+  try {
+    const sessionsList = await listAll(ref(storage, 'sessions'))
+    const missingPrefixes = sessionsList.prefixes.filter(p => {
+      const defaultPath = `sessions/${p.name}/strip.jpg`
+      return !knownPhotoPaths.has(defaultPath)
+    })
+
+    const BATCH = 30
+    for (let i = 0; i < missingPrefixes.length; i += BATCH) {
+      const chunk = missingPrefixes.slice(i, i + BATCH)
+      const results = await Promise.all(chunk.map(async p => {
+        try {
+          const sub = await listAll(p)
+          return { sessionId: p.name, items: sub.items }
+        } catch { return { sessionId: p.name, items: [] } }
+      }))
+      for (const { sessionId, items } of results) {
+        for (const item of items) {
+          const lower = item.name.toLowerCase()
+          const isPhoto = /\.(jpg|jpeg|png|webp)$/.test(lower)
+          const isVideo = /\.(mp4|webm)$/.test(lower)
+          const time = parseTimeFromSessionId(sessionId)
+          if (isPhoto && !knownPhotoPaths.has(item.fullPath)) {
+            storagePhotos.push({ name: `Session ${sessionId.slice(0, 8)}`, fullPath: item.fullPath, url: stableUrl(item.fullPath), timeCreated: time, size: 0, type: 'photo', sessionId })
+          } else if (isVideo && !knownVideoPaths.has(item.fullPath)) {
+            storageVideos.push({ name: `Recap ${sessionId.slice(0, 8)}`, fullPath: item.fullPath, url: stableUrl(item.fullPath), timeCreated: time, size: 0, type: 'video', sessionId })
+          }
+        }
+      }
+    }
+  } catch { /* ignore */ }
+
+  storagePhotos.sort((a, b) => new Date(b.timeCreated).getTime() - new Date(a.timeCreated).getTime())
+  storageVideos.sort((a, b) => new Date(b.timeCreated).getTime() - new Date(a.timeCreated).getTime())
+  return { storagePhotos, storageVideos }
+}
+
 export default function AdminPage() {
   const { logout, permissions, user } = useAdminAuth()
   const tc = useThemeClass()
@@ -116,6 +206,10 @@ export default function AdminPage() {
   
   // Real-time state
   const [sessionItems, setSessionItems] = useState<{ photos: MediaItem[], videos: MediaItem[], printed: Set<string> }>({ photos: [], videos: [], printed: new Set() })
+  // Storage-only items (no Firestore doc) — loaded once after sessions
+  const [storageOnlyItems, setStorageOnlyItems] = useState<{ photos: MediaItem[], videos: MediaItem[] }>({ photos: [], videos: [] })
+  const storageOnlyFetchedRef = useRef(false)
+
 
   // ── Admin Management state ──────────────────────────────────────────────────
   const [admins, setAdmins] = useState<AdminUser[]>([])
@@ -420,12 +514,25 @@ export default function AdminPage() {
       }
       setSessionItems({ photos: sPhotos, videos: sVideos, printed: sPrinted })
       setLoading(false)
+
+      // Fetch storage-only items once after first Firestore load
+      if (!storageOnlyFetchedRef.current) {
+        storageOnlyFetchedRef.current = true
+        const knownPhotoPaths = new Set(sPhotos.map(p => p.fullPath))
+        const knownVideoPaths = new Set(sVideos.map(v => v.fullPath))
+        const bucket = import.meta.env.VITE_FIREBASE_STORAGE_BUCKET as string
+        fetchStorageOnlyMedia(knownPhotoPaths, knownVideoPaths, bucket)
+          .then(({ storagePhotos, storageVideos }) => {
+            setStorageOnlyItems({ photos: storagePhotos, videos: storageVideos })
+          })
+          .catch(() => { /* ignore */ })
+      }
     })
     
     return () => unsubscribe()
   }, [])
 
-  // 2. Compute final lists with filters
+  // 2. Compute final lists with filters (Firestore sessions + storage-only appended at bottom)
   useEffect(() => {
     let allP = [...sessionItems.photos]
     let allV = [...sessionItems.videos]
@@ -450,11 +557,13 @@ export default function AdminPage() {
     allP.sort((a, b) => new Date(b.timeCreated).getTime() - new Date(a.timeCreated).getTime())
     allV.sort((a, b) => new Date(b.timeCreated).getTime() - new Date(a.timeCreated).getTime())
 
-    setPhotos(allP)
-    setVideos(allV)
+    // Append storage-only items at the bottom (no date range filter applied)
+    setPhotos([...allP, ...storageOnlyItems.photos])
+    setVideos([...allV, ...storageOnlyItems.videos])
     setPrintedPaths(sessionItems.printed)
     
-  }, [sessionItems, permissions])
+  }, [sessionItems, permissions, storageOnlyItems])
+
 
   const loadCustomFrames = useCallback(async () => {
     setFramesLoading(true)
