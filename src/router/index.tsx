@@ -1,10 +1,19 @@
 import { createBrowserRouter } from 'react-router-dom'
+import { lazy, Suspense } from 'react'
+import { Spin } from 'antd'
 import { MainLayout } from '@/components/layout'
-import HomePage from '@/pages/HomePage'
-import AdminLoginPage from '@/pages/AdminLoginPage'
-import AdminPage from '@/pages/AdminPage'
-import SessionPage from '@/pages/SessionPage'
 import ProtectedRoute from '@/components/admin/ProtectedRoute'
+
+const HomePage = lazy(() => import('@/pages/HomePage'))
+const AdminLoginPage = lazy(() => import('@/pages/AdminLoginPage'))
+const AdminPage = lazy(() => import('@/pages/AdminPage'))
+const SessionPage = lazy(() => import('@/pages/SessionPage'))
+
+const PageFallback = () => (
+  <div className="min-h-dvh flex items-center justify-center bg-[#0a0a0a]">
+    <Spin size="large" />
+  </div>
+)
 
 export const router = createBrowserRouter([
   {
@@ -13,23 +22,37 @@ export const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <HomePage />,
+        element: (
+          <Suspense fallback={<PageFallback />}>
+            <HomePage />
+          </Suspense>
+        ),
       },
     ],
   },
   {
     path: '/session/:id',
-    element: <SessionPage />,
+    element: (
+      <Suspense fallback={<PageFallback />}>
+        <SessionPage />
+      </Suspense>
+    ),
   },
   {
     path: '/admin/login',
-    element: <AdminLoginPage />,
+    element: (
+      <Suspense fallback={<PageFallback />}>
+        <AdminLoginPage />
+      </Suspense>
+    ),
   },
   {
     path: '/admin',
     element: (
       <ProtectedRoute>
-        <AdminPage />
+        <Suspense fallback={<PageFallback />}>
+          <AdminPage />
+        </Suspense>
       </ProtectedRoute>
     ),
   },

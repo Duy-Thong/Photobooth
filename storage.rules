@@ -24,10 +24,11 @@ service firebase.storage {
       allow create: if true;
     }
 
-    // Session photos & videos — đọc public, ai cũng upload được
+    // Session photos & videos — đọc public, ai cũng upload được (create), chỉ admin (auth) mới xóa/sửa
     match /sessions/{sessionId}/{allPaths=**} {
       allow read: if true;
-      allow write: if true;
+      allow create: if true;
+      allow update, delete: if request.auth != null;
     }
   }
 }

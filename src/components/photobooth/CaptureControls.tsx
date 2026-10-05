@@ -5,6 +5,7 @@ import {
   CloseOutlined,
   SoundOutlined,
   MutedOutlined,
+  VideoCameraOutlined,
 } from '@ant-design/icons'
 import type { LayoutConfig } from '@/types/photobooth'
 import { COUNTDOWN_OPTIONS } from '@/types/photobooth'
@@ -190,26 +191,27 @@ export default function CaptureControls({
       <div className={`hidden md:block w-px h-6 shrink-0 ${tc('bg-[#262626]', 'bg-[#e0e0e0]')}`} />
 
       {/* ── Group 3: Capture Actions ── */}
-      <div className="flex items-center justify-end gap-1 sm:gap-1.5 shrink-0 w-full md:w-auto">
+      <div className="flex items-center justify-between md:justify-end gap-1 sm:gap-1.5 shrink-0 w-full md:w-auto overflow-x-auto no-scrollbar py-0.5 md:py-0">
         {/* Video Recap */}
         <label
-          className={`h-10 px-2 sm:px-2.5 rounded-xl border flex items-center gap-1.5 select-none transition-all ${
-            countdown === 0 || isCapturing ? 'opacity-30 cursor-not-allowed pointer-events-none' : 'cursor-pointer active:scale-95'
+          className={`h-10 px-2 sm:px-2.5 rounded-xl border flex items-center gap-1.5 select-none transition-all cursor-pointer ${
+            countdown === 0 || isCapturing ? 'opacity-30 cursor-not-allowed pointer-events-none' : 'active:scale-95'
           } ${
             videoRecap && countdown > 0
               ? tc('bg-[#0a0a0a] border-[#4da6ff] text-[#4da6ff] shadow-[0_0_12px_rgba(77,166,255,0.25)]', 'bg-white border-[#4da6ff] text-[#4da6ff] shadow-[0_0_12px_rgba(77,166,255,0.25)]')
               : tc('bg-[#0e0e0e] border-[#262626] text-[#888] hover:border-[#444]', 'bg-white border-[#d0d0d0] text-[#777] hover:border-[#999]')
           }`}
-          title={countdown === 0 ? 'Không hỗ trợ quay video khi chụp 0s' : 'Quay video recap'}
+          title={countdown === 0 ? 'Không hỗ trợ quay video khi chụp 0s' : 'Quay video recap các khoảnh khắc chụp'}
         >
+          <VideoCameraOutlined style={{ fontSize: 13 }} />
+          <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider">Video</span>
           <Switch
             size="small"
             disabled={countdown === 0 || isCapturing}
-            checked={videoRecap}
+            checked={videoRecap && countdown > 0}
             onChange={onToggleVideoRecap}
             style={{ background: videoRecap && countdown > 0 ? '#4da6ff' : undefined }}
           />
-          <span className="text-xs font-bold uppercase tracking-wider hidden sm:inline xl:inline">Video</span>
         </label>
 
         {/* Double x2 */}

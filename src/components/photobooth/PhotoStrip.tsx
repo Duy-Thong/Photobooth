@@ -1,4 +1,4 @@
-import { useRef, memo, useEffect } from 'react'
+import { useRef, memo, useEffect, useState } from 'react'
 import { DownloadOutlined, CloseOutlined } from '@ant-design/icons'
 import type { CapturedSlot, EffectType, LayoutConfig } from '@/types/photobooth'
 import { useStripPreview } from '@/hooks/useStripPreview'
@@ -18,6 +18,8 @@ interface PhotoStripProps {
   onRemoveSlot: (index: number) => void
   onDownload: () => void
   onBuildStrip: () => void
+  countdownValue?: number | null
+  showFlash?: boolean
 }
 
 /** 
@@ -120,6 +122,8 @@ export const PhotoStrip = memo(function PhotoStrip({
   onRemoveSlot,
   onDownload,
   onBuildStrip,
+  countdownValue,
+  showFlash,
 }: PhotoStripProps) {
   const tc = useThemeClass()
   const filled = slots.filter(Boolean).length
@@ -134,12 +138,109 @@ export const PhotoStrip = memo(function PhotoStrip({
       ? `${dimensions.w}/${dimensions.h}`
       : (layout.cols === 2 ? '2/3.1' : '1/3')
 
-  return (
-    <div className="flex flex-col gap-2">
+  // Mobile Auto-Slot-Focus & Zoom state
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768)
+  const [isZoomed, setIsZoomed] = useState(true)
+  const viewportRef = useRef<HTMLDivElement>(null)
+  const stripCardRef = useRef<HTMLDivElement>(null)
+  const [translateY, setTranslateY] = useState(0)
+  const [fittedSize, setFittedSize] = useState<{ width: number; height: number } | null>(null)
 
-      {/* ── Live composite preview ── */}
-      <div className={`relative rounded-2xl border overflow-hidden flex items-center justify-center p-0.5 shadow-2xl max-h-[480px] sm:max-h-[540px] md:max-h-[calc(100dvh-220px)] w-auto max-w-full mx-auto ${tc('bg-[#0d0d0d] border-[#1f1f1f]', 'bg-[#f0f0f0] border-[#e0e0e0]')}`} 
-        style={{ aspectRatio: containerAspectRatio }}>
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
+
+  // Auto zoom on mobile while shooting, auto fit when done
+  const shouldZoom = isMobile && isZoomed && !allFilled && !finalImageUrl
+
+  useEffect(() => {
+    if (!viewportRef.current) return
+
+    const updateLayout = () => {
+      if (!viewportRef.current) return
+      const vpWidth = viewportRef.current.clientWidth
+      const vpHeight = viewportRef.current.clientHeight
+      if (vpWidth === 0 || vpHeight === 0) return
+
+      // Determine aspect ratio
+      const parts = containerAspectRatio.split('/')
+      const rW = parseFloat(parts[0]) || (layout.cols === 2 ? 2 : 1)
+      const rH = parseFloat(parts[1]) || (layout.cols === 2 ? 3.1 : 3)
+      const ratio = rW / rH
+
+      if (shouldZoom) {
+        // Mobile slot-zoom mode: width takes 94% (up to 380px), height follows ratio
+        const w = Math.min(vpWidth * 0.94, 380)
+        const h = w / ratio
+        setFittedSize({ width: Math.round(w), height: Math.round(h) })
+
+        // Auto slot focus translation
+        if (h > vpHeight) {
+          const targetIdx = nextTargetIndex >= 0 ? nextTargetIndex : 0
+          let centerRatio = (targetIdx + 0.5) / layout.slots
+          if (detectedSlots && detectedSlots.length > targetIdx && dimensions && dimensions.h > 0) {
+            const slot = detectedSlots[targetIdx]
+            centerRatio = (slot.y + slot.h / 2) / dimensions.h
+          }
+          const slotPixelY = centerRatio * h
+          const idealY = (vpHeight * 0.45) - slotPixelY
+          const minTranslate = vpHeight - h
+          const maxTranslate = 0
+          setTranslateY(Math.min(maxTranslate, Math.max(minTranslate, idealY)))
+        } else {
+          setTranslateY(0)
+        }
+      } else {
+        // Full view mode (Desktop or Mobile overview): fit completely inside viewport maintaining exact ratio
+        const maxH = vpHeight - 6
+        const maxW = vpWidth - 6
+
+        let w = maxW
+        let h = w / ratio
+
+        if (h > maxH) {
+          h = maxH
+          w = h * ratio
+        }
+
+        setFittedSize({ width: Math.round(w), height: Math.round(h) })
+        setTranslateY(0)
+      }
+    }
+
+    updateLayout()
+    const observer = new ResizeObserver(updateLayout)
+    observer.observe(viewportRef.current)
+    return () => observer.disconnect()
+  }, [shouldZoom, containerAspectRatio, layout.cols, layout.slots, nextTargetIndex, detectedSlots, dimensions])
+
+  return (
+    <div className="flex flex-col gap-1 items-center w-full h-full justify-start md:justify-center min-h-0 relative">
+
+      {/* ── Viewport window (clips zoomed overflow on mobile) ── */}
+      <div 
+        ref={viewportRef}
+        className={`w-full min-h-0 relative flex justify-center items-center ${
+          shouldZoom ? 'h-full overflow-hidden items-start' : 'flex-1 h-full max-h-full overflow-hidden'
+        }`}
+      >
+        {/* ── Live composite preview card ── */}
+        <div
+          ref={stripCardRef}
+          className={`relative rounded-2xl border overflow-hidden flex items-center justify-center p-0.5 shadow-2xl shrink-0 mx-auto ${tc(
+            'bg-[#0d0d0d] border-[#1f1f1f]',
+            'bg-[#f0f0f0] border-[#e0e0e0]'
+          )}`}
+          style={{
+            width: fittedSize ? `${fittedSize.width}px` : 'auto',
+            height: fittedSize ? `${fittedSize.height}px` : 'auto',
+            aspectRatio: containerAspectRatio,
+            transform: shouldZoom ? `translateY(${translateY}px)` : 'translateY(0)',
+            transition: 'transform 0.45s cubic-bezier(0.2, 0.9, 0.3, 1)',
+          }}
+        >
         
         {/* Layer 0: Individual Live Videos for each empty slot (positioned exactly in the holes) */}
         {!finalImageUrl && stream && dimensions && detectedSlots.length > 0 && (
@@ -175,24 +276,26 @@ export const PhotoStrip = memo(function PhotoStrip({
           <img
             src={previewUrl}
             alt="preview"
-            className="w-full h-full object-contain relative z-10 block"
+            className="w-full h-full object-fill relative z-10 block"
           />
         ) : (
           /* No preview yet — show empty slot placeholders */
           <div
-            className="w-full h-full p-1.5 grid gap-1"
+            className="w-full h-full p-2 grid gap-1.5"
             style={{ gridTemplateColumns: `repeat(${layout.cols}, 1fr)` }}
           >
             {slots.map((slot, i) => {
               return (
                 <div
                   key={i}
-                  className={`${layout.cols === 1 ? 'aspect-4/3' : 'aspect-square'} bg-transparent rounded-lg border border-dashed border-white/10 flex items-center justify-center overflow-hidden relative`}
+                  className={`${layout.cols === 1 ? 'aspect-4/3' : 'aspect-square'} bg-black/5 dark:bg-white/5 rounded-lg border border-dashed border-black/10 dark:border-white/10 flex items-center justify-center overflow-hidden relative`}
                 >
                   {slot ? (
                     <img src={slot.dataUrl} alt="" className="w-full h-full object-cover rounded-lg" />
+                  ) : (i === nextTargetIndex && !finalImageUrl && !!stream) ? (
+                    <LiveSlotVideo stream={stream} isMirrored={isMirrored} />
                   ) : (
-                    <span className="text-lg font-bold select-none opacity-0">{i + 1}</span>
+                    <span className={`text-xs font-bold select-none opacity-25 ${tc('text-white', 'text-black')}`}>{i + 1}</span>
                   )}
                 </div>
               )
@@ -206,11 +309,43 @@ export const PhotoStrip = memo(function PhotoStrip({
             <div className="w-6 h-6 border-2 border-white/20 border-t-white/80 rounded-full animate-spin" />
           </div>
         )}
+
+        {/* Countdown overlay */}
+        {typeof countdownValue === 'number' && countdownValue > 0 && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/35 z-30 pointer-events-none">
+            <span
+              className="text-white font-black select-none tracking-tight animate-pulse"
+              style={{ fontSize: 'clamp(54px, 14vw, 110px)', lineHeight: 1, textShadow: '0 4px 30px rgba(0,0,0,0.95)' }}
+            >
+              {countdownValue}
+            </span>
+          </div>
+        )}
+
+        {/* Flash effect overlay */}
+        {showFlash && (
+          <div className="absolute inset-0 bg-white pointer-events-none z-40 transition-opacity" style={{ opacity: 0.95 }} />
+        )}
       </div>
 
-      {/* ── Mini thumbnails for remove / replace ── */}
+      {/* Floating Zoom Toggle Pill (Mobile only while shooting) */}
+      {isMobile && !allFilled && !finalImageUrl && (
+        <button
+          onClick={() => setIsZoomed(prev => !prev)}
+          className={`absolute bottom-2.5 right-2.5 z-30 px-3 py-1.5 rounded-full text-[11px] font-bold border backdrop-blur-md shadow-lg transition active:scale-95 flex items-center gap-1.5 cursor-pointer select-none ${
+            isZoomed
+              ? tc('bg-white/90 text-black border-white/50 shadow-black/20', 'bg-black/90 text-white border-black/50 shadow-black/10')
+              : tc('bg-[#141414]/85 text-white/90 border-[#333]', 'bg-white/85 text-black/90 border-[#ddd]')
+          }`}
+        >
+          <span>{isZoomed ? '🔍 Toàn cảnh' : '🔎 Zoom ô'}</span>
+        </button>
+      )}
+    </div>
+
+      {/* ── Mini thumbnails for remove / replace (desktop/tablet only to keep mobile frame large) ── */}
       {filled > 0 && (
-        <div className="flex gap-2 justify-start sm:justify-center overflow-x-auto no-scrollbar flex-nowrap py-0.5 max-w-full">
+        <div className="hidden sm:flex gap-2 justify-start sm:justify-center overflow-x-auto no-scrollbar flex-nowrap py-0.5 max-w-full">
           {slots.map((slot, i) => (
             <MiniSlot
               key={i}
@@ -225,10 +360,10 @@ export const PhotoStrip = memo(function PhotoStrip({
       )}
 
       {/* ── Status + actions ── */}
-      <div className="flex flex-col gap-1.5">
-        <div className="flex items-center justify-between px-1">
-          <span className={`text-[10px] font-bold uppercase tracking-wider opacity-50 ${tc('text-white', 'text-black')}`}>Ảnh đã chụp</span>
-          <span className={`text-xs font-bold tabular-nums opacity-80 ${tc('text-white', 'text-black')}`}>{filled} / {layout.slots}</span>
+      <div className="hidden md:flex w-full flex-col gap-1.5">
+        <div className="flex items-center justify-between px-2 w-full">
+          <span className={`text-[10px] font-bold uppercase tracking-wider opacity-60 ${tc('text-white', 'text-black')}`}>Ảnh đã chụp</span>
+          <span className={`text-xs font-bold tabular-nums opacity-90 ${tc('text-white', 'text-black')}`}>{filled} / {layout.slots}</span>
         </div>
 
         {allFilled && !finalImageUrl && (

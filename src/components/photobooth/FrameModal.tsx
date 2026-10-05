@@ -32,16 +32,13 @@ export default function FrameModal({
   const [layoutFilter, setLayoutFilter] = useState<string | null>(null)
   const [contributeOpen, setContributeOpen] = useState(false)
 
-  // Reset filters when modal opens: layout = 'Tất cả' (null), category = priority 'Sổ Media' if exists
+  // Reset filters when modal opens: layout = 'Tất cả' (null), category = 'Tất cả' (null)
   useEffect(() => {
     if (open) {
       setLayoutFilter(null)
-      if (categories.length > 0) {
-        const soMediaCat = categories.find(c => c.name.toLowerCase().includes('sổ media'))
-        setActiveCategoryName(soMediaCat ? soMediaCat.name : null)
-      }
+      setActiveCategoryName(null)
     }
-  }, [open, categories])
+  }, [open])
 
   // Load data when modal opens
   useEffect(() => {
@@ -53,8 +50,6 @@ export default function FrameModal({
       .then(([f, c]) => {
         setFrames(f)
         setCategories(c)
-        const soMediaCat = c.find(cat => cat.name.toLowerCase().includes('sổ media'))
-        setActiveCategoryName(soMediaCat ? soMediaCat.name : null)
       })
       .catch(() => setError('Không tải được danh sách khung. Kiểm tra kết nối mạng.'))
       .finally(() => setLoading(false))

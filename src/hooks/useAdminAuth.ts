@@ -19,8 +19,11 @@ export function useAdminAuth() {
         try {
           let admin = await fetchAdminUser(u.uid)
           // If this is the main admin (from env) and no record exists, create it
-          const superAdminEmail = import.meta.env.VITE_ADMIN_EMAIL || 'duythong.ptit@gmail.com'
-          if (!admin && u.email === superAdminEmail) {
+          const superAdminEmail = import.meta.env.VITE_ADMIN_EMAIL
+          if (!superAdminEmail) {
+            console.warn('[AdminAuth] VITE_ADMIN_EMAIL is not set in environment variables')
+          }
+          if (!admin && superAdminEmail && u.email === superAdminEmail) {
             const newAdmin = {
               email: u.email!,
               permissions: SUPER_ADMIN_PERMISSIONS,

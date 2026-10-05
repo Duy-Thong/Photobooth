@@ -1,15 +1,22 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { message } from 'antd'
+import {
+  SyncOutlined,
+  UndoOutlined,
+  UploadOutlined,
+  VideoCameraOutlined,
+  SoundOutlined,
+  MutedOutlined,
+} from '@ant-design/icons'
 import { useCamera } from '@/hooks/useCamera'
 import { useVideoRecap } from '@/hooks/useVideoRecap'
 import { usePhotoboothStore } from '@/stores/photoboothStore'
 import { useThemeClass } from '@/stores/themeStore'
 import { buildStripImage, buildStripVideo, detectFrameSlots } from '@/lib/imageProcessing'
-import { LAYOUTS, FILTERS } from '@/types/photobooth'
+import { LAYOUTS, FILTERS, COUNTDOWN_OPTIONS } from '@/types/photobooth'
 import CameraView from '@/components/photobooth/CameraView'
 import PhotoStrip from '@/components/photobooth/PhotoStrip'
 import CaptureControls from '@/components/photobooth/CaptureControls'
-// import FilterPanel from '@/components/photobooth/FilterPanel'
 import FrameModal from '@/components/photobooth/FrameModal'
 import ResultModal from '@/components/photobooth/ResultModal'
 import ContributeFrameModal from '@/components/photobooth/ContributeFrameModal'
@@ -48,6 +55,24 @@ export default function HomePage() {
   const capturedCount = capturedSlots.filter(Boolean).length
   const tc = useThemeClass()
 
+  // Responsive mobile mode tracking
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 768)
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+
+  const mobileUploadRef = useRef<HTMLInputElement>(null)
+  const handleMobileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => handleUploadAll(ev.target!.result as string)
+    reader.readAsDataURL(file)
+    e.target.value = ''
+  }
+
   // Helper to clear & revoke all video recap clips
   const clearRecapClips = useCallback(() => {
     setRecapClips(prev => {
@@ -77,13 +102,6 @@ export default function HomePage() {
     localStorage.setItem('somedia_privacy_accepted', 'true')
     setPrivacyModalOpen(false)
   }
-
-  useEffect(() => {
-    if (!selectedFrame) {
-      const timer = setTimeout(() => setFrameModalOpen(true), 300)
-      return () => clearTimeout(timer)
-    }
-  }, [selectedFrame])
 
   // Build the combined strip video once we have all clips + a frame
   useEffect(() => {
@@ -125,6 +143,8 @@ export default function HomePage() {
   // This produces one clip per slot, stored at the exact slot index.
   const takeOnePhoto = useCallback((): Promise<void> => {
     return new Promise((resolve) => {
+      // Use getState() to read fresh capturedSlots — capturedSlots from the hook closure
+      // would be stale when takeOnePhoto is called repeatedly inside handleAutoCapture loop
       const targetIndex = usePhotoboothStore.getState().capturedSlots.findIndex(s => s === null)
       if (videoRecap) startRecording(30)
       let count = countdown
@@ -214,15 +234,18 @@ export default function HomePage() {
       return
     }
     try {
-      if (videoRecap) setBuildingStrip(true)
+      setBuildingStrip(true)
       const fUrl = selectedFrame ? (selectedFrame.storageUrl ?? `/frames/${selectedFrame.filename}`) : null
       const url = await buildStripImage(capturedSlots, layout, activeEffects, fUrl, selectedFrame?.slots_data, isX2)
       setFinalImageUrl(url)
       setResultModalOpen(true)
-    } catch {
+    } catch (err) {
+      console.error('[buildStripImage error]', err)
       messageApi.error('Tạo ảnh thất bại, thử lại nhé!')
+    } finally {
+      setBuildingStrip(false)
     }
-  }, [capturedSlots, layout, activeEffects, selectedFrame, isX2, videoRecap, setFinalImageUrl, messageApi])
+  }, [capturedSlots, layout, activeEffects, selectedFrame, isX2, setFinalImageUrl, messageApi])
 
   // ---------- Download / Show Result ----------
   const handleDownload = useCallback(() => {
@@ -274,6 +297,8 @@ export default function HomePage() {
     clearRecapClips()
   }, [selectedFrame, addPhoto, setFinalImageUrl, clearRecapClips, messageApi])
 
+  const isWideStrip = layout.cols === 2 || (selectedFrame?.frame ? ['square', 'wide', 'bigrectangle'].includes(selectedFrame.frame) : false) || (selectedFrame?.layout ? ['2x2', '2x3'].includes(selectedFrame.layout) : false)
+
   return (
     <>
       {contextHolder}
@@ -289,7 +314,8 @@ export default function HomePage() {
             try { detectedSlots = (await detectFrameSlots(url)).length } catch { /* noop */ }
           }
 
-          // Find best matching layout
+          // Read fresh state after async detectFrameSlots — getState() is the correct
+          // Zustand pattern here because the hook-closure value may be stale post-await
           const store = usePhotoboothStore.getState()
           let targetLayout = store.layout
           if (detectedSlots > 0) {
@@ -322,7 +348,7 @@ export default function HomePage() {
           setFinalImageUrl(null)
           setRecapStripUrl(null)
 
-          // If all slots are already filled after layout (possibly changed), auto-build
+          // Re-read state after potential layout/photo mutations above to check if auto-build applies
           const refreshed = usePhotoboothStore.getState()
           if (refreshed.capturedSlots.every(s => s !== null)) {
             setTimeout(async () => {
@@ -366,29 +392,10 @@ export default function HomePage() {
         onClose={handleClosePrivacyModal}
       />
 
-      <div className={`min-h-dvh md:h-dvh md:max-h-dvh overflow-y-auto md:overflow-hidden flex flex-col ${tc('bg-[#0a0a0a]', 'bg-[#f5f5f5]')}`}>
+      <div className={`h-dvh max-h-dvh overflow-hidden flex flex-col ${tc('bg-[#0a0a0a]', 'bg-[#f5f5f5]')}`}>
         {/* Header - slim & centered */}
-        <header className={`py-2.5 px-4 sm:px-8 border-b shrink-0 relative flex items-center justify-between ${tc('border-[#141414]', 'border-[#e0e0e0]')}`}>
-          {/* Desktop News Pill */}
-          <div className="hidden sm:flex items-center">
-            <a
-              href="https://www.somediaclub.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`group flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-semibold transition-all border shadow-xs ${tc(
-                'bg-[#141414] border-[#282828] text-[#ccc] hover:border-[#444] hover:text-white',
-                'bg-[#f0f0f0] border-[#d8d8d8] text-[#333] hover:border-[#bbb] hover:text-black'
-              )}`}
-              title="Tuyển thành viên Gen 10 — Sổ Media"
-            >
-              <span className={`px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider rounded shrink-0 ${tc('bg-white text-black', 'bg-black text-white')}`}>
-                NEWS
-              </span>
-              <span className="text-[11px] font-semibold whitespace-nowrap">
-                Tuyển Gen 10 ↗
-              </span>
-            </a>
-          </div>
+        <header className={`py-1.5 md:py-2 px-3 sm:px-8 border-b shrink-0 relative flex items-center justify-between ${tc('border-[#141414]', 'border-[#e0e0e0]')}`}>
+          <div className="w-8 hidden sm:block" />
 
           {/* Title - Absolutely Centered */}
           <div className="absolute left-1/2 -translate-x-1/2 text-center pointer-events-none">
@@ -408,26 +415,26 @@ export default function HomePage() {
           </div>
         </header>
 
-        {/* Mobile News Bar (sm:hidden) */}
-        <div className={`sm:hidden py-1.5 px-4 border-b shrink-0 flex items-center justify-center ${tc('bg-[#111] border-[#1e1e1e]', 'bg-[#f5f5f5] border-[#e0e0e0]')}`}>
-          <a
-            href="https://www.somediaclub.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`flex items-center justify-center gap-2 text-[11px] font-medium transition-all ${tc('text-[#ccc] hover:text-white', 'text-[#333] hover:text-black')}`}
-          >
-            <span className={`px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider rounded shrink-0 ${tc('bg-white text-black', 'bg-black text-white')}`}>
-              NEWS
-            </span>
-            <span>CLB Sổ Media mở đơn tuyển Gen 10 ↗</span>
-          </a>
-        </div>
+        {/* Mobile Background Headless Camera Feed (so captureFrame and videoRecap work flawlessly) */}
+        {isMobile && (
+          <video
+            ref={videoRef as React.RefObject<HTMLVideoElement>}
+            autoPlay
+            playsInline
+            muted
+            className="fixed -top-[9999px] -left-[9999px] w-[640px] h-[480px] opacity-0 pointer-events-none"
+            style={{
+              transform: isMirrored ? 'scaleX(-1)' : 'none',
+            }}
+          />
+        )}
 
-        {/* Main Studio Area - Full Width Stretch & Generous Preview */}
-        <div className="flex-1 w-full max-w-[1640px] mx-auto px-2 sm:px-4 lg:px-6 py-2 overflow-y-auto md:overflow-hidden flex flex-col justify-between">
-          <div className="flex flex-col md:flex-row gap-3 sm:gap-5 h-full items-start">
-            {/* Left: camera (takes available vertical space) + unified capture controls (shrink-0) */}
-            <div className="w-full md:flex-1 flex flex-col gap-2 shrink-0 md:shrink md:h-full min-h-0 min-w-0">
+        {/* Main Studio Area */}
+        <div className="flex-1 h-full w-full max-w-[1640px] mx-auto px-2 sm:px-4 lg:px-6 py-1 md:py-2 overflow-hidden flex flex-col justify-between min-h-0">
+          {/* ══════════════ DESKTOP VIEW (md:flex) ══════════════ */}
+          <div className="hidden md:flex flex-row gap-3 sm:gap-5 h-full items-start">
+            {/* Left: camera + unified capture controls */}
+            <div className="w-full md:flex-1 flex flex-col gap-2 shrink md:h-full min-h-0 min-w-0">
               <CameraView
                 videoRef={videoRef as React.RefObject<HTMLVideoElement>}
                 isMirrored={isMirrored}
@@ -475,8 +482,12 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Right: photo strip — wider and comfortable preview */}
-            <div className={`shrink-0 w-full md:self-start pb-6 md:pb-0 flex flex-col justify-center items-center ${layout.cols === 2 ? 'md:w-80 lg:w-96 xl:w-[420px]' : 'md:w-52 lg:w-60 xl:w-64'}`}>
+            {/* Right: photo strip */}
+            <div className={`shrink-0 w-full md:h-full md:self-stretch pb-6 md:pb-0 flex flex-col justify-center items-center min-h-0 transition-all duration-300 ${
+              isWideStrip 
+                ? 'md:w-80 lg:w-[420px] xl:w-[480px] 2xl:w-[540px]' 
+                : 'md:w-52 lg:w-60 xl:w-64'
+            }`}>
               <PhotoStrip
                 layout={layout}
                 slots={capturedSlots}
@@ -486,11 +497,264 @@ export default function HomePage() {
                 stream={stream}
                 isMirrored={isMirrored}
                 isCapturing={isCapturing}
+                countdownValue={countdownValue}
+                showFlash={showFlash}
                 onUploadSlot={handleUploadSlot}
                 onRemoveSlot={handleRemoveSlot}
                 onDownload={handleDownload}
                 onBuildStrip={handleBuildStrip}
               />
+            </div>
+          </div>
+
+          {/* ══════════════ MOBILE FRAME-FIRST STUDIO (flex md:hidden) ══════════════ */}
+          <div className="flex md:hidden flex-col h-full justify-between items-center w-full overflow-hidden min-h-0 pb-1">
+            {/* Mobile Top Tools: Camera Flip & Mirror */}
+            <div className="w-full flex items-center justify-between px-1 py-0.5 shrink-0">
+              <div className="flex items-center gap-1.5">
+                {devices.length > 1 && (
+                  <div className="relative inline-flex items-center">
+                    <select
+                      value={activeDeviceId ?? ''}
+                      onChange={e => selectDevice(e.target.value)}
+                      title="Chọn camera"
+                      className={`h-8 pl-6.5 pr-5 rounded-xl border text-[11px] font-bold transition active:scale-95 cursor-pointer shadow-xs appearance-none outline-none max-w-[130px] truncate ${tc(
+                        'bg-[#141414] border-[#282828] text-white',
+                        'bg-white border-[#d8d8d8] text-black'
+                      )}`}
+                    >
+                      {devices.map((d, i) => (
+                        <option
+                          key={d.deviceId}
+                          value={d.deviceId}
+                          className={tc('bg-[#141414] text-white', 'bg-white text-black')}
+                        >
+                          {d.label ? (d.label.length > 16 ? d.label.slice(0, 14) + '…' : d.label) : `Camera ${i + 1}`}
+                        </option>
+                      ))}
+                    </select>
+                    <SyncOutlined className="absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none text-[10px] opacity-70" />
+                    <span className="absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none text-[8px] opacity-60">▾</span>
+                  </div>
+                )}
+
+                <button
+                  onClick={toggleMirror}
+                  title="Lật gương camera"
+                  className={`h-8 px-2.5 rounded-xl border flex items-center gap-1.5 text-xs font-semibold transition active:scale-95 cursor-pointer shadow-xs ${tc(
+                    'bg-[#141414] border-[#282828] text-white',
+                    'bg-white border-[#d8d8d8] text-black'
+                  )}`}
+                >
+                  <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5">
+                    <path d="M15 21h2v-2h-2v2zm4-12h2V7h-2v2zm0 8h2v-2h-2v2zm0-4h2v-2h-2v2zm-4 8h2v-2h-2v2zM5 3H3v18h2V3zm4 18h2v-2H9v2zm8-16V3l-4 4 4 4V7h2V5h-2zm-8 0h2V3H9v2z" />
+                  </svg>
+                  <span className="text-[11px] font-bold">{isMirrored ? 'Đang lật' : 'Gương'}</span>
+                </button>
+              </div>
+
+              {/* Progress badge */}
+              <div className={`px-2.5 py-1 rounded-full text-[11px] font-bold border tracking-wider ${tc('bg-[#141414] border-[#262626] text-white/80', 'bg-white border-[#e0e0e0] text-black/80')}`}>
+                {capturedCount} / {layout.slots} ảnh
+              </div>
+            </div>
+
+            {/* Mobile Hero: PhotoStrip as Viewfinder */}
+            <div className="flex-1 h-full w-full flex flex-col justify-start items-center pt-0.5 pb-1 overflow-hidden min-h-0">
+              <PhotoStrip
+                layout={layout}
+                slots={capturedSlots}
+                finalImageUrl={finalImageUrl}
+                selectedFrame={selectedFrame}
+                activeEffects={activeEffects}
+                stream={stream}
+                isMirrored={isMirrored}
+                isCapturing={isCapturing}
+                countdownValue={countdownValue}
+                showFlash={showFlash}
+                onUploadSlot={handleUploadSlot}
+                onRemoveSlot={handleRemoveSlot}
+                onDownload={handleDownload}
+                onBuildStrip={handleBuildStrip}
+              />
+            </div>
+
+            {/* Mobile Bottom Deck: Quick Settings + Shutter */}
+            <div className="w-full flex flex-col gap-1.5 shrink-0 pt-0.5 pb-1.5">
+              {/* Row 1: Quick Settings Pill Bar */}
+              <div className="flex items-center justify-between gap-1 overflow-x-auto no-scrollbar py-0.5 px-0.5">
+                {/* Frame Picker */}
+                <button
+                  onClick={() => setFrameModalOpen(true)}
+                  disabled={isCapturing}
+                  className={`h-8.5 px-2.5 rounded-xl border text-[11px] font-bold flex items-center gap-1.5 shrink-0 transition active:scale-95 cursor-pointer shadow-xs ${
+                    selectedFrame
+                      ? tc('bg-[#161616] border-[#333] text-white', 'bg-white border-[#ccc] text-black')
+                      : tc('bg-amber-500/20 border-amber-400 text-amber-300 animate-pulse', 'bg-amber-100 border-amber-400 text-amber-900 animate-pulse')
+                  }`}
+                >
+                  <span>🖼️</span>
+                  <span className="truncate max-w-[85px]">{selectedFrame?.name || 'Chọn khung'}</span>
+                  <span className="text-[8px] opacity-60">▾</span>
+                </button>
+
+                {/* Countdown Timer Pill */}
+                <button
+                  onClick={() => {
+                    const curIdx = COUNTDOWN_OPTIONS.indexOf(countdown)
+                    const next = COUNTDOWN_OPTIONS[(curIdx + 1) % COUNTDOWN_OPTIONS.length]
+                    setCountdown(next)
+                  }}
+                  disabled={isCapturing}
+                  className={`h-8.5 px-2.5 rounded-xl border text-[11px] font-bold shrink-0 flex items-center gap-1 transition active:scale-95 cursor-pointer shadow-xs ${
+                    countdown > 0
+                      ? tc('bg-white text-black border-white', 'bg-black text-white border-black')
+                      : tc('bg-[#141414] border-[#262626] text-[#888]', 'bg-white border-[#d8d8d8] text-[#666]')
+                  }`}
+                  title="Chạm để đổi số giây đếm ngược"
+                >
+                  <span>⏱️</span>
+                  <span>{countdown}s</span>
+                </button>
+
+                {/* Video Recap Pill */}
+                <button
+                  onClick={() => {
+                    if (countdown > 0 && !isCapturing) {
+                      handleToggleVideoRecap(!videoRecap)
+                    }
+                  }}
+                  disabled={countdown === 0 || isCapturing}
+                  className={`h-8.5 px-2 rounded-xl border text-[11px] font-bold shrink-0 flex items-center gap-1 transition active:scale-95 cursor-pointer shadow-xs ${
+                    videoRecap && countdown > 0
+                      ? tc('bg-[#0a0a0a] border-[#4da6ff] text-[#4da6ff] shadow-[0_0_10px_rgba(77,166,255,0.3)]', 'bg-white border-[#4da6ff] text-[#4da6ff] shadow-[0_0_10px_rgba(77,166,255,0.3)]')
+                      : tc('bg-[#141414] border-[#262626] text-[#888]', 'bg-white border-[#d8d8d8] text-[#777]')
+                  }`}
+                >
+                  <VideoCameraOutlined style={{ fontSize: 12 }} />
+                  <span>Video</span>
+                  <span className={`text-[8px] font-black px-1 rounded ${videoRecap && countdown > 0 ? 'bg-[#4da6ff] text-black' : 'bg-gray-800 text-gray-400'}`}>
+                    {videoRecap && countdown > 0 ? 'ON' : 'OFF'}
+                  </span>
+                </button>
+
+                {/* x2 Pill */}
+                {layout.cols === 1 && layout.slots > 1 && (
+                  <button
+                    onClick={() => setIsX2(!isX2)}
+                    disabled={isCapturing}
+                    className={`h-8.5 px-2 rounded-xl border text-[11px] font-black shrink-0 transition active:scale-95 cursor-pointer shadow-xs ${
+                      isX2
+                        ? tc('bg-[#0a0a0a] border-[#ff9f4d] text-[#ff9f4d]', 'bg-white border-[#ff9f4d] text-[#ff9f4d]')
+                        : tc('bg-[#141414] border-[#262626] text-[#888]', 'bg-white border-[#d8d8d8] text-[#777]')
+                    }`}
+                  >
+                    x2
+                  </button>
+                )}
+
+                {/* Sound Pill */}
+                <button
+                  onClick={toggleSound}
+                  disabled={isCapturing}
+                  className={`w-8.5 h-8.5 rounded-xl border shrink-0 flex items-center justify-center transition active:scale-95 cursor-pointer shadow-xs ${
+                    soundEnabled
+                      ? tc('bg-[#1a1a1a] border-white/20 text-white', 'bg-white border-black/20 text-black')
+                      : tc('bg-[#141414] border-[#262626] text-[#666]', 'bg-white border-[#d8d8d8] text-[#999]')
+                  }`}
+                >
+                  {soundEnabled ? <SoundOutlined style={{ fontSize: 12 }} /> : <MutedOutlined style={{ fontSize: 12 }} />}
+                </button>
+              </div>
+
+              {/* Row 2: Shutter Action Bar */}
+              <div className="flex items-center justify-between gap-2 pt-0.5 px-0.5">
+                {/* Retake & Upload Buttons */}
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button
+                    onClick={handleRetake}
+                    disabled={capturedCount === 0 || isCapturing}
+                    title="Chụp lại từ đầu"
+                    className={`w-11 h-11 rounded-2xl border flex items-center justify-center transition active:scale-95 cursor-pointer shadow-xs ${
+                      capturedCount === 0 || isCapturing
+                        ? 'opacity-30 pointer-events-none'
+                        : tc('bg-[#141414] border-[#262626] text-white', 'bg-white border-[#d8d8d8] text-black')
+                    }`}
+                  >
+                    <UndoOutlined style={{ fontSize: 15 }} />
+                  </button>
+
+                  <button
+                    onClick={() => mobileUploadRef.current?.click()}
+                    disabled={isCapturing}
+                    title="Tải ảnh lên"
+                    className={`w-11 h-11 rounded-2xl border flex items-center justify-center transition active:scale-95 cursor-pointer shadow-xs ${tc(
+                      'bg-[#141414] border-[#262626] text-white',
+                      'bg-white border-[#d8d8d8] text-black'
+                    )}`}
+                  >
+                    <UploadOutlined style={{ fontSize: 15 }} />
+                  </button>
+                  <input ref={mobileUploadRef} type="file" accept="image/*" className="hidden" onChange={handleMobileUpload} disabled={isCapturing} />
+                </div>
+
+                {/* Center: Main Shutter Button or Finish Button */}
+                {capturedCount === layout.slots || finalImageUrl ? (
+                  <button
+                    onClick={finalImageUrl ? handleDownload : handleBuildStrip}
+                    disabled={buildingStrip}
+                    className={`flex-1 h-12 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider shadow-xl flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer disabled:opacity-50 ${tc(
+                      'bg-white text-black hover:bg-gray-100 shadow-[0_0_20px_rgba(255,255,255,0.2)]',
+                      'bg-black text-white hover:bg-gray-900 shadow-[0_0_20px_rgba(0,0,0,0.2)]'
+                    )}`}
+                  >
+                    {buildingStrip ? (
+                      <>
+                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <span>ĐANG TẠO ẢNH...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>✨</span>
+                        <span>NHẬN ẢNH ({capturedCount}/{layout.slots})</span>
+                      </>
+                    )}
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleManualCapture}
+                    disabled={!isReady || isCapturing}
+                    className={`flex-1 h-12 rounded-2xl font-black text-xs sm:text-sm tracking-wide flex items-center justify-center gap-2 transition active:scale-95 cursor-pointer shadow-xl ${
+                      !isReady || isCapturing
+                        ? 'opacity-40 cursor-not-allowed'
+                        : tc('bg-white text-black hover:bg-gray-100', 'bg-black text-white hover:bg-gray-900')
+                    }`}
+                  >
+                    {isCapturing ? (
+                      <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <span className="w-3.5 h-3.5 rounded-full border-2 border-current flex items-center justify-center">
+                        <span className="w-1.5 h-1.5 rounded-full bg-current" />
+                      </span>
+                    )}
+                    <span>{isCapturing ? 'ĐANG CHỤP...' : `CHỤP (${capturedCount + 1}/${layout.slots})`}</span>
+                  </button>
+                )}
+
+                {/* AUTO Shoot Button */}
+                <button
+                  onClick={handleAutoCapture}
+                  disabled={!isReady || isCapturing || capturedCount === layout.slots}
+                  className={`h-11 px-3.5 rounded-2xl border font-black text-xs uppercase tracking-wider flex items-center gap-1.5 transition active:scale-95 cursor-pointer shadow-xs shrink-0 ${
+                    !isReady || isCapturing || capturedCount === layout.slots
+                      ? 'opacity-30 pointer-events-none'
+                      : tc('bg-[#181818] border-[#333] text-white hover:bg-[#222]', 'bg-[#f0f0f0] border-[#ccc] text-black hover:bg-[#e4e4e4]')
+                  }`}
+                >
+                  <span>⚡</span>
+                  <span>AUTO</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>

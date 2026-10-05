@@ -53,9 +53,19 @@ export default function ResultModal({
   const [downloading, setDownloading] = useState(false)
   const [mediaTab, setMediaTab] = useState<'photo' | 'video'>('photo')
 
+  const videoPreviewRef = useRef<HTMLVideoElement>(null)
   const lastUploadedUrlRef = useRef<string | null>(null)
   const lastSessionIdRef = useRef<string | null>(null)
   const isUploadingRef = useRef(false)
+
+  // Seamless video playback on tab switch without flickering
+  useEffect(() => {
+    if (mediaTab === 'video' && videoPreviewRef.current) {
+      videoPreviewRef.current.play().catch(() => {})
+    } else if (mediaTab === 'photo' && videoPreviewRef.current) {
+      videoPreviewRef.current.pause()
+    }
+  }, [mediaTab])
 
   const sessionUrl = sessionId ? `${window.location.origin}/session/${sessionId}` : ''
 
@@ -168,19 +178,19 @@ export default function ResultModal({
       styles={{
         body: {
           background: tc('#111111', '#ffffff') === '#111111' ? '#111111' : '#ffffff',
-          padding: '20px 24px 28px',
+          padding: '14px 18px 22px',
           maxHeight: '90vh',
           overflowY: 'auto',
         },
         header: {
           background: tc('#111111', '#ffffff') === '#111111' ? '#111111' : '#ffffff',
           borderBottom: `1px solid ${tc('#1f1f1f', '#f0f0f0') === '#1f1f1f' ? '#1f1f1f' : '#f0f0f0'}`,
-          paddingBottom: '14px',
+          paddingBottom: '12px',
         },
       }}
     >
       {imageBlobUrl && (
-        <div className="flex flex-col md:flex-row gap-6 lg:gap-8 items-start mt-3">
+        <div className="flex flex-col md:flex-row gap-4 md:gap-6 lg:gap-8 items-start mt-2">
           {/* Left — Large Media Preview (Photo / Video Recap Tabs) */}
           <div className="w-full md:w-[380px] lg:w-[450px] shrink-0 flex flex-col gap-3">
             {/* View Mode Toggle Pill (if video recap is present or building) */}
@@ -208,23 +218,33 @@ export default function ResultModal({
             )}
 
             {/* Media Box */}
-            <div className={`w-full rounded-2xl border p-2 flex items-center justify-center shadow-xl ${tc('bg-[#080808] border-[#222]', 'bg-[#fafafa] border-[#e5e5e5]')}`}>
-              {mediaTab === 'photo' || (!recapStripUrl && !buildingStrip) ? (
-                <img
-                  src={imageBlobUrl}
-                  alt="Final photo strip"
-                  className="w-full max-h-[45vh] md:max-h-[65vh] object-contain rounded-xl shadow-md"
-                />
-              ) : recapStripUrl ? (
+            <div className={`w-full rounded-2xl border p-2 flex items-center justify-center shadow-xl relative ${tc('bg-[#080808] border-[#222]', 'bg-[#fafafa] border-[#e5e5e5]')}`}>
+              {/* Photo View - kept mounted to avoid decoding flicker */}
+              <img
+                src={imageBlobUrl}
+                alt="Final photo strip"
+                className={`w-full max-h-[45vh] md:max-h-[65vh] object-contain rounded-xl shadow-md ${
+                  mediaTab === 'photo' ? 'block' : 'hidden'
+                }`}
+              />
+
+              {/* Video View - kept mounted to avoid reload flicker */}
+              {recapStripUrl && (
                 <video
+                  ref={videoPreviewRef}
                   src={recapStripUrl}
                   controls
-                  autoPlay
                   loop
                   playsInline
-                  className="w-full max-h-[45vh] md:max-h-[65vh] object-contain rounded-xl shadow-md"
+                  preload="auto"
+                  className={`w-full max-h-[45vh] md:max-h-[65vh] object-contain rounded-xl shadow-md ${
+                    mediaTab === 'video' ? 'block' : 'hidden'
+                  }`}
                 />
-              ) : (
+              )}
+
+              {/* Video Loading State */}
+              {mediaTab === 'video' && !recapStripUrl && (
                 <div className={`flex flex-col items-center justify-center gap-3 py-24 text-xs font-medium ${tc('text-[#777]', 'text-[#888]')}`}>
                   <Spin indicator={<LoadingOutlined style={{ fontSize: 24 }} spin />} />
                   <span>Đang kết xuất video strip recap...</span>
@@ -273,18 +293,20 @@ export default function ResultModal({
                 </button>
               )}
 
-              {/* Local Storage Privacy Badge */}
-              <div className={`p-2 rounded-xl text-center border flex items-center justify-center flex-wrap gap-1 ${tc('bg-emerald-500/10 border-emerald-500/20 text-emerald-400', 'bg-emerald-50 border-emerald-200 text-emerald-700')}`}>
-                <span className="text-xs">🛡️</span>
-                <span className="text-[11px] font-semibold">Quyền riêng tư: Mặc định ảnh KHÔNG tự động lưu trên hệ thống.</span>
+              {/* Local Storage Privacy Note */}
+              <div className="flex items-center justify-center gap-1.5 text-[11px] opacity-70 py-0.5">
+                <span>🛡️ Ảnh lưu an toàn trên máy bạn</span>
                 {onOpenPrivacyModal && (
-                  <button
-                    type="button"
-                    onClick={onOpenPrivacyModal}
-                    className="text-[11px] font-bold underline cursor-pointer hover:opacity-80 transition-opacity ml-0.5"
-                  >
-                    [Xem thêm]
-                  </button>
+                  <>
+                    <span>·</span>
+                    <button
+                      type="button"
+                      onClick={onOpenPrivacyModal}
+                      className="font-bold underline cursor-pointer hover:opacity-100 transition-opacity"
+                    >
+                      Chi tiết
+                    </button>
+                  </>
                 )}
               </div>
 
@@ -305,58 +327,43 @@ export default function ResultModal({
             </div>
 
             {/* QR Code & Share Card (On-Demand) */}
-            <div className={`rounded-2xl border p-4 sm:p-5 flex flex-col items-center gap-3.5 shadow-lg ${tc('bg-[#0a0a0a] border-[#1e1e1e]', 'bg-[#f7f7f7] border-[#e0e0e0]')}`}>
+            <div className={`rounded-2xl border p-3.5 sm:p-4 flex flex-col items-center gap-2.5 shadow-lg ${tc('bg-[#0a0a0a] border-[#1e1e1e]', 'bg-[#f7f7f7] border-[#e0e0e0]')}`}>
               {qrState === 'idle' && (
-                <div className="w-full flex flex-col items-center gap-3 text-center py-1">
-                  <div className="flex flex-col items-center gap-1">
-                    <span className={`text-xs sm:text-sm font-bold uppercase tracking-wider ${tc('text-white', 'text-black')}`}>
-                      Quét mã QR để xem &amp; tải trên điện thoại
-                    </span>
-                    <span className={`text-[11px] ${tc('text-[#888]', 'text-[#777]')}`}>
-                      Tạo mã QR nếu bạn muốn chuyển ảnh sang điện thoại hoặc gửi bạn bè.
-                    </span>
-                  </div>
-
+                <div className="w-full flex flex-col items-center gap-2 text-center py-0.5">
                   <button
                     onClick={handleCreateQR}
-                    className={`w-full py-3 px-4 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 border transition-all cursor-pointer shadow-lg active:scale-[0.98] ${tc(
-                      'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white border-blue-400/30 shadow-blue-500/20',
-                      'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white border-blue-400/30 shadow-blue-500/20'
-                    )}`}
+                    className="w-full py-3 px-4 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 border transition-all cursor-pointer shadow-lg active:scale-[0.98] bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white border-blue-400/30 shadow-blue-500/20"
                   >
                     <QrcodeOutlined style={{ fontSize: 16 }} />
                     Tạo Mã QR &amp; Link Chia Sẻ
                   </button>
+                  <span className={`text-[11px] font-medium ${tc('text-[#888]', 'text-[#777]')}`}>
+                    Dùng để mở trên thiết bị khác hoặc gửi bạn bè
+                  </span>
                 </div>
               )}
 
               {qrState === 'uploading' && (
-                <div className="py-6 flex flex-col items-center gap-2.5 text-center">
-                  <Spin indicator={<LoadingOutlined style={{ fontSize: 24 }} spin />} />
+                <div className="py-5 flex flex-col items-center gap-2 text-center">
+                  <Spin indicator={<LoadingOutlined style={{ fontSize: 22 }} spin />} />
                   <span className={`text-xs font-medium ${tc('text-[#aaa]', 'text-[#666]')}`}>
-                    Đang tải ảnh &amp; khởi tạo mã QR...
+                    Đang tải ảnh &amp; tạo mã QR...
                   </span>
                 </div>
               )}
 
               {qrState === 'ready' && sessionId && (
                 <>
-                  <div className="flex items-center gap-1.5 text-center">
-                    <span className={`text-xs sm:text-sm font-bold uppercase tracking-wider ${tc('text-[#aaa]', 'text-[#555]')}`}>
-                      Quét mã QR để xem &amp; tải trên điện thoại
-                    </span>
-                  </div>
-
-                  <div className="p-3 bg-white rounded-2xl shadow-md inline-flex items-center justify-center border border-gray-200">
+                  <div className="p-2.5 bg-white rounded-2xl shadow-md inline-flex items-center justify-center border border-gray-200">
                     <QRCode
                       value={sessionUrl}
-                      size={155}
+                      size={145}
                       bordered={false}
                       errorLevel="H"
                       color="#000000"
                       bgColor="#ffffff"
                       icon="/clublogo.png"
-                      iconSize={36}
+                      iconSize={34}
                     />
                   </div>
 

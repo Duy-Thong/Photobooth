@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { Spin, Modal, QRCode, message } from 'antd'
+import { Spin, QRCode, message } from 'antd'
 import {
   LoadingOutlined,
   PrinterOutlined,
@@ -12,6 +12,7 @@ import {
 } from '@ant-design/icons'
 import { fetchSession, type SessionData } from '@/lib/sessionService'
 import { downloadMedia } from '@/lib/imageProcessing'
+import { printSingleImage } from '@/lib/printService'
 import { useThemeClass } from '@/stores/themeStore'
 import ThemeToggle from '@/components/photobooth/ThemeToggle'
 import RecruitmentBanner from '@/components/photobooth/RecruitmentBanner'
@@ -122,44 +123,7 @@ export default function SessionPage() {
   }
 
   const handlePrint = () => {
-    const style = document.createElement('style')
-    style.innerHTML = `
-      @page { size: 4in 6in portrait; margin: 3mm; }
-      @media print {
-        body > *:not(#__print_frame) { display: none !important; }
-        #__print_frame {
-          display: flex !important;
-          position: fixed; inset: 0;
-          justify-content: center; align-items: center;
-          background: white;
-        }
-        #__print_frame img { max-width: 100%; max-height: 100%; object-fit: contain; }
-      }
-    `
-    const frame = document.createElement('div')
-    frame.id = '__print_frame'
-    frame.style.display = 'none'
-    const img = document.createElement('img')
-    img.src = session.imageUrl
-    frame.appendChild(img)
-    document.head.appendChild(style)
-    document.body.appendChild(frame)
-    const cleanup = () => {
-      style.remove()
-      frame.remove()
-      window.removeEventListener('afterprint', cleanup)
-    }
-    window.addEventListener('afterprint', cleanup)
-    const doPrint = () => window.print()
-    if (img.complete && img.naturalWidth > 0) {
-      doPrint()
-    } else {
-      img.onload = doPrint
-      img.onerror = () => {
-        cleanup()
-        Modal.error({ title: 'Không thể tải ảnh để in', centered: true })
-      }
-    }
+    printSingleImage(session.imageUrl)
   }
 
   const smallBtnClass = tc(

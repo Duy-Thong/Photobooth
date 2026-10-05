@@ -53,6 +53,13 @@ service cloud.firestore {
         .hasAny(['roles', '_roleKeys', 'role', 'status']);
     }
 
+    // Kiểm tra ứng viên có token lịch phỏng vấn hợp lệ (dùng cho Magic Link)
+    function hasValidScheduleToken(appId) {
+      return exists(/databases/$(database)/documents/applications/$(appId))
+        && get(/databases/$(database)/documents/applications/$(appId)).data.scheduleToken != null
+        && get(/databases/$(database)/documents/applications/$(appId)).data.scheduleToken != '';
+    }
+
     // ═══════════════════════════════════════════════════════════════
     //  PHOTOBOOTH COLLECTIONS
     // ═══════════════════════════════════════════════════════════════
@@ -203,27 +210,39 @@ service cloud.firestore {
     // ═══════════════════════════════════════════════════════════════
     match /applications/{applicationId} {
       // Thành viên đã đăng nhập xem hồ sơ ứng viên
-      allow read: if isAuth();
+      // HOẶC Ứng viên đọc đơn qua Magic Link (bằng scheduleToken)
+      allow get: if isAuth() || (resource.data.scheduleToken != null && resource.data.scheduleToken != '');
+      allow list: if isAuth() || (resource.data.scheduleToken != null && resource.data.scheduleToken != '');
 
       // ⚠️ PUBLIC CREATE — Form tuyển dụng không cần đăng nhập
       allow create: if true;
 
       // Chấm CV, cập nhật status — chỉ thành viên chính thức
       // HOẶC Ứng viên tự cập nhật ban chính (finalTrainingDepartment)
+      // HOẶC Ứng viên tự xác nhận / đổi lịch phỏng vấn qua Magic Link
       allow update: if isActiveMember() || (
         isAuth() && 
         resource.data.linkedUid == request.auth.uid &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['finalTrainingDepartment'])
+      ) || (
+        resource.data.scheduleToken != null &&
+        resource.data.scheduleToken != '' &&
+        request.resource.data.scheduleToken == resource.data.scheduleToken &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['scheduledDayId', 'scheduledShiftId', 'scheduleConfirmedAt', 'updatedAt'])
       );
 
       // Chỉ admin cấp CLB xóa hồ sơ
       allow delete: if isGlobalAdmin();
 
-      // Phiếu bình chọn theo vòng (cv, interview, training)
-      match /rounds/{roundId}/votes/{voterId} {
-        allow read: if isActiveMember();
-        allow create, update: if isActiveMember() && request.auth.uid == voterId;
-        allow delete: if isActiveMember() && request.auth.uid == voterId;
+      // Thông tin vòng & phiếu bình chọn theo vòng (cv, interview, training)
+      match /rounds/{roundId} {
+        allow read, write: if isActiveMember();
+
+        match /votes/{voterId} {
+          allow read: if isActiveMember();
+          allow create, update: if isActiveMember() && request.auth.uid == voterId;
+          allow delete: if isActiveMember() && request.auth.uid == voterId;
+        }
       }
 
       // Nhận xét chung
@@ -255,12 +274,14 @@ service cloud.firestore {
     match /recruitment_periods/{periodId} {
       // Public chỉ đọc đợt đang mở, auth user đọc tất cả
       allow read: if isAuth() || resource.data.status == 'open';
-      allow create, update, delete: if isGlobalAdmin();
+      // Ban Điều Hành (Admin, CN, PCN, Trưởng/Phó ban) được cập nhật đợt tuyển, câu hỏi & tiêu chí
+      allow update: if isExecutive();
+      allow create, delete: if isGlobalAdmin();
 
       // Câu hỏi form tuyển dụng — public read
       match /questions/{questionId} {
         allow read: if true;
-        allow create, update, delete: if isGlobalAdmin();
+        allow create, update, delete: if isExecutive();
       }
     }
 
@@ -308,13 +329,26 @@ service cloud.firestore {
     //  9. INTERVIEW DAYS — Ngày phỏng vấn
     // ═══════════════════════════════════════════════════════════════
     match /interview_days/{dayId} {
-      allow read: if isAuth();
+      // Cho phép đọc công khai danh sách ngày và ca phỏng vấn để ứng viên chọn lịch
+      allow read: if true;
       allow create, delete: if isGlobalAdmin();
       allow update: if isActiveMember();
 
       match /checkins/{checkinId} {
-        allow read: if isAuth();
-        allow write: if isActiveMember();
+        // Chỉ thành viên chính thức mới xem toàn bộ danh sách checkin
+        allow list: if isActiveMember();
+        // Cho phép đọc checkin theo ID cụ thể để kiểm tra xem ứng viên đã chọn lịch chưa
+        allow get: if true;
+
+        // Cho phép ứng viên tự lưu / đổi ca phỏng vấn khi có scheduleToken hợp lệ
+        allow create, update: if isActiveMember() || (
+          request.resource.data.applicationId == checkinId &&
+          request.resource.data.selfRegistered == true &&
+          hasValidScheduleToken(checkinId)
+        );
+
+        // Cho phép ứng viên hủy ca cũ khi đổi sang ngày mới
+        allow delete: if isActiveMember() || hasValidScheduleToken(checkinId);
       }
     }
 
@@ -382,7 +416,8 @@ service cloud.firestore {
     //  16. RECRUITMENT MAIL
     // ═══════════════════════════════════════════════════════════════
     match /recruitment_mail_templates/{templateId} {
-      allow read, write: if isGlobalAdmin();
+      allow read: if isAuth();
+      allow write: if isExecutive();
     }
 
     match /recruitment_mail_logs/{logId} {
@@ -522,8 +557,9 @@ service cloud.firestore {
     }
 
     match /notificationReads/{userId} {
-      // Chỉ đọc/sửa trạng thái đọc của chính mình
-      allow read, create, update: if isAuth() && request.auth.uid == userId;
+      // Thành viên tự đọc/sửa trạng thái đọc của chính mình, Ban Điều Hành được đọc để thống kê ai đã xem thông báo
+      allow read: if isAuth() && (request.auth.uid == userId || isExecutive());
+      allow create, update: if isAuth() && request.auth.uid == userId;
       allow delete: if false;
     }
 
@@ -605,7 +641,25 @@ service cloud.firestore {
       allow delete: if isAuth() && (
         request.auth.uid == userId || isGlobalAdmin()
       );
+
+      
     }
+    
+    // ═══════════════════════════════════════════════════════════════
+    //  41. AUDIT LOGS — Nhật ký tương tác và hoạt động hệ thống
+    // ═══════════════════════════════════════════════════════════════
+    match /audit_logs/{logId} {
+      // Chỉ Ban Điều Hành hoặc Admin cấp CLB mới được xem toàn bộ log
+      allow read: if isExecutive();
+
+      // Cho phép ghi nhận log (cả user đã đăng nhập lẫn khách vãng lai)
+      allow create: if true;
+
+      // Tuyệt đối không cho phép sửa hoặc xóa log (Immutable Audit Trail)
+      allow update, delete: if false;
+    }
+
+    
 
   }
 }
