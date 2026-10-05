@@ -1,12 +1,20 @@
-import { useState } from 'react'
-import { Spin, Empty, Tooltip, Modal, Button } from 'antd'
+import { useState, useMemo } from 'react'
+import { Spin, Empty, Tooltip, Modal, Button, DatePicker, Input } from 'antd'
 import {
   PlayCircleOutlined,
   CloseOutlined,
   CheckOutlined,
   PictureOutlined,
   DeleteOutlined,
+  CalendarOutlined,
+  SearchOutlined,
+  ClearOutlined,
+  DownloadOutlined,
+  LinkOutlined,
+  PrinterOutlined,
+  ClockCircleOutlined,
 } from '@ant-design/icons'
+import dayjs from 'dayjs'
 import type { MediaItem } from '@/lib/adminMediaService'
 import { formatBytes, formatDate } from '@/lib/adminUtils'
 import { useThemeClass } from '@/stores/themeStore'
@@ -42,6 +50,78 @@ export default function MediaTab({
 }: MediaTabProps) {
   const tc = useThemeClass()
   const [previewItem, setPreviewItem] = useState<MediaItem | null>(null)
+  const [downloading, setDownloading] = useState(false)
+
+  // Date & Search Filter state
+  const [datePreset, setDatePreset] = useState<'all' | 'today' | 'yesterday' | '7days' | '30days' | 'custom'>('all')
+  const [customRange, setCustomRange] = useState<[dayjs.Dayjs | null, dayjs.Dayjs | null] | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
+
+  const filteredItems = useMemo(() => {
+    let result = items
+
+    // 1. Search text filter
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim()
+      result = result.filter(
+        (item) =>
+          item.name.toLowerCase().includes(q) ||
+          (item.sessionId && item.sessionId.toLowerCase().includes(q)) ||
+          item.fullPath.toLowerCase().includes(q),
+      )
+    }
+
+    // 2. Date preset filter
+    if (datePreset === 'today') {
+      const startOfDay = dayjs().startOf('day').valueOf()
+      result = result.filter((item) => dayjs(item.timeCreated).valueOf() >= startOfDay)
+    } else if (datePreset === 'yesterday') {
+      const startOfYesterday = dayjs().subtract(1, 'day').startOf('day').valueOf()
+      const endOfYesterday = dayjs().subtract(1, 'day').endOf('day').valueOf()
+      result = result.filter((item) => {
+        const t = dayjs(item.timeCreated).valueOf()
+        return t >= startOfYesterday && t <= endOfYesterday
+      })
+    } else if (datePreset === '7days') {
+      const sevenDaysAgo = dayjs().subtract(7, 'day').startOf('day').valueOf()
+      result = result.filter((item) => dayjs(item.timeCreated).valueOf() >= sevenDaysAgo)
+    } else if (datePreset === '30days') {
+      const thirtyDaysAgo = dayjs().subtract(30, 'day').startOf('day').valueOf()
+      result = result.filter((item) => dayjs(item.timeCreated).valueOf() >= thirtyDaysAgo)
+    } else if (datePreset === 'custom' && customRange && customRange[0] && customRange[1]) {
+      const start = customRange[0].startOf('day').valueOf()
+      const end = customRange[1].endOf('day').valueOf()
+      result = result.filter((item) => {
+        const t = dayjs(item.timeCreated).valueOf()
+        return t >= start && t <= end
+      })
+    }
+
+    return result
+  }, [items, searchQuery, datePreset, customRange])
+
+  const handleDownload = async () => {
+    if (!previewItem) return
+    setDownloading(true)
+    try {
+      const res = await fetch(previewItem.url)
+      const blob = await res.blob()
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(blob)
+      const ext = previewItem.type === 'video' ? 'mp4' : 'jpg'
+      let fileName = previewItem.name || `photobooth-${previewItem.type}-${Date.now()}.${ext}`
+      if (!fileName.includes('.')) fileName += `.${ext}`
+      a.download = fileName
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(a.href)
+    } catch {
+      window.open(previewItem.url, '_blank')
+    } finally {
+      setDownloading(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -62,14 +142,117 @@ export default function MediaTab({
 
   return (
     <>
+      {/* Date & Search Filter Toolbar */}
       <div
-        className={`grid gap-4 ${
-          tab === 'photos'
-            ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5'
-            : 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3'
-        }`}
+        className={`sticky top-0 z-20 mb-4 p-3 rounded-xl border flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-md backdrop-blur-md ${tc(
+          'bg-[#141414]/95 border-[#222]',
+          'bg-white/95 border-slate-200',
+        )}`}
       >
-        {items.map((item) => (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className={`text-xs font-semibold mr-1 flex items-center gap-1 ${tc('text-slate-400', 'text-slate-600')}`}>
+            <CalendarOutlined /> Thời gian:
+          </span>
+          {[
+            { key: 'all', label: 'Tất cả' },
+            { key: 'today', label: 'Hôm nay' },
+            { key: 'yesterday', label: 'Hôm qua' },
+            { key: '7days', label: '7 ngày qua' },
+            { key: '30days', label: '30 ngày qua' },
+            { key: 'custom', label: 'Tùy chọn' },
+          ].map((preset) => {
+            const active = datePreset === preset.key
+            return (
+              <button
+                key={preset.key}
+                onClick={() => setDatePreset(preset.key as any)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition cursor-pointer ${
+                  active
+                    ? 'bg-blue-600 text-white font-semibold shadow-xs'
+                    : tc(
+                        'bg-[#1f1f1f] text-slate-300 hover:bg-[#2a2a2a] hover:text-white',
+                        'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-black',
+                      )
+                }`}
+              >
+                {preset.label}
+              </button>
+            )
+          })}
+
+          {datePreset === 'custom' && (
+            <DatePicker.RangePicker
+              size="small"
+              format="DD/MM/YYYY"
+              placeholder={['Từ ngày', 'Đến ngày']}
+              value={customRange}
+              onChange={(dates) => setCustomRange(dates as any)}
+              className="ml-1"
+            />
+          )}
+
+          {(datePreset !== 'all' || searchQuery.trim() !== '') && (
+            <Button
+              size="small"
+              type="text"
+              icon={<ClearOutlined />}
+              onClick={() => {
+                setDatePreset('all')
+                setCustomRange(null)
+                setSearchQuery('')
+              }}
+              className="text-xs opacity-70 hover:opacity-100"
+            >
+              Đặt lại
+            </Button>
+          )}
+        </div>
+
+        <div className="flex items-center gap-3">
+          <Input
+            size="small"
+            placeholder="Tìm session ID, tên..."
+            prefix={<SearchOutlined className="opacity-50" />}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            allowClear
+            className="w-full md:w-56"
+          />
+          <span className={`text-[11px] font-medium shrink-0 ${tc('text-slate-400', 'text-slate-500')}`}>
+            {filteredItems.length} / {items.length} {tab === 'photos' ? 'ảnh' : 'video'}
+          </span>
+        </div>
+      </div>
+
+      {filteredItems.length === 0 ? (
+        <Empty
+          description={
+            <span className={tc('text-slate-500', 'text-slate-400')}>
+              Không tìm thấy file nào trong khoảng thời gian đã lọc
+            </span>
+          }
+          className="my-16"
+        >
+          <Button
+            size="small"
+            onClick={() => {
+              setDatePreset('all')
+              setCustomRange(null)
+              setSearchQuery('')
+            }}
+          >
+            Bỏ lọc thời gian
+          </Button>
+        </Empty>
+      ) : (
+        <div
+          className={`grid gap-4 ${
+            tab === 'photos'
+              ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5'
+              : 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3'
+          }`}
+        >
+          {filteredItems.map((item) => (
           <div
             key={item.fullPath}
             className={`group relative rounded-xl overflow-hidden transition-all duration-200 border shadow-xs hover:shadow-md ${
@@ -156,12 +339,14 @@ export default function MediaTab({
 
             {/* Info */}
             <div className="p-2.5">
-              <p className={`text-[11px] truncate ${tc('text-slate-400', 'text-slate-500')}`}>
+              <p className={`text-[11px] font-medium truncate ${tc('text-slate-300', 'text-slate-700')}`}>
                 {formatDate(item.timeCreated)}
               </p>
-              <p className={`text-[11px] font-medium ${tc('text-white', 'text-slate-800')}`}>
-                {formatBytes(item.size)}
-              </p>
+              {item.size > 0 && (
+                <p className={`text-[10px] mt-0.5 ${tc('text-slate-500', 'text-slate-400')}`}>
+                  {formatBytes(item.size)}
+                </p>
+              )}
             </div>
 
             {/* Actions btn */}
@@ -198,6 +383,7 @@ export default function MediaTab({
           </div>
         ))}
       </div>
+      )}
 
       {/* Preview modal */}
       <Modal
@@ -218,51 +404,60 @@ export default function MediaTab({
         ) : previewItem?.type === 'video' ? (
           <video src={previewItem.url} controls autoPlay className="w-full rounded-lg" style={{ maxHeight: '75vh' }} />
         ) : null}
-        <div className="pt-3 flex justify-between items-center flex-wrap gap-2">
-          <span className={`text-xs ${tc('text-slate-400', 'text-slate-500')}`}>
-            {previewItem ? formatDate(previewItem.timeCreated) : ''} ·{' '}
-            {previewItem ? formatBytes(previewItem.size) : ''}
-          </span>
+        <div className={`mt-3 pt-3 border-t flex justify-between items-center flex-wrap gap-2.5 ${tc('border-[#222]', 'border-slate-200')}`}>
+          <div className="flex items-center gap-1.5 text-xs">
+            <ClockCircleOutlined className={tc('text-slate-500', 'text-slate-400')} />
+            <span className={tc('text-slate-300', 'text-slate-600')}>
+              {previewItem ? formatDate(previewItem.timeCreated) : ''}
+            </span>
+            {previewItem && previewItem.size > 0 && (
+              <span className={tc('text-slate-500', 'text-slate-400')}>
+                · {formatBytes(previewItem.size)}
+              </span>
+            )}
+          </div>
           <div className="flex gap-2 items-center flex-wrap">
             {previewItem?.sessionId && (
               <a href={`/session/${previewItem.sessionId}`} target="_blank" rel="noopener noreferrer">
-                <Button type="link" size="small">
-                  Trang Session ↗
+                <Button
+                  size="middle"
+                  icon={<LinkOutlined />}
+                  className="rounded-lg font-medium"
+                >
+                  Trang Session
                 </Button>
               </a>
             )}
             <Button
-              size="small"
-              onClick={async () => {
-                if (!previewItem) return
-                const res = await fetch(previewItem.url)
-                const blob = await res.blob()
-                const a = document.createElement('a')
-                a.href = URL.createObjectURL(blob)
-                a.download = previewItem.name || 'photo'
-                a.click()
-                URL.revokeObjectURL(a.href)
-              }}
+              size="middle"
+              type="primary"
+              icon={<DownloadOutlined />}
+              loading={downloading}
+              onClick={handleDownload}
+              className="rounded-lg font-medium shadow-xs"
             >
-              Tải ảnh ↓
+              Tải xuống
             </Button>
             {previewItem?.type === 'photo' && (
               <Button
-                size="small"
+                size="middle"
                 type="primary"
+                icon={<PrinterOutlined />}
                 style={{ background: '#10b981', borderColor: '#10b981' }}
                 onClick={() => {
                   if (previewItem) onPrint(previewItem)
                 }}
-                icon={<PictureOutlined />}
+                className="rounded-lg font-medium shadow-xs"
               >
                 In ảnh
               </Button>
             )}
             {canDelete && (
               <Button
-                size="small"
+                size="middle"
                 danger
+                icon={<DeleteOutlined />}
+                className="rounded-lg font-medium"
                 onClick={() => {
                   if (previewItem) {
                     onDelete(previewItem)

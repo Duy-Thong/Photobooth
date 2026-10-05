@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ref, deleteObject, getMetadata } from 'firebase/storage'
+import { ref, deleteObject } from 'firebase/storage'
 import { storage } from '@/lib/firebase'
 import { listenToSessions, deleteSession, markSessionPrinted } from '@/lib/sessionService'
 import { useAdminAuth } from '@/hooks/useAdminAuth'
@@ -9,7 +9,6 @@ import {
   ReloadOutlined,
   LogoutOutlined,
   DeleteFilled,
-  ClockCircleOutlined,
   PictureOutlined,
 } from '@ant-design/icons'
 import ThemeToggle from '@/components/photobooth/ThemeToggle'
@@ -230,44 +229,6 @@ export default function AdminPage() {
     })
   }
 
-  const handleDeleteOlderThan7Days = () => {
-    const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000
-    const allItems = [...photos, ...videos]
-    const old = allItems.filter((item) => new Date(item.timeCreated).getTime() < cutoff)
-    if (old.length === 0) {
-      Modal.info({
-        title: 'Không có dữ liệu cũ',
-        content: 'Tất cả file đều trong vòng 7 ngày gần nhất.',
-        centered: true,
-        okText: 'Đóng',
-      })
-      return
-    }
-    Modal.confirm({
-      title: 'Xóa dữ liệu cũ hơn 7 ngày?',
-      content: `Tìm thấy ${old.length} file (${old.filter((i) => i.type === 'photo').length} ảnh, ${old.filter((i) => i.type === 'video').length} video). Hành động này không thể hoàn tác.`,
-      okText: `Xóa ${old.length} file`,
-      okButtonProps: { danger: true },
-      cancelText: 'Hủy',
-      centered: true,
-      onOk: async () => {
-        setBulkDeleting(true)
-        try {
-          await Promise.allSettled(
-            old.map(async (item) => {
-              await deleteObject(ref(storage, item.fullPath)).catch(() => {})
-              if (item.sessionId) await deleteSession(item.sessionId).catch(() => {})
-            }),
-          )
-          const oldPaths = new Set(old.map((i) => i.fullPath))
-          setPhotos((ps) => ps.filter((p) => !oldPaths.has(p.fullPath)))
-          setVideos((vs) => vs.filter((v) => !oldPaths.has(v.fullPath)))
-        } finally {
-          setBulkDeleting(false)
-        }
-      },
-    })
-  }
 
   const handleDeleteSelected = () => {
     if (selectedPaths.size === 0) return
@@ -317,56 +278,6 @@ export default function AdminPage() {
     setSelectedPaths(new Set())
   }
 
-  const handleCleanupSessions = () => {
-    Modal.confirm({
-      title: 'Dọn dẹp Database tích cực?',
-      content:
-        'Hệ thống sẽ quét sâu toàn bộ bản ghi và xóa sạch những session không còn file trên Storage. Bạn có muốn tiếp tục?',
-      okText: 'Bắt đầu ngay',
-      centered: true,
-      onOk: async () => {
-        setBulkDeleting(true)
-        try {
-          let cleaned = 0
-          const allItems = [...photos, ...videos]
-          const sessionsWithId = allItems.filter((i) => i.sessionId)
-
-          for (let i = 0; i < sessionsWithId.length; i += 5) {
-            const chunk = sessionsWithId.slice(i, i + 5)
-            await Promise.allSettled(
-              chunk.map(async (item) => {
-                try {
-                  await getMetadata(ref(storage, item.fullPath))
-                } catch (err: any) {
-                  const is404 =
-                    err.code?.includes('not-found') ||
-                    err.message?.includes('404') ||
-                    err.status === 404 ||
-                    err.serverResponse?.includes('404')
-
-                  if (is404 && item.sessionId) {
-                    await deleteSession(item.sessionId).catch(() => {})
-                    cleaned++
-                  }
-                }
-              }),
-            )
-            await new Promise((r) => setTimeout(r, 100))
-          }
-
-          Modal.success({
-            title: 'Hoàn tất dọn dẹp',
-            content: `Đã dọn dẹp xong. Hệ thống đã xóa ${cleaned} bản ghi lỗi. Dữ liệu sẽ được cập nhật tự động.`,
-            centered: true,
-          })
-        } catch {
-          Modal.error({ title: 'Dọn dẹp thất bại', centered: true })
-        } finally {
-          setBulkDeleting(false)
-        }
-      },
-    })
-  }
 
   const handlePrint = (item: MediaItem) => {
     printSingleImage(item.url, () => {
@@ -429,111 +340,89 @@ export default function AdminPage() {
 
   return (
     <div
-      className={`min-h-dvh flex flex-col transition-colors duration-200 ${tc(
+      className={`h-dvh flex flex-col overflow-hidden transition-colors duration-200 ${tc(
         'bg-[#0a0a0a] text-[#e5e5e5]',
         'bg-[#f8fafc] text-slate-800',
       )}`}
     >
-      {/* Header */}
-      <header
-        className={`px-6 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b ${tc(
-          'bg-[#111] border-[#1f1f1f]',
-          'bg-white border-slate-200 shadow-xs',
-        )}`}
-      >
-        <div className="flex items-center gap-3">
-          <div>
-            <h1
-              className={`font-bold text-lg leading-tight ${tc('text-white', 'text-slate-900')}`}
-              style={{ letterSpacing: '-0.02em' }}
-            >
-              Sổ Media Photobooth
-            </h1>
-            <p className={`text-[10px] uppercase tracking-widest font-semibold ${tc('text-slate-500', 'text-slate-400')}`}>
-              Admin Panel
-            </p>
-          </div>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {selectedPaths.size > 0 && (
-            <div
-              className={`flex items-center gap-2 rounded-lg px-2.5 py-1 mr-2 border ${tc(
-                'bg-[#0a0a0a] border-blue-900/50',
-                'bg-blue-50 border-blue-200',
-              )}`}
-            >
-              <span className={`text-[11px] font-bold px-1 uppercase tracking-wider ${tc('text-blue-400', 'text-blue-600')}`}>
-                Đã chọn {selectedPaths.size}
-              </span>
-
-              {tab === 'photos' && (
-                <Button
-                  size="small"
-                  type="primary"
-                  icon={<PictureOutlined />}
-                  onClick={handlePrintSelected}
-                  style={{ background: '#10b981', borderColor: '#10b981' }}
-                >
-                  In {selectedPaths.size} ảnh
-                </Button>
-              )}
-
-              {permissions?.canManageAdmins && (
-                <Button
-                  size="small"
-                  type="primary"
-                  danger
-                  icon={<DeleteFilled />}
-                  onClick={handleDeleteSelected}
-                >
-                  Xóa {selectedPaths.size}
-                </Button>
-              )}
-              <Button size="small" onClick={deselectAll}>
-                Bỏ chọn
-              </Button>
+      {/* Sticky Top Navbar + Tabs */}
+      <div className="shrink-0 z-30 shadow-xs">
+        <header
+          className={`px-6 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b ${tc(
+            'bg-[#111] border-[#1f1f1f]',
+            'bg-white border-slate-200 shadow-xs',
+          )}`}
+        >
+          <div className="flex items-center gap-3">
+            <div>
+              <h1
+                className={`font-bold text-lg leading-tight ${tc('text-white', 'text-slate-900')}`}
+                style={{ letterSpacing: '-0.02em' }}
+              >
+                Sổ Media Photobooth
+              </h1>
+              <p className={`text-[10px] uppercase tracking-widest font-semibold ${tc('text-slate-500', 'text-slate-400')}`}>
+                Admin Panel
+              </p>
             </div>
-          )}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {selectedPaths.size > 0 && (
+              <div
+                className={`flex items-center gap-2 rounded-lg px-2.5 py-1 mr-2 border ${tc(
+                  'bg-[#0a0a0a] border-blue-900/50',
+                  'bg-blue-50 border-blue-200',
+                )}`}
+              >
+                <span className={`text-[11px] font-bold px-1 uppercase tracking-wider ${tc('text-blue-400', 'text-blue-600')}`}>
+                  Đã chọn {selectedPaths.size}
+                </span>
 
-          <Button
-            size="small"
-            icon={<ReloadOutlined />}
-            onClick={() => window.location.reload()}
-            disabled={bulkDeleting}
-          >
-            Tải lại
-          </Button>
+                {tab === 'photos' && (
+                  <Button
+                    size="small"
+                    type="primary"
+                    icon={<PictureOutlined />}
+                    onClick={handlePrintSelected}
+                    style={{ background: '#10b981', borderColor: '#10b981' }}
+                  >
+                    In {selectedPaths.size} ảnh
+                  </Button>
+                )}
 
-          {(tab === 'photos' || tab === 'videos') && items.length > 0 && (
-            <Button size="small" onClick={selectedPaths.size === items.length ? deselectAll : selectAll}>
-              {selectedPaths.size === items.length ? 'Bỏ chọn hết' : 'Chọn tất cả'}
+                {permissions?.canManageAdmins && (
+                  <Button
+                    size="small"
+                    type="primary"
+                    danger
+                    icon={<DeleteFilled />}
+                    onClick={handleDeleteSelected}
+                  >
+                    Xóa {selectedPaths.size}
+                  </Button>
+                )}
+                <Button size="small" onClick={deselectAll}>
+                  Bỏ chọn
+                </Button>
+              </div>
+            )}
+
+            <Button
+              size="small"
+              icon={<ReloadOutlined />}
+              onClick={() => window.location.reload()}
+              disabled={bulkDeleting}
+            >
+              Tải lại
             </Button>
-          )}
 
-          {permissions?.canManageAdmins && (
-            <>
-              <Tooltip title="Xóa dữ liệu cũ hơn 7 ngày (cả ảnh & video)">
-                <Button
-                  size="small"
-                  icon={<ClockCircleOutlined />}
-                  onClick={handleDeleteOlderThan7Days}
-                  loading={bulkDeleting}
-                  className={tc('text-amber-500 border-amber-900/40', 'text-amber-600 border-amber-300')}
-                >
-                  <span className="hidden sm:inline">Cũ &gt; 7 ngày</span>
-                </Button>
-              </Tooltip>
-              <Tooltip title="Quét và xóa các bản ghi không còn file ảnh/video thực tế">
-                <Button
-                  size="small"
-                  icon={<ReloadOutlined />}
-                  onClick={handleCleanupSessions}
-                  loading={bulkDeleting}
-                  className={tc('text-sky-400 border-sky-900/40', 'text-sky-600 border-sky-300')}
-                >
-                  <span className="hidden sm:inline">Dọn dẹp DB</span>
-                </Button>
-              </Tooltip>
+            {(tab === 'photos' || tab === 'videos') && items.length > 0 && (
+              <Button size="small" onClick={selectedPaths.size === items.length ? deselectAll : selectAll}>
+                {selectedPaths.size === items.length ? 'Bỏ chọn hết' : 'Chọn tất cả'}
+              </Button>
+            )}
+
+            {permissions?.canManageAdmins && (
               <Tooltip title="Xóa tất cả trong tab hiện tại">
                 <Button
                   size="small"
@@ -545,88 +434,90 @@ export default function AdminPage() {
                   <span className="hidden sm:inline">Xóa tất cả</span>
                 </Button>
               </Tooltip>
-            </>
-          )}
+            )}
 
-          <ThemeToggle />
+            <ThemeToggle />
 
-          <Button size="small" icon={<LogoutOutlined />} onClick={logout}>
-            Đăng xuất
-          </Button>
+            <Button size="small" icon={<LogoutOutlined />} onClick={logout}>
+              Đăng xuất
+            </Button>
+          </div>
+        </header>
+
+        {/* Tabs */}
+        <div
+          className={`flex px-4 sm:px-6 overflow-x-auto no-scrollbar flex-nowrap shrink-0 border-b ${tc(
+            'bg-[#111] border-[#1f1f1f]',
+            'bg-white border-slate-200',
+          )}`}
+        >
+          {availableTabs.map((t) => (
+            <button
+              key={t}
+              onClick={() => {
+                setTab(t)
+                setSelectedPaths(new Set())
+              }}
+              className={`py-3 px-4 text-sm font-semibold border-b-2 transition-colors shrink-0 whitespace-nowrap cursor-pointer ${
+                tab === t
+                  ? tc('border-white text-white', 'border-blue-600 text-blue-600')
+                  : tc(
+                      'border-transparent text-slate-500 hover:text-slate-300',
+                      'border-transparent text-slate-500 hover:text-slate-800',
+                    )
+              }`}
+            >
+              {t === 'photos'
+                ? `Ảnh (${photos.length})`
+                : t === 'videos'
+                  ? `Video (${videos.length})`
+                  : t === 'frames'
+                    ? `Khung (${customFrames.length})`
+                    : t === 'requests'
+                      ? 'Đề Xuất'
+                      : t === 'feedback'
+                        ? 'Góp ý'
+                        : 'Admin'}
+            </button>
+          ))}
         </div>
-      </header>
-
-      {/* Tabs */}
-      <div
-        className={`flex px-4 sm:px-6 overflow-x-auto no-scrollbar flex-nowrap shrink-0 border-b ${tc(
-          'bg-[#111] border-[#1f1f1f]',
-          'bg-white border-slate-200',
-        )}`}
-      >
-        {availableTabs.map((t) => (
-          <button
-            key={t}
-            onClick={() => {
-              setTab(t)
-              setSelectedPaths(new Set())
-            }}
-            className={`py-3 px-4 text-sm font-semibold border-b-2 transition-colors shrink-0 whitespace-nowrap cursor-pointer ${
-              tab === t
-                ? tc('border-white text-white', 'border-blue-600 text-blue-600')
-                : tc(
-                    'border-transparent text-slate-500 hover:text-slate-300',
-                    'border-transparent text-slate-500 hover:text-slate-800',
-                  )
-            }`}
-          >
-            {t === 'photos'
-              ? `Ảnh (${photos.length})`
-              : t === 'videos'
-                ? `Video (${videos.length})`
-                : t === 'frames'
-                  ? `Khung (${customFrames.length})`
-                  : t === 'requests'
-                    ? 'Đề Xuất'
-                    : t === 'feedback'
-                      ? 'Góp ý'
-                      : 'Admin'}
-          </button>
-        ))}
       </div>
 
-      {/* Active Tab Content */}
-      {tab === 'admins' ? (
-        <AdminsTab currentUserEmail={user?.email} onSelfDeleted={logout} />
-      ) : tab === 'frames' ? (
-        <FramesTab
-          customFrames={customFrames}
-          framesLoading={framesLoading}
-          canDelete={permissions?.canManageAdmins ?? false}
-          onReload={loadCustomFrames}
-          onFramesChange={setCustomFrames}
-        />
-      ) : tab === 'requests' ? (
-        <RequestsTab onFrameApproved={loadCustomFrames} />
-      ) : tab === 'feedback' ? (
-        <FeedbackTab canDelete={permissions?.canManageAdmins ?? false} />
-      ) : (
-        <div className="flex-1 p-6">
-          <MediaTab
-            tab={tab}
-            items={items}
-            loading={loading}
-            selectedPaths={selectedPaths}
-            brokenPaths={brokenPaths}
-            printedPaths={printedPaths}
-            deletingPath={deletingPath}
+      {/* Main Scrollable Content */}
+      <main className="flex-1 overflow-y-auto">
+        {tab === 'admins' ? (
+          <AdminsTab currentUserEmail={user?.email} onSelfDeleted={logout} />
+        ) : tab === 'frames' ? (
+          <FramesTab
+            customFrames={customFrames}
+            framesLoading={framesLoading}
             canDelete={permissions?.canManageAdmins ?? false}
-            onToggleSelect={toggleSelect}
-            onDelete={handleDelete}
-            onPrint={handlePrint}
-            onBrokenPath={(path) => setBrokenPaths((prev) => new Set(prev).add(path))}
+            onReload={loadCustomFrames}
+            onFramesChange={setCustomFrames}
           />
-        </div>
-      )}
+        ) : tab === 'requests' ? (
+          <RequestsTab onFrameApproved={loadCustomFrames} />
+        ) : tab === 'feedback' ? (
+          <FeedbackTab canDelete={permissions?.canManageAdmins ?? false} />
+        ) : (
+          <div className="p-4 sm:p-6">
+            <MediaTab
+              tab={tab}
+              items={items}
+              loading={loading}
+              selectedPaths={selectedPaths}
+              brokenPaths={brokenPaths}
+              printedPaths={printedPaths}
+              deletingPath={deletingPath}
+              canDelete={permissions?.canManageAdmins ?? false}
+              onToggleSelect={toggleSelect}
+              onDelete={handleDelete}
+              onPrint={handlePrint}
+              onBrokenPath={(path) => setBrokenPaths((prev) => new Set(prev).add(path))}
+            />
+          </div>
+        )}
+      </main>
     </div>
   )
 }

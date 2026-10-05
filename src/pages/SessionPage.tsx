@@ -263,10 +263,12 @@ export default function SessionPage() {
         </div>
       </div>
 
-      {/* Recruitment Banner Card */}
-      <div className="w-full max-w-xs">
-        <RecruitmentBanner variant="card" />
-      </div>
+      {/* Recruitment Banner Card (Ẩn theo yêu cầu, đổi false thành true khi cần hiển thị lại) */}
+      {false && (
+        <div className="w-full max-w-xs">
+          <RecruitmentBanner variant="card" />
+        </div>
+      )}
 
       {/* CTA: Back to Photobooth */}
       <a
