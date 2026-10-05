@@ -22,4 +22,14 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          antd: ['antd', '@ant-design/icons'],
+          firebase: ['firebase/app', 'firebase/firestore', 'firebase/storage', 'firebase/auth'],
+        },
+      },
+    },
+  },
 })
