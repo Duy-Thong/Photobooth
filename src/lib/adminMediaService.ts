@@ -1,5 +1,4 @@
-import { ref, listAll } from 'firebase/storage'
-import { storage } from '@/lib/firebase'
+import { getStoragePathFromUrl, getStableStorageUrl, listStorageFolder } from '@/utils/storage'
 
 export interface MediaItem {
   name: string
@@ -11,18 +10,7 @@ export interface MediaItem {
   sessionId?: string
 }
 
-export function getPathFromUrl(url: string): string | null {
-  if (!url) return null
-  try {
-    if (url.includes('/o/')) {
-      const parts = url.split('/o/')[1].split('?')[0]
-      return decodeURIComponent(parts)
-    }
-    return null
-  } catch {
-    return null
-  }
-}
+export const getPathFromUrl = getStoragePathFromUrl
 
 export function parseTimeFromSessionId(sessionId: string): string {
   try {
@@ -57,21 +45,18 @@ export async function fetchStorageOnlyMedia(
   knownVideoPaths: Set<string>,
   bucket: string,
 ): Promise<{ storagePhotos: MediaItem[]; storageVideos: MediaItem[] }> {
-  const stableUrl = (path: string) =>
-    `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodeURIComponent(path)}?alt=media`
-
   const storagePhotos: MediaItem[] = []
   const storageVideos: MediaItem[] = []
 
   // 1. photobooth/ folder
   try {
-    const pbList = await listAll(ref(storage, 'photobooth'))
+    const pbList = await listStorageFolder('photobooth')
     for (const item of pbList.items) {
       if (!knownPhotoPaths.has(item.fullPath)) {
         storagePhotos.push({
           name: item.name,
           fullPath: item.fullPath,
-          url: stableUrl(item.fullPath),
+          url: getStableStorageUrl(item.fullPath, bucket),
           timeCreated: parseTimeFromPhotoboothFilename(item.name),
           size: 0,
           type: 'photo',
@@ -84,7 +69,7 @@ export async function fetchStorageOnlyMedia(
 
   // 2. sessions/ subfolders not in Firestore
   try {
-    const sessionsList = await listAll(ref(storage, 'sessions'))
+    const sessionsList = await listStorageFolder('sessions')
     const missingPrefixes = sessionsList.prefixes.filter((p) => {
       const defaultPath = `sessions/${p.name}/strip.jpg`
       return !knownPhotoPaths.has(defaultPath)
@@ -96,7 +81,7 @@ export async function fetchStorageOnlyMedia(
       const results = await Promise.all(
         chunk.map(async (p) => {
           try {
-            const sub = await listAll(p)
+            const sub = await listStorageFolder(p)
             return { sessionId: p.name, items: sub.items }
           } catch {
             return { sessionId: p.name, items: [] }
@@ -113,7 +98,7 @@ export async function fetchStorageOnlyMedia(
             storagePhotos.push({
               name: `Session ${sessionId.slice(0, 8)}`,
               fullPath: item.fullPath,
-              url: stableUrl(item.fullPath),
+              url: getStableStorageUrl(item.fullPath, bucket),
               timeCreated: time,
               size: 0,
               type: 'photo',
@@ -123,7 +108,7 @@ export async function fetchStorageOnlyMedia(
             storageVideos.push({
               name: `Recap ${sessionId.slice(0, 8)}`,
               fullPath: item.fullPath,
-              url: stableUrl(item.fullPath),
+              url: getStableStorageUrl(item.fullPath, bucket),
               timeCreated: time,
               size: 0,
               type: 'video',

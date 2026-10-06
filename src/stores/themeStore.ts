@@ -8,13 +8,13 @@ interface ThemeState {
   setTheme: (t: Theme) => void
 }
 
-// Read initial theme from localStorage or default to 'dark'
+// Read initial theme from localStorage or default to 'light'
 function getInitialTheme(): Theme {
   try {
     const saved = localStorage.getItem('pb-theme')
     if (saved === 'light' || saved === 'dark') return saved
   } catch { /* noop */ }
-  return 'dark'
+  return 'light'
 }
 
 // Apply theme class to <html> element
@@ -22,7 +22,13 @@ function applyTheme(theme: Theme) {
   const root = document.documentElement
   root.classList.remove('dark', 'light')
   root.classList.add(theme)
-  try { localStorage.setItem('pb-theme', theme) } catch { /* noop */ }
+  try {
+    localStorage.setItem('pb-theme', theme)
+    const metaTheme = document.querySelector('meta[name="theme-color"]')
+    if (metaTheme) {
+      metaTheme.setAttribute('content', theme === 'dark' ? '#0a0a0a' : '#ffffff')
+    }
+  } catch { /* noop */ }
 }
 
 // Apply on load

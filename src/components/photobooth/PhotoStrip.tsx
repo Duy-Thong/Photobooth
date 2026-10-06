@@ -79,15 +79,15 @@ function MiniSlot({
             alt={`slot ${index + 1}`}
             onClick={() => !isCapturing && inputRef.current?.click()}
             title="Nhấn để đổi ảnh"
-            className="w-12 h-12 sm:w-13.5 sm:h-13.5 object-cover rounded-xl cursor-pointer opacity-90 hover:opacity-100 transition-all shadow-md hover:scale-105 border border-white/10"
+            className="w-11 h-11 sm:w-12 sm:h-12 object-cover rounded-xl cursor-pointer opacity-90 hover:opacity-100 transition-all shadow-md hover:scale-105 border border-white/10"
           />
           {!isCapturing && (
             <button
               onClick={() => onRemove(index)}
               title="Xóa ảnh này"
-              className="absolute -top-1.5 -right-1.5 w-5.5 h-5.5 bg-[#ff4d4f] text-white rounded-full flex items-center justify-center shadow-lg hover:bg-[#ff7875] hover:scale-110 active:scale-95 transition-all z-10 cursor-pointer"
+              className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-[#ff4d4f] text-white rounded-full flex items-center justify-center shadow-lg hover:bg-[#ff7875] hover:scale-110 active:scale-95 transition-all z-10 cursor-pointer"
             >
-              <CloseOutlined style={{ fontSize: 11, strokeWidth: 3 }} />
+              <CloseOutlined style={{ fontSize: 10, strokeWidth: 3 }} />
             </button>
           )}
         </>
@@ -95,7 +95,7 @@ function MiniSlot({
         <div
           onClick={() => !isCapturing && inputRef.current?.click()}
           title="Tải ảnh lên ô này"
-          className={`w-12 h-12 sm:w-13.5 sm:h-13.5 rounded-xl border border-dashed flex items-center justify-center cursor-pointer transition-all hover:scale-105 shadow-sm ${tc(
+          className={`w-11 h-11 sm:w-12 sm:h-12 rounded-xl border border-dashed flex items-center justify-center cursor-pointer transition-all hover:scale-105 shadow-sm ${tc(
             'border-[#2e2e2e] bg-[#0f0f0f] hover:border-[#666]',
             'border-[#d0d0d0] bg-[#f5f5f5] hover:border-[#888]'
           )}`}
@@ -345,7 +345,7 @@ export const PhotoStrip = memo(function PhotoStrip({
 
       {/* ── Mini thumbnails for remove / replace (desktop/tablet only to keep mobile frame large) ── */}
       {filled > 0 && (
-        <div className="hidden sm:flex gap-2 justify-start sm:justify-center overflow-x-auto no-scrollbar flex-nowrap py-0.5 max-w-full">
+        <div className="hidden sm:flex gap-1.5 justify-center flex-wrap no-scrollbar py-0.5 max-w-full overflow-hidden">
           {slots.map((slot, i) => (
             <MiniSlot
               key={i}

@@ -1,66 +1,80 @@
-import { useState, useMemo } from 'react'
-import { Spin, Empty, Tooltip, Modal, Button, DatePicker, Input } from 'antd'
+import { useState, useMemo, useEffect, useCallback } from 'react'
+import { Spin, Empty, Modal, Button, DatePicker, Input, Tooltip, message } from 'antd'
 import {
-  PlayCircleOutlined,
-  CloseOutlined,
-  CheckOutlined,
-  PictureOutlined,
-  DeleteOutlined,
   CalendarOutlined,
   SearchOutlined,
   ClearOutlined,
   DownloadOutlined,
+  DeleteFilled,
   LinkOutlined,
   PrinterOutlined,
   ClockCircleOutlined,
+  DeleteOutlined,
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
+import { deleteSession, markSessionPrinted } from '@/lib/sessionService'
 import type { MediaItem } from '@/lib/adminMediaService'
-import { formatBytes, formatDate } from '@/lib/adminUtils'
+import { formatBytes, formatDate, deleteStorageFile, deleteStorageFiles } from '@/utils'
 import { useThemeClass } from '@/stores/themeStore'
+import { useBulkSelection } from '@/hooks/useBulkSelection'
+import { downloadSingleMedia, downloadMultipleMedia } from '@/lib/downloadService'
+import { printSingleImage, printMultipleImages } from '@/lib/printService'
+import { MediaCard } from '@/components/admin/MediaCard'
+import { BulkActionBar } from '@/components/admin/BulkActionBar'
 
-interface MediaTabProps {
+export interface MediaTabProps {
   tab: 'photos' | 'videos'
   items: MediaItem[]
   loading: boolean
-  selectedPaths: Set<string>
-  brokenPaths: Set<string>
-  printedPaths: Set<string>
-  deletingPath: string | null
   canDelete: boolean
-  onToggleSelect: (path: string) => void
-  onDelete: (item: MediaItem) => void
-  onPrint: (item: MediaItem) => void
-  onBrokenPath: (path: string) => void
+  initialPrintedPaths?: Set<string>
+  onItemDeleted?: (item: MediaItem) => void
+  onItemsDeleted?: (items: MediaItem[]) => void
 }
 
 export default function MediaTab({
   tab,
   items,
   loading,
-  selectedPaths,
-  brokenPaths,
-  printedPaths,
-  deletingPath,
   canDelete,
-  onToggleSelect,
-  onDelete,
-  onPrint,
-  onBrokenPath,
+  initialPrintedPaths = new Set(),
+  onItemDeleted,
+  onItemsDeleted,
 }: MediaTabProps) {
   const tc = useThemeClass()
-  const [previewItem, setPreviewItem] = useState<MediaItem | null>(null)
-  const [downloading, setDownloading] = useState(false)
 
-  // Date & Search Filter state
+  // Selection Hook
+  const selection = useBulkSelection<string>()
+
+  // Clear selection on tab change
+  useEffect(() => {
+    selection.clear()
+  }, [tab, selection.clear])
+
+  // Local media state
+  const [brokenPaths, setBrokenPaths] = useState<Set<string>>(new Set())
+  const [printedPaths, setPrintedPaths] = useState<Set<string>>(initialPrintedPaths)
+  const [deletingPath, setDeletingPath] = useState<string | null>(null)
+  const [bulkDeleting, setBulkDeleting] = useState(false)
+  const [bulkDownloading, setBulkDownloading] = useState(false)
+  const [previewItem, setPreviewItem] = useState<MediaItem | null>(null)
+  const [previewDownloading, setPreviewDownloading] = useState(false)
+
+  // Keep printed paths in sync with parent prop
+  useEffect(() => {
+    setPrintedPaths((prev) => new Set([...prev, ...initialPrintedPaths]))
+  }, [initialPrintedPaths])
+
+  // Filters state
   const [datePreset, setDatePreset] = useState<'all' | 'today' | 'yesterday' | '7days' | '30days' | 'custom'>('all')
   const [customRange, setCustomRange] = useState<[dayjs.Dayjs | null, dayjs.Dayjs | null] | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
 
+  // 1. Filtered items memo
   const filteredItems = useMemo(() => {
     let result = items
 
-    // 1. Search text filter
+    // Search query
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim()
       result = result.filter(
@@ -71,7 +85,7 @@ export default function MediaTab({
       )
     }
 
-    // 2. Date preset filter
+    // Date preset
     if (datePreset === 'today') {
       const startOfDay = dayjs().startOf('day').valueOf()
       result = result.filter((item) => dayjs(item.timeCreated).valueOf() >= startOfDay)
@@ -100,28 +114,226 @@ export default function MediaTab({
     return result
   }, [items, searchQuery, datePreset, customRange])
 
-  const handleDownload = async () => {
-    if (!previewItem) return
-    setDownloading(true)
-    try {
-      const res = await fetch(previewItem.url)
-      const blob = await res.blob()
-      const a = document.createElement('a')
-      a.href = URL.createObjectURL(blob)
-      const ext = previewItem.type === 'video' ? 'mp4' : 'jpg'
-      let fileName = previewItem.name || `photobooth-${previewItem.type}-${Date.now()}.${ext}`
-      if (!fileName.includes('.')) fileName += `.${ext}`
-      a.download = fileName
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(a.href)
-    } catch {
-      window.open(previewItem.url, '_blank')
-    } finally {
-      setDownloading(false)
-    }
+  const resetFilters = () => {
+    setDatePreset('all')
+    setCustomRange(null)
+    setSearchQuery('')
   }
+
+  // Filtered paths for quick select
+  const filteredPaths = useMemo(() => filteredItems.map((i) => i.fullPath), [filteredItems])
+  const areAllFilteredSelected = useMemo(
+    () => filteredPaths.length > 0 && filteredPaths.every((p) => selection.isSelected(p)),
+    [filteredPaths, selection],
+  )
+
+  // 2. Print Actions
+  const handlePrintSingle = useCallback((item: MediaItem) => {
+    printSingleImage(item.url, () => {
+      setPrintedPaths((prev) => new Set(prev).add(item.fullPath))
+      if (item.sessionId) {
+        markSessionPrinted(item.sessionId).catch(() => {})
+      }
+    })
+  }, [])
+
+  const handlePrintSelected = useCallback(() => {
+    const toPrint = items.filter((i) => selection.isSelected(i.fullPath))
+    if (toPrint.length === 0) return
+
+    const executePrint = () => {
+      printMultipleImages(
+        toPrint.map((i) => i.url),
+        () => {
+          setPrintedPaths((prev) => {
+            const next = new Set(prev)
+            toPrint.forEach((it) => next.add(it.fullPath))
+            return next
+          })
+          toPrint.forEach((it) => {
+            if (it.sessionId) markSessionPrinted(it.sessionId).catch(() => {})
+          })
+        },
+      )
+    }
+
+    if (toPrint.length > 5) {
+      Modal.confirm({
+        title: `In ${toPrint.length} ảnh?`,
+        content: `Sẽ in ${toPrint.length} ảnh, mỗi ảnh trên 1 trang 4x6in. Tiếp tục?`,
+        onOk: executePrint,
+        centered: true,
+      })
+    } else {
+      executePrint()
+    }
+  }, [items, selection])
+
+  // 3. Download Actions
+  const handleDownloadSingle = useCallback(async (item: MediaItem) => {
+    await downloadSingleMedia(item)
+  }, [])
+
+  const executeBulkDownload = useCallback(
+    async (itemsToDownload: MediaItem[], zipName: string) => {
+      if (itemsToDownload.length === 0) return
+      setBulkDownloading(true)
+      const msgKey = 'bulk-download'
+      message.loading({
+        content: `Đang chuẩn bị tải ${itemsToDownload.length} file...`,
+        key: msgKey,
+        duration: 0,
+      })
+
+      try {
+        const { successCount, failCount } = await downloadMultipleMedia(itemsToDownload, {
+          zipFilename: zipName,
+          onProgress: (progress) => {
+            if (progress.status === 'compressing') {
+              message.loading({
+                content: `Đang nén ${itemsToDownload.length} file thành ZIP (${progress.percentage}%)...`,
+                key: msgKey,
+                duration: 0,
+              })
+            } else if (progress.status === 'fetching') {
+              message.loading({
+                content: `Đang tải ${progress.current}/${progress.total} file (${progress.percentage}%)...`,
+                key: msgKey,
+                duration: 0,
+              })
+            }
+          },
+        })
+
+        if (failCount > 0) {
+          message.warning({
+            content: `Đã tải ${successCount}/${itemsToDownload.length} file (thất bại ${failCount} file).`,
+            key: msgKey,
+            duration: 4,
+          })
+        } else {
+          message.success({
+            content: `Đã tải về thành công ${successCount} ${tab === 'photos' ? 'ảnh' : 'video'}!`,
+            key: msgKey,
+            duration: 3,
+          })
+        }
+      } catch (err: any) {
+        message.error({
+          content: err?.message || 'Có lỗi xảy ra khi tải file.',
+          key: msgKey,
+          duration: 4,
+        })
+      } finally {
+        setBulkDownloading(false)
+      }
+    },
+    [tab],
+  )
+
+  const handleDownloadSelected = useCallback(() => {
+    const toDownload = items.filter((i) => selection.isSelected(i.fullPath))
+    if (toDownload.length === 0) return
+    const zipName = `photobooth-${tab}-${dayjs().format('YYYYMMDD-HHmmss')}.zip`
+    executeBulkDownload(toDownload, zipName)
+  }, [items, selection, tab, executeBulkDownload])
+
+  const handleDownloadAll = useCallback(() => {
+    if (items.length === 0) return
+    const zipName = `photobooth-all-${tab}-${dayjs().format('YYYYMMDD-HHmmss')}.zip`
+
+    if (items.length > 5) {
+      Modal.confirm({
+        title: `Tải tất cả ${items.length} ${tab === 'photos' ? 'ảnh' : 'video'}?`,
+        content: `Hệ thống sẽ tải toàn bộ ${items.length} file và nén thành 1 file ZIP để tải về máy. Tiếp tục?`,
+        okText: 'Tải về (ZIP)',
+        cancelText: 'Hủy',
+        centered: true,
+        onOk: () => executeBulkDownload(items, zipName),
+      })
+    } else {
+      executeBulkDownload(items, zipName)
+    }
+  }, [items, tab, executeBulkDownload])
+
+  // 4. Delete Actions
+  const handleDeleteSingle = useCallback(
+    (item: MediaItem) => {
+      Modal.confirm({
+        title: 'Xóa file này?',
+        content: item.name,
+        okText: 'Xóa',
+        okButtonProps: { danger: true },
+        cancelText: 'Hủy',
+        centered: true,
+        onOk: async () => {
+          setDeletingPath(item.fullPath)
+          try {
+            await deleteStorageFile(item.fullPath)
+            if (item.sessionId) await deleteSession(item.sessionId).catch(() => {})
+            selection.deselect(item.fullPath)
+            onItemDeleted?.(item)
+          } finally {
+            setDeletingPath(null)
+          }
+        },
+      })
+    },
+    [selection, onItemDeleted],
+  )
+
+  const handleDeleteSelected = useCallback(() => {
+    const toDelete = items.filter((i) => selection.isSelected(i.fullPath))
+    if (toDelete.length === 0) return
+
+    Modal.confirm({
+      title: `Xóa ${toDelete.length} file đã chọn?`,
+      content: 'Hành động này không thể hoàn tác.',
+      okText: `Xóa ${toDelete.length} file`,
+      okButtonProps: { danger: true },
+      cancelText: 'Hủy',
+      centered: true,
+      onOk: async () => {
+        setBulkDeleting(true)
+        try {
+          await deleteStorageFiles(toDelete.map((i) => i.fullPath))
+          await Promise.allSettled(
+            toDelete.filter((i) => i.sessionId).map((i) => deleteSession(i.sessionId!)),
+          )
+          selection.clear()
+          onItemsDeleted?.(toDelete)
+        } finally {
+          setBulkDeleting(false)
+        }
+      },
+    })
+  }, [items, selection, onItemsDeleted])
+
+  const handleDeleteAll = useCallback(() => {
+    if (items.length === 0) return
+
+    Modal.confirm({
+      title: 'Xóa tất cả?',
+      content: `Sẽ xóa ${items.length} file trong tab "${tab === 'photos' ? 'Ảnh' : 'Video'}". Hành động này không thể hoàn tác.`,
+      okText: 'Xóa tất cả',
+      okButtonProps: { danger: true },
+      cancelText: 'Hủy',
+      centered: true,
+      onOk: async () => {
+        setBulkDeleting(true)
+        try {
+          await deleteStorageFiles(items.map((i) => i.fullPath))
+          await Promise.allSettled(
+            items.filter((i) => i.sessionId).map((i) => deleteSession(i.sessionId!)),
+          )
+          selection.clear()
+          onItemsDeleted?.(items)
+        } finally {
+          setBulkDeleting(false)
+        }
+      },
+    })
+  }, [items, tab, selection, onItemsDeleted])
 
   if (loading) {
     return (
@@ -149,6 +361,7 @@ export default function MediaTab({
           'bg-white/95 border-slate-200',
         )}`}
       >
+        {/* Preset Date Filters */}
         <div className="flex flex-wrap items-center gap-1.5">
           <span className={`text-xs font-semibold mr-1 flex items-center gap-1 ${tc('text-slate-400', 'text-slate-600')}`}>
             <CalendarOutlined /> Thời gian:
@@ -196,11 +409,7 @@ export default function MediaTab({
               size="small"
               type="text"
               icon={<ClearOutlined />}
-              onClick={() => {
-                setDatePreset('all')
-                setCustomRange(null)
-                setSearchQuery('')
-              }}
+              onClick={resetFilters}
               className="text-xs opacity-70 hover:opacity-100"
             >
               Đặt lại
@@ -208,7 +417,8 @@ export default function MediaTab({
           )}
         </div>
 
-        <div className="flex items-center gap-3">
+        {/* Search, Filter count & Global Tab Buttons */}
+        <div className="flex flex-wrap items-center gap-2.5">
           <Input
             size="small"
             placeholder="Tìm session ID, tên..."
@@ -216,14 +426,77 @@ export default function MediaTab({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             allowClear
-            className="w-full md:w-56"
+            className="w-full md:w-52"
           />
-          <span className={`text-[11px] font-medium shrink-0 ${tc('text-slate-400', 'text-slate-500')}`}>
-            {filteredItems.length} / {items.length} {tab === 'photos' ? 'ảnh' : 'video'}
-          </span>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <span className={`text-[11px] font-medium ${tc('text-slate-400', 'text-slate-500')}`}>
+              {filteredItems.length} / {items.length} {tab === 'photos' ? 'ảnh' : 'video'}
+            </span>
+
+            {filteredItems.length > 0 && (
+              <Button
+                size="small"
+                type="dashed"
+                onClick={() => {
+                  if (areAllFilteredSelected) {
+                    selection.deselect(filteredPaths)
+                  } else {
+                    selection.select(filteredPaths)
+                  }
+                }}
+                className="text-xs h-6 px-2"
+              >
+                {areAllFilteredSelected ? 'Bỏ chọn lọc' : `Chọn ${filteredItems.length}`}
+              </Button>
+            )}
+
+            <Tooltip title={`Tải tất cả ${items.length} file (ZIP)`}>
+              <Button
+                size="small"
+                icon={<DownloadOutlined />}
+                onClick={handleDownloadAll}
+                loading={bulkDownloading}
+              >
+                <span className="hidden sm:inline">Tải tất cả</span>
+              </Button>
+            </Tooltip>
+
+            {canDelete && (
+              <Tooltip title="Xóa tất cả file trong tab hiện tại">
+                <Button
+                  size="small"
+                  danger
+                  icon={<DeleteFilled />}
+                  onClick={handleDeleteAll}
+                  loading={bulkDeleting}
+                >
+                  <span className="hidden sm:inline">Xóa tất cả</span>
+                </Button>
+              </Tooltip>
+            )}
+          </div>
         </div>
       </div>
 
+      {/* Floating Bulk Action Bar (when items are selected) */}
+      {selection.selectedCount > 0 && (
+        <div className="sticky top-16 z-20 mb-4">
+          <BulkActionBar
+            selectedCount={selection.selectedCount}
+            itemType={tab}
+            canDelete={canDelete}
+            isDownloading={bulkDownloading}
+            isDeleting={bulkDeleting}
+            onPrint={tab === 'photos' ? handlePrintSelected : undefined}
+            onDownload={handleDownloadSelected}
+            onDelete={canDelete ? handleDeleteSelected : undefined}
+            onClear={selection.clear}
+          />
+        </div>
+      )}
+
+      {/* Media Grid or Empty State */}
       {filteredItems.length === 0 ? (
         <Empty
           description={
@@ -233,14 +506,7 @@ export default function MediaTab({
           }
           className="my-16"
         >
-          <Button
-            size="small"
-            onClick={() => {
-              setDatePreset('all')
-              setCustomRange(null)
-              setSearchQuery('')
-            }}
-          >
+          <Button size="small" onClick={resetFilters}>
             Bỏ lọc thời gian
           </Button>
         </Empty>
@@ -253,139 +519,27 @@ export default function MediaTab({
           }`}
         >
           {filteredItems.map((item) => (
-          <div
-            key={item.fullPath}
-            className={`group relative rounded-xl overflow-hidden transition-all duration-200 border shadow-xs hover:shadow-md ${
-              selectedPaths.has(item.fullPath)
-                ? 'border-blue-500 ring-2 ring-blue-500/30'
-                : tc(
-                    'bg-[#141414] border-[#262626] hover:border-[#444]',
-                    'bg-white border-slate-200 hover:border-slate-300',
-                  )
-            }`}
-          >
-            {/* Thumbnail */}
-            <div
-              className="relative cursor-pointer"
-              onClick={() => {
-                if (selectedPaths.size > 0) onToggleSelect(item.fullPath)
-                else if (!brokenPaths.has(item.fullPath)) setPreviewItem(item)
-              }}
-            >
-              {item.type === 'photo' ? (
-                brokenPaths.has(item.fullPath) ? (
-                  <div
-                    className={`w-full aspect-3/4 flex flex-col items-center justify-center gap-2 ${tc(
-                      'bg-[#0a0a0a] text-slate-600',
-                      'bg-slate-100 text-slate-400',
-                    )}`}
-                  >
-                    <CloseOutlined style={{ fontSize: 24 }} />
-                    <span className="text-[10px] uppercase font-semibold">File missing</span>
-                  </div>
-                ) : (
-                  <img
-                    src={item.url}
-                    alt={item.name}
-                    className="w-full aspect-3/4 object-cover"
-                    loading="lazy"
-                    onError={() => onBrokenPath(item.fullPath)}
-                  />
-                )
-              ) : (
-                <div className="w-full aspect-video bg-black flex items-center justify-center overflow-hidden">
-                  {brokenPaths.has(item.fullPath) ? (
-                    <div className="flex flex-col items-center justify-center text-slate-500 gap-2">
-                      <CloseOutlined style={{ fontSize: 24 }} />
-                      <span className="text-[10px] uppercase font-semibold">Video missing</span>
-                    </div>
-                  ) : (
-                    <>
-                      <video
-                        src={item.url}
-                        className="w-full h-full object-cover"
-                        onError={() => onBrokenPath(item.fullPath)}
-                      />
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                        <PlayCircleOutlined className="text-white text-4xl opacity-80 group-hover:opacity-100 transition-opacity" />
-                      </div>
-                    </>
-                  )}
-                </div>
-              )}
-
-              {/* Checkbox indicator */}
-              <div
-                className={`absolute top-2 left-2 w-5 h-5 rounded-md border flex items-center justify-center transition-all ${
-                  selectedPaths.has(item.fullPath)
-                    ? 'bg-blue-600 border-blue-600 text-white'
-                    : 'bg-black/40 border-white/50 opacity-0 group-hover:opacity-100 text-white'
-                }`}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onToggleSelect(item.fullPath)
-                }}
-              >
-                {selectedPaths.has(item.fullPath) && <CheckOutlined className="text-[10px]" />}
-              </div>
-
-              {/* Printed badge */}
-              {printedPaths.has(item.fullPath) && (
-                <div className="absolute bottom-2 left-2 bg-emerald-600 text-white text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded shadow-xs">
-                  Đã in
-                </div>
-              )}
-            </div>
-
-            {/* Info */}
-            <div className="p-2.5">
-              <p className={`text-[11px] font-medium truncate ${tc('text-slate-300', 'text-slate-700')}`}>
-                {formatDate(item.timeCreated)}
-              </p>
-              {item.size > 0 && (
-                <p className={`text-[10px] mt-0.5 ${tc('text-slate-500', 'text-slate-400')}`}>
-                  {formatBytes(item.size)}
-                </p>
-              )}
-            </div>
-
-            {/* Actions btn */}
-            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1.5">
-              {item.type === 'photo' && (
-                <Tooltip title="In ảnh">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onPrint(item)
-                    }}
-                    className="bg-black/70 hover:bg-emerald-600 text-white rounded-lg p-1.5 transition-colors cursor-pointer"
-                  >
-                    <PictureOutlined />
-                  </button>
-                </Tooltip>
-              )}
-
-              {canDelete && (
-                <Tooltip title="Xóa">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onDelete(item)
-                    }}
-                    disabled={deletingPath === item.fullPath}
-                    className="bg-black/70 hover:bg-red-600 text-white rounded-lg p-1.5 transition-colors cursor-pointer"
-                  >
-                    {deletingPath === item.fullPath ? <Spin size="small" /> : <DeleteOutlined />}
-                  </button>
-                </Tooltip>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
+            <MediaCard
+              key={item.fullPath}
+              item={item}
+              isSelected={selection.isSelected(item.fullPath)}
+              isBroken={brokenPaths.has(item.fullPath)}
+              isPrinted={printedPaths.has(item.fullPath)}
+              isDeleting={deletingPath === item.fullPath}
+              canDelete={canDelete}
+              hasActiveSelection={selection.selectedCount > 0}
+              onToggleSelect={(it) => selection.toggle(it.fullPath)}
+              onPreview={setPreviewItem}
+              onPrint={tab === 'photos' ? handlePrintSingle : undefined}
+              onDownload={handleDownloadSingle}
+              onDelete={canDelete ? handleDeleteSingle : undefined}
+              onBroken={(it) => setBrokenPaths((prev) => new Set(prev).add(it.fullPath))}
+            />
+          ))}
+        </div>
       )}
 
-      {/* Preview modal */}
+      {/* Preview Modal */}
       <Modal
         open={!!previewItem}
         onCancel={() => setPreviewItem(null)}
@@ -404,6 +558,7 @@ export default function MediaTab({
         ) : previewItem?.type === 'video' ? (
           <video src={previewItem.url} controls autoPlay className="w-full rounded-lg" style={{ maxHeight: '75vh' }} />
         ) : null}
+
         <div className={`mt-3 pt-3 border-t flex justify-between items-center flex-wrap gap-2.5 ${tc('border-[#222]', 'border-slate-200')}`}>
           <div className="flex items-center gap-1.5 text-xs">
             <ClockCircleOutlined className={tc('text-slate-500', 'text-slate-400')} />
@@ -416,28 +571,35 @@ export default function MediaTab({
               </span>
             )}
           </div>
+
           <div className="flex gap-2 items-center flex-wrap">
             {previewItem?.sessionId && (
               <a href={`/session/${previewItem.sessionId}`} target="_blank" rel="noopener noreferrer">
-                <Button
-                  size="middle"
-                  icon={<LinkOutlined />}
-                  className="rounded-lg font-medium"
-                >
+                <Button size="middle" icon={<LinkOutlined />} className="rounded-lg font-medium">
                   Trang Session
                 </Button>
               </a>
             )}
+
             <Button
               size="middle"
               type="primary"
               icon={<DownloadOutlined />}
-              loading={downloading}
-              onClick={handleDownload}
+              loading={previewDownloading}
+              onClick={async () => {
+                if (!previewItem) return
+                setPreviewDownloading(true)
+                try {
+                  await handleDownloadSingle(previewItem)
+                } finally {
+                  setPreviewDownloading(false)
+                }
+              }}
               className="rounded-lg font-medium shadow-xs"
             >
               Tải xuống
             </Button>
+
             {previewItem?.type === 'photo' && (
               <Button
                 size="middle"
@@ -445,13 +607,14 @@ export default function MediaTab({
                 icon={<PrinterOutlined />}
                 style={{ background: '#10b981', borderColor: '#10b981' }}
                 onClick={() => {
-                  if (previewItem) onPrint(previewItem)
+                  if (previewItem) handlePrintSingle(previewItem)
                 }}
                 className="rounded-lg font-medium shadow-xs"
               >
                 In ảnh
               </Button>
             )}
+
             {canDelete && (
               <Button
                 size="middle"
@@ -460,7 +623,7 @@ export default function MediaTab({
                 className="rounded-lg font-medium"
                 onClick={() => {
                   if (previewItem) {
-                    onDelete(previewItem)
+                    handleDeleteSingle(previewItem)
                     setPreviewItem(null)
                   }
                 }}

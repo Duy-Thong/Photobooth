@@ -86,13 +86,13 @@ export function useCamera(): UseCameraReturn {
           deviceId: { exact: deviceId },
           width: isPortrait ? { ideal: 1080, max: 1920 } : { ideal: 1920, max: 1920 },
           height: isPortrait ? { ideal: 1440, max: 2560 } : { ideal: 1080, max: 1080 },
-          aspectRatio: isPortrait ? { ideal: 3 / 4 } : { ideal: 4 / 3 },
+          aspectRatio: isPortrait ? { ideal: 3 / 4 } : { ideal: 16 / 9 },
         }
       : {
           facingMode: { ideal: 'user' },
           width: isPortrait ? { ideal: 1080, max: 1920 } : { ideal: 1920, max: 1920 },
           height: isPortrait ? { ideal: 1440, max: 2560 } : { ideal: 1080, max: 1080 },
-          aspectRatio: isPortrait ? { ideal: 3 / 4 } : { ideal: 4 / 3 },
+          aspectRatio: isPortrait ? { ideal: 3 / 4 } : { ideal: 16 / 9 },
         }
 
     try {

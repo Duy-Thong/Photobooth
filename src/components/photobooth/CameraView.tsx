@@ -52,7 +52,7 @@ export default function CameraView({
   const filterCss = FILTERS.find(f => f.value === activeFilter)?.css ?? 'none'
 
   return (
-    <div className={`relative w-full aspect-[3/4] sm:aspect-[4/3] max-h-[48vh] sm:max-h-[55vh] md:aspect-none md:max-h-none md:h-full md:flex-1 rounded-2xl overflow-hidden border shadow-2xl mx-auto ${tc('bg-[#080808] border-[#222]', 'bg-[#e8e8e8] border-[#d0d0d0]')}`}>
+    <div className={`relative w-full aspect-[3/4] sm:aspect-[4/3] md:aspect-video max-h-[48vh] sm:max-h-[55vh] md:max-h-none rounded-2xl overflow-hidden border shadow-2xl mx-auto ${tc('bg-[#080808] border-[#222]', 'bg-[#e8e8e8] border-[#d0d0d0]')}`}>
       <video
         ref={videoRef}
         autoPlay

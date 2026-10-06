@@ -1,11 +1,7 @@
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
+import { ref, uploadBytes } from 'firebase/storage'
 import { storage } from './firebase'
 import { generateSessionId, createSession } from './sessionService'
-
-/** Stable public URL for a Storage path (no token required when rules allow read). */
-function stableStorageUrl(bucket: string, storagePath: string): string {
-  return `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodeURIComponent(storagePath)}?alt=media`
-}
+import { getStableStorageUrl, uploadStorageFile } from '@/utils/storage'
 
 /**
  * Upload a full capture session (strip image + optional strip video) to Firebase Storage,
@@ -20,12 +16,11 @@ export async function uploadSession(
   videoUrl?: string | null,
   videoMimeType?: string,
 ): Promise<{ sessionId: string; stampedBlobUrl: string }> {
-  const bucket = import.meta.env.VITE_FIREBASE_STORAGE_BUCKET as string
   const sessionId = generateSessionId()
 
   // Paths use sessionId so image + video are co-located
   const imagePath = `sessions/${sessionId}/strip.jpg`
-  const imageStorageUrl = stableStorageUrl(bucket, imagePath)
+  const imageStorageUrl = getStableStorageUrl(imagePath)
 
   // Upload original clean image directly (no QR stamp overlay)
   const imageBlob = await fetch(imageBlobUrl).then(r => r.blob())
@@ -38,7 +33,7 @@ export async function uploadSession(
     const baseMime = (videoMimeType ?? 'video/webm').split(';')[0].trim()
     const ext = baseMime === 'video/mp4' ? 'mp4' : 'webm'
     const videoPath = `sessions/${sessionId}/strip.${ext}`
-    videoStorageUrl = stableStorageUrl(bucket, videoPath)
+    videoStorageUrl = getStableStorageUrl(videoPath)
     const videoBlob = await fetch(videoUrl).then(r => r.blob())
     uploadTasks.push(uploadBytes(ref(storage, videoPath), videoBlob, { contentType: baseMime }))
   }
@@ -56,12 +51,9 @@ export async function uploadSession(
  * Returns the public download URL.
  */
 export async function uploadPhotoToFirebase(blobUrl: string): Promise<string> {
-  const res = await fetch(blobUrl)
-  const blob = await res.blob()
+  const blob = await fetch(blobUrl).then(r => r.blob())
   const filename = `photobooth/${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`
-  const storageRef = ref(storage, filename)
-  await uploadBytes(storageRef, blob, { contentType: 'image/jpeg' })
-  return getDownloadURL(storageRef)
+  return uploadStorageFile(filename, blob, 'image/jpeg')
 }
 
 /**
@@ -69,12 +61,9 @@ export async function uploadPhotoToFirebase(blobUrl: string): Promise<string> {
  * mimeType drives the file extension and Content-Type header.
  */
 export async function uploadVideoToFirebase(blobUrl: string, mimeType = 'video/webm'): Promise<string> {
-  const res = await fetch(blobUrl)
-  const blob = await res.blob()
+  const blob = await fetch(blobUrl).then(r => r.blob())
   const baseMime = mimeType.split(';')[0].trim()
   const ext = baseMime === 'video/mp4' ? 'mp4' : 'webm'
   const filename = `recap/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
-  const storageRef = ref(storage, filename)
-  await uploadBytes(storageRef, blob, { contentType: baseMime })
-  return getDownloadURL(storageRef)
+  return uploadStorageFile(filename, blob, baseMime)
 }

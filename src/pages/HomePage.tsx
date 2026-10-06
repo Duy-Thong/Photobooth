@@ -36,6 +36,15 @@ export default function HomePage() {
     isX2, setIsX2,
   } = usePhotoboothStore()
 
+  const isWideStrip =
+    isX2 ||
+    layout.cols >= 2 ||
+    Boolean(selectedFrame?.layout && ['2x2', '2x3', '2x4'].includes(selectedFrame.layout)) ||
+    Boolean(
+      (selectedFrame?.frame === 'grid' || selectedFrame?.frame === 'bigrectangle') &&
+      !['1x4', '1x3', '1x2'].includes(selectedFrame?.layout ?? '')
+    )
+
   const { startRecording, stopRecording, cancelRecording, getVideoMimeType } = useVideoRecap(videoRef, isMirrored)
 
   const [countdownValue, setCountdownValue] = useState<number | null>(null)
@@ -62,6 +71,37 @@ export default function HomePage() {
     window.addEventListener('resize', check)
     return () => window.removeEventListener('resize', check)
   }, [])
+
+  // Desktop camera + controls unified deck width sync (1 cohesive unit at 16:9, tight to strip)
+  const studioRef = useRef<HTMLDivElement>(null)
+  const stripColRef = useRef<HTMLDivElement>(null)
+  const [desktopDeckWidth, setDesktopDeckWidth] = useState<number | null>(null)
+
+  useEffect(() => {
+    const el = studioRef.current
+    if (!el) return
+
+    const update = () => {
+      const width = el.clientWidth
+      const height = el.clientHeight
+      if (width === 0 || height === 0) return
+
+      const stripW = stripColRef.current?.offsetWidth ?? (isWideStrip ? 320 : 240)
+      const gap = 20 // gap-3 sm:gap-5
+      const maxCamW = Math.max(300, width - stripW - gap)
+      // CaptureControls is ~56px, gap is 8px, leave safety buffer 4px -> 68px
+      const maxCamH = Math.max(0, height - 68)
+      const idealW = maxCamH * (16 / 9)
+      const w = Math.min(maxCamW, idealW)
+      setDesktopDeckWidth(Math.round(w))
+    }
+
+    const ro = new ResizeObserver(update)
+    ro.observe(el)
+    if (stripColRef.current) ro.observe(stripColRef.current)
+    update()
+    return () => ro.disconnect()
+  }, [isWideStrip])
 
   const mobileUploadRef = useRef<HTMLInputElement>(null)
   const handleMobileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -128,8 +168,15 @@ export default function HomePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [finalImageUrl, videoRecap, recapClips, selectedFrame, layout.slots, isX2])
 
-  // Auto-open frame modal only if no frame selected. 
-  // Auto-build is now DISABLED per user request (manual only).
+  // Auto-open frame modal immediately on page entry if no frame is selected yet
+  useEffect(() => {
+    if (!selectedFrame) {
+      const timer = setTimeout(() => setFrameModalOpen(true), 300)
+      return () => clearTimeout(timer)
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-open frame modal after shooting all slots if still no frame selected
   useEffect(() => {
     if (capturedCount !== layout.slots || finalImageUrl || isCapturing) return
     if (!selectedFrame) {
@@ -297,8 +344,6 @@ export default function HomePage() {
     clearRecapClips()
   }, [selectedFrame, addPhoto, setFinalImageUrl, clearRecapClips, messageApi])
 
-  const isWideStrip = layout.cols === 2 || (selectedFrame?.frame ? ['square', 'wide', 'bigrectangle'].includes(selectedFrame.frame) : false) || (selectedFrame?.layout ? ['2x2', '2x3'].includes(selectedFrame.layout) : false)
-
   return (
     <>
       {contextHolder}
@@ -430,28 +475,33 @@ export default function HomePage() {
         )}
 
         {/* Main Studio Area */}
-        <div className="flex-1 h-full w-full max-w-[1640px] mx-auto px-2 sm:px-4 lg:px-6 py-1 md:py-2 overflow-hidden flex flex-col justify-between min-h-0">
+        <div ref={studioRef} className="flex-1 h-full w-full max-w-[1640px] mx-auto px-2 sm:px-4 lg:px-6 py-1 md:py-2 overflow-hidden flex flex-col justify-between min-h-0">
           {/* ══════════════ DESKTOP VIEW (md:flex) ══════════════ */}
-          <div className="hidden md:flex flex-row gap-3 sm:gap-5 h-full items-start">
-            {/* Left: camera + unified capture controls */}
-            <div className="w-full md:flex-1 flex flex-col gap-2 shrink md:h-full min-h-0 min-w-0">
-              <CameraView
-                videoRef={videoRef as React.RefObject<HTMLVideoElement>}
-                isMirrored={isMirrored}
-                isReady={isReady}
-                error={error}
-                activeFilter={activeFilter}
-                capturedCount={capturedCount}
-                totalSlots={layout.slots}
-                countdownValue={countdownValue}
-                showFlash={showFlash}
-                devices={devices}
-                activeDeviceId={activeDeviceId}
-                onSelectDevice={selectDevice}
-                onToggleMirror={toggleMirror}
-                onRetry={retryCamera}
-              />
-              <div className="shrink-0 w-full">
+          <div className="hidden md:flex flex-row gap-3 sm:gap-5 h-full items-center justify-center mx-auto">
+            {/* Left: camera + unified capture controls (1 cohesive deck) */}
+            <div
+              style={{ width: desktopDeckWidth ? `${desktopDeckWidth}px` : undefined }}
+              className="flex flex-col gap-2 shrink-0 items-center justify-center max-w-full transition-all duration-150"
+            >
+              <div className="w-full shrink-0">
+                <CameraView
+                  videoRef={videoRef as React.RefObject<HTMLVideoElement>}
+                  isMirrored={isMirrored}
+                  isReady={isReady}
+                  error={error}
+                  activeFilter={activeFilter}
+                  capturedCount={capturedCount}
+                  totalSlots={layout.slots}
+                  countdownValue={countdownValue}
+                  showFlash={showFlash}
+                  devices={devices}
+                  activeDeviceId={activeDeviceId}
+                  onSelectDevice={selectDevice}
+                  onToggleMirror={toggleMirror}
+                  onRetry={retryCamera}
+                />
+              </div>
+              <div className="w-full shrink-0">
                 <CaptureControls
                   isReady={isReady}
                   isCapturing={isCapturing}
@@ -483,11 +533,14 @@ export default function HomePage() {
             </div>
 
             {/* Right: photo strip */}
-            <div className={`shrink-0 w-full md:h-full md:self-stretch pb-6 md:pb-0 flex flex-col justify-center items-center min-h-0 transition-all duration-300 ${
-              isWideStrip 
-                ? 'md:w-80 lg:w-[420px] xl:w-[480px] 2xl:w-[540px]' 
-                : 'md:w-52 lg:w-60 xl:w-64'
-            }`}>
+            <div
+              ref={stripColRef}
+              className={`shrink-0 md:h-full md:self-stretch pb-6 md:pb-0 flex flex-col justify-center items-center min-h-0 transition-all duration-300 ${
+                isWideStrip 
+                  ? 'md:w-72 lg:w-80 xl:w-96' 
+                  : 'md:w-52 lg:w-60 xl:w-64'
+              }`}
+            >
               <PhotoStrip
                 layout={layout}
                 slots={capturedSlots}

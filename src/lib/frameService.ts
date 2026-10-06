@@ -1,6 +1,6 @@
 import { collection, getDocs, addDoc, deleteDoc, doc, query, orderBy, updateDoc } from 'firebase/firestore'
-import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
-import { db, storage } from './firebase'
+import { db } from './firebase'
+import { uploadStorageFile, deleteStorageFile } from '@/utils/storage'
 import { STATIC_FRAMES } from './frames-static'
 import type { SlotRect } from '@/types/photobooth'
 
@@ -115,9 +115,7 @@ export async function uploadFrame(
 ): Promise<FrameItem> {
   const ext = file.name.split('.').pop()?.toLowerCase() ?? 'png'
   const filename = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
-  const sRef = storageRef(storage, `frames/${filename}`)
-  await uploadBytes(sRef, file, { contentType: file.type || 'image/png' })
-  const storageUrl = await getDownloadURL(sRef)
+  const storageUrl = await uploadStorageFile(`frames/${filename}`, file, file.type || 'image/png')
 
   const frameDoc: Omit<FrameItem, 'firestoreId'> = {
     id: Date.now(),
@@ -141,7 +139,7 @@ export async function uploadFrame(
 export async function deleteCustomFrame(firestoreId: string, filename: string): Promise<void> {
   await Promise.all([
     deleteDoc(doc(db, FRAMES_COLLECTION, firestoreId)),
-    deleteObject(storageRef(storage, `frames/${filename}`)).catch(() => { /* already deleted */ }),
+    deleteStorageFile(`frames/${filename}`),
   ])
   invalidateFramesCache()
 }
@@ -224,9 +222,7 @@ export async function submitFrameRequest(
 ): Promise<void> {
   const ext = file.name.split('.').pop()?.toLowerCase() ?? 'png'
   const filename = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
-  const sRef = storageRef(storage, `frame-requests/${filename}`)
-  await uploadBytes(sRef, file, { contentType: file.type || 'image/png' })
-  const storageUrl = await getDownloadURL(sRef)
+  const storageUrl = await uploadStorageFile(`frame-requests/${filename}`, file, file.type || 'image/png')
 
   await addDoc(collection(db, REQUESTS_COLLECTION), {
     filename,

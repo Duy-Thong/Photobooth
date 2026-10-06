@@ -12,51 +12,6 @@ html {
 
 /* ── Theme CSS Variables ── */
 :root,
-html.dark {
-    --bg-primary: #0a0a0a;
-    --bg-secondary: #111111;
-    --bg-elevated: #141414;
-    --bg-surface: #0d0d0d;
-    --bg-input: #0a0a0a;
-    --border-primary: #222222;
-    --border-secondary: #1e1e1e;
-    --border-subtle: #141414;
-    --border-dashed: #252525;
-    --border-hover: #444444;
-    --text-primary: #e5e5e5;
-    --text-secondary: #888888;
-    --text-tertiary: #555555;
-    --text-muted: #333333;
-    --text-label: #3a3a3a;
-    --text-heading: #ffffff;
-    --scrollbar-track: #0a0a0a;
-    --scrollbar-thumb: #2a2a2a;
-    --scrollbar-thumb-hover: #444444;
-    --switch-off: #2a2a2a;
-    --modal-bg: #050505;
-    --modal-border: #222222;
-    --modal-divider: #1e1e1e;
-    --modal-close: #555555;
-    --modal-close-hover-bg: #222222;
-    --modal-close-hover-color: #ffffff;
-    --focus-ring: rgba(255, 255, 255, 0.2);
-    --shadow-modal: rgba(0, 0, 0, 0.7);
-    --pill-off-border: #252525;
-    --pill-off-text: #888888;
-    --pill-off-hover-border: #444444;
-    --pill-off-hover-text: #dddddd;
-    --divider: #1e1e1e;
-    --btn-base-bg: #1e1e1e;
-    --btn-base-border: #2a2a2a;
-    --progress-track: #1e1e1e;
-    --accent-chip-border: #2a2a2a;
-    --accent-chip-hover-border: #444444;
-    --accent-chip-text: #5a5a5a;
-    --accent-chip-hover-text: #aaaaaa;
-    --slot-empty-bg: #141414;
-    color-scheme: dark;
-}
-
 html.light {
     --bg-primary: #f5f5f5;
     --bg-secondary: #ffffff;
@@ -102,6 +57,51 @@ html.light {
     color-scheme: light;
 }
 
+html.dark {
+    --bg-primary: #0a0a0a;
+    --bg-secondary: #111111;
+    --bg-elevated: #141414;
+    --bg-surface: #0d0d0d;
+    --bg-input: #0a0a0a;
+    --border-primary: #222222;
+    --border-secondary: #1e1e1e;
+    --border-subtle: #141414;
+    --border-dashed: #252525;
+    --border-hover: #444444;
+    --text-primary: #e5e5e5;
+    --text-secondary: #888888;
+    --text-tertiary: #555555;
+    --text-muted: #333333;
+    --text-label: #3a3a3a;
+    --text-heading: #ffffff;
+    --scrollbar-track: #0a0a0a;
+    --scrollbar-thumb: #2a2a2a;
+    --scrollbar-thumb-hover: #444444;
+    --switch-off: #2a2a2a;
+    --modal-bg: #050505;
+    --modal-border: #222222;
+    --modal-divider: #1e1e1e;
+    --modal-close: #555555;
+    --modal-close-hover-bg: #222222;
+    --modal-close-hover-color: #ffffff;
+    --focus-ring: rgba(255, 255, 255, 0.2);
+    --shadow-modal: rgba(0, 0, 0, 0.7);
+    --pill-off-border: #252525;
+    --pill-off-text: #888888;
+    --pill-off-hover-border: #444444;
+    --pill-off-hover-text: #dddddd;
+    --divider: #1e1e1e;
+    --btn-base-bg: #1e1e1e;
+    --btn-base-border: #2a2a2a;
+    --progress-track: #1e1e1e;
+    --accent-chip-border: #2a2a2a;
+    --accent-chip-hover-border: #444444;
+    --accent-chip-text: #5a5a5a;
+    --accent-chip-hover-text: #aaaaaa;
+    --slot-empty-bg: #141414;
+    color-scheme: dark;
+}
+
 body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -132,6 +132,15 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
     background: var(--scrollbar-thumb-hover);
+}
+
+/* ── Hide scrollbar utility ── */
+.no-scrollbar::-webkit-scrollbar {
+    display: none !important;
+}
+.no-scrollbar {
+    -ms-overflow-style: none !important;
+    scrollbar-width: none !important;
 }
 
 /* ── AntD modal backdrop ── */

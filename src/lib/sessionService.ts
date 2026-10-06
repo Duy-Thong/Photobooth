@@ -1,5 +1,6 @@
 import { collection, doc, setDoc, getDoc, serverTimestamp, updateDoc, query, orderBy, onSnapshot, deleteDoc, getDocs } from 'firebase/firestore'
 import { db } from './firebase'
+import { toIsoDate, generateShortId } from '@/utils'
 
 export interface SessionData {
   id: string
@@ -28,14 +29,12 @@ export async function fetchSession(id: string): Promise<SessionData | null> {
     id: snap.id,
     imageUrl: d.imageUrl,
     videoUrl: d.videoUrl ?? null,
-    createdAt: d.createdAt?.toDate?.()?.toISOString() ?? new Date().toISOString(),
+    createdAt: toIsoDate(d.createdAt),
   }
 }
 
 /** Generate a short unique session ID. */
-export function generateSessionId(): string {
-  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
-}
+export const generateSessionId = generateShortId
 
 /** Fetch all sessions from Firestore, ordered by createdAt descending. */
 export async function fetchSessions(): Promise<SessionData[]> {
@@ -47,8 +46,8 @@ export async function fetchSessions(): Promise<SessionData[]> {
       id: doc.id,
       imageUrl: d.imageUrl,
       videoUrl: d.videoUrl ?? null,
-      createdAt: d.createdAt?.toDate?.()?.toISOString() ?? new Date().toISOString(),
-      printedAt: d.printedAt?.toDate?.()?.toISOString() ?? null,
+      createdAt: toIsoDate(d.createdAt),
+      printedAt: d.printedAt ? toIsoDate(d.printedAt) : null,
     }
   })
 }
@@ -78,8 +77,8 @@ export function listenToSessions(callback: (sessions: SessionData[]) => void): (
           id: doc.id,
           imageUrl: d.imageUrl,
           videoUrl: d.videoUrl ?? null,
-          createdAt: d.createdAt?.toDate?.()?.toISOString() ?? new Date().toISOString(),
-          printedAt: d.printedAt?.toDate?.()?.toISOString() ?? null,
+          createdAt: toIsoDate(d.createdAt),
+          printedAt: d.printedAt ? toIsoDate(d.printedAt) : null,
         }
       })
       callback(sessions)

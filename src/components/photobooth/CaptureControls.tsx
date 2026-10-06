@@ -79,14 +79,6 @@ export default function CaptureControls({
         'bg-white border-[#d8d8d8]'
       )}`}
     >
-      {/* ── Progress bar top line ── */}
-      <div className={`absolute top-0 inset-x-0 h-1 overflow-hidden rounded-t-2xl ${tc('bg-[#1a1a1a]', 'bg-[#e5e5e5]')}`}>
-        <div
-          className={`h-full transition-all duration-500 rounded-full ${tc('bg-white/80', 'bg-black/70')}`}
-          style={{ width: totalSlots > 0 ? `${(capturedCount / totalSlots) * 100}%` : '0%' }}
-        />
-      </div>
-
       {/* ── Top Row on Mobile / Left Groups on Desktop ── */}
       <div className="flex items-center justify-between md:justify-start gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar py-0.5 md:py-0 shrink-0">
         {/* ── Group 1: Khung Ảnh ── */}

@@ -1,19 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ref, deleteObject } from 'firebase/storage'
-import { storage } from '@/lib/firebase'
-import { listenToSessions, deleteSession, markSessionPrinted } from '@/lib/sessionService'
+import { listenToSessions } from '@/lib/sessionService'
 import { useAdminAuth } from '@/hooks/useAdminAuth'
 import { fetchCustomFrames as fetchCustomFramesService, type FrameItem } from '@/lib/frameService'
-import { Button, Modal, Tooltip } from 'antd'
-import {
-  ReloadOutlined,
-  LogoutOutlined,
-  DeleteFilled,
-  PictureOutlined,
-} from '@ant-design/icons'
+import { Button } from 'antd'
+import { ReloadOutlined, LogoutOutlined } from '@ant-design/icons'
 import ThemeToggle from '@/components/photobooth/ThemeToggle'
 import { useThemeClass } from '@/stores/themeStore'
-import { printSingleImage, printMultipleImages } from '@/lib/printService'
 import {
   fetchStorageOnlyMedia,
   getPathFromUrl,
@@ -33,13 +25,9 @@ export default function AdminPage() {
   const [photos, setPhotos] = useState<MediaItem[]>([])
   const [videos, setVideos] = useState<MediaItem[]>([])
   const [loading, setLoading] = useState(true)
-  const [deletingPath, setDeletingPath] = useState<string | null>(null)
-  const [bulkDeleting, setBulkDeleting] = useState(false)
   const [printedPaths, setPrintedPaths] = useState<Set<string>>(new Set())
-  const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set())
-  const [brokenPaths, setBrokenPaths] = useState<Set<string>>(new Set())
 
-  // Real-time state
+  // Real-time session state
   const [sessionItems, setSessionItems] = useState<{
     photos: MediaItem[]
     videos: MediaItem[]
@@ -133,7 +121,7 @@ export default function AdminPage() {
     return () => unsubscribe()
   }, [])
 
-  // 2. Compute final lists with date range filters
+  // 2. Compute final lists with permissions date range filters
   useEffect(() => {
     let allP = [...sessionItems.photos]
     let allV = [...sessionItems.videos]
@@ -177,166 +165,21 @@ export default function AdminPage() {
     loadCustomFrames()
   }, [loadCustomFrames])
 
-  const handleDelete = async (item: MediaItem) => {
-    Modal.confirm({
-      title: 'Xóa file này?',
-      content: item.name,
-      okText: 'Xóa',
-      okButtonProps: { danger: true },
-      cancelText: 'Hủy',
-      centered: true,
-      onOk: async () => {
-        setDeletingPath(item.fullPath)
-        try {
-          await deleteObject(ref(storage, item.fullPath)).catch(() => {})
-          if (item.sessionId) {
-            await deleteSession(item.sessionId).catch(() => {})
-          }
-          if (item.type === 'photo') setPhotos((ps) => ps.filter((p) => p.fullPath !== item.fullPath))
-          else setVideos((vs) => vs.filter((v) => v.fullPath !== item.fullPath))
-        } finally {
-          setDeletingPath(null)
-        }
-      },
-    })
-  }
-
-  const handleDeleteAll = () => {
-    const list = tab === 'photos' ? photos : videos
-    if (list.length === 0) return
-    Modal.confirm({
-      title: 'Xóa tất cả?',
-      content: `Sẽ xóa ${list.length} file trong tab "${tab === 'photos' ? 'Ảnh' : 'Video'}". Hành động này không thể hoàn tác.`,
-      okText: 'Xóa tất cả',
-      okButtonProps: { danger: true },
-      cancelText: 'Hủy',
-      centered: true,
-      onOk: async () => {
-        setBulkDeleting(true)
-        try {
-          await Promise.allSettled(
-            list.map(async (item) => {
-              await deleteObject(ref(storage, item.fullPath)).catch(() => {})
-              if (item.sessionId) await deleteSession(item.sessionId).catch(() => {})
-            }),
-          )
-          if (tab === 'photos') setPhotos([])
-          else setVideos([])
-        } finally {
-          setBulkDeleting(false)
-        }
-      },
-    })
-  }
-
-
-  const handleDeleteSelected = () => {
-    if (selectedPaths.size === 0) return
-    const count = selectedPaths.size
-    Modal.confirm({
-      title: `Xóa ${count} file đã chọn?`,
-      content: 'Hành động này không thể hoàn tác.',
-      okText: `Xóa ${count} file`,
-      okButtonProps: { danger: true },
-      cancelText: 'Hủy',
-      centered: true,
-      onOk: async () => {
-        setBulkDeleting(true)
-        try {
-          const toDelete = items.filter((i) => selectedPaths.has(i.fullPath))
-          await Promise.allSettled(
-            toDelete.map(async (item) => {
-              await deleteObject(ref(storage, item.fullPath)).catch(() => {})
-              if (item.sessionId) await deleteSession(item.sessionId).catch(() => {})
-            }),
-          )
-          const deletedPaths = new Set(toDelete.map((i) => i.fullPath))
-          setPhotos((ps) => ps.filter((p) => !deletedPaths.has(p.fullPath)))
-          setVideos((vs) => vs.filter((v) => !deletedPaths.has(v.fullPath)))
-          setSelectedPaths(new Set())
-        } finally {
-          setBulkDeleting(false)
-        }
-      },
-    })
-  }
-
-  const toggleSelect = (path: string) => {
-    setSelectedPaths((prev) => {
-      const next = new Set(prev)
-      if (next.has(path)) next.delete(path)
-      else next.add(path)
-      return next
-    })
-  }
-
-  const selectAll = () => {
-    setSelectedPaths(new Set(items.map((i) => i.fullPath)))
-  }
-
-  const deselectAll = () => {
-    setSelectedPaths(new Set())
-  }
-
-
-  const handlePrint = (item: MediaItem) => {
-    printSingleImage(item.url, () => {
-      setPrintedPaths((prev) => new Set(prev).add(item.fullPath))
-      if (item.sessionId) {
-        markSessionPrinted(item.sessionId).catch(() => {})
-      } else {
-        const stored = localStorage.getItem('printed_paths')
-        const list: string[] = stored ? JSON.parse(stored) : []
-        if (!list.includes(item.fullPath)) {
-          list.push(item.fullPath)
-          localStorage.setItem('printed_paths', JSON.stringify(list))
-        }
-      }
-    })
-  }
-
-  const handlePrintMultiple = (itemsToPrint: MediaItem[]) => {
-    if (itemsToPrint.length === 0) return
-    printMultipleImages(
-      itemsToPrint.map((i) => i.url),
-      () => {
-        setPrintedPaths((prev) => {
-          const next = new Set(prev)
-          itemsToPrint.forEach((item) => next.add(item.fullPath))
-          return next
-        })
-        itemsToPrint.forEach((item) => {
-          if (item.sessionId) {
-            markSessionPrinted(item.sessionId).catch(() => {})
-          } else {
-            const stored = localStorage.getItem('printed_paths')
-            const list: string[] = stored ? JSON.parse(stored) : []
-            if (!list.includes(item.fullPath)) list.push(item.fullPath)
-            localStorage.setItem('printed_paths', JSON.stringify(list))
-          }
-        })
-      },
-    )
-  }
-
-  const handlePrintSelected = () => {
-    if (selectedPaths.size === 0) return
-    const toPrint = photos.filter((i) => selectedPaths.has(i.fullPath))
-    if (toPrint.length === 0) return
-
-    if (toPrint.length > 5) {
-      Modal.confirm({
-        title: `In ${toPrint.length} ảnh?`,
-        content: `Sẽ in ${toPrint.length} ảnh trong 1 lần, mỗi ảnh trên 1 trang. Tiếp tục?`,
-        onOk: () => handlePrintMultiple(toPrint),
-        centered: true,
-      })
+  const handleItemDeleted = useCallback((item: MediaItem) => {
+    if (item.type === 'photo') {
+      setPhotos((prev) => prev.filter((p) => p.fullPath !== item.fullPath))
     } else {
-      handlePrintMultiple(toPrint)
+      setVideos((prev) => prev.filter((v) => v.fullPath !== item.fullPath))
     }
-  }
+  }, [])
 
-  const items = tab === 'photos' ? photos : videos
+  const handleItemsDeleted = useCallback((deletedList: MediaItem[]) => {
+    const deletedPaths = new Set(deletedList.map((i) => i.fullPath))
+    setPhotos((prev) => prev.filter((p) => !deletedPaths.has(p.fullPath)))
+    setVideos((prev) => prev.filter((v) => !deletedPaths.has(v.fullPath)))
+  }, [])
+
+  const currentMediaList = tab === 'photos' ? photos : videos
 
   return (
     <div
@@ -366,75 +209,15 @@ export default function AdminPage() {
               </p>
             </div>
           </div>
+
           <div className="flex flex-wrap items-center gap-2">
-            {selectedPaths.size > 0 && (
-              <div
-                className={`flex items-center gap-2 rounded-lg px-2.5 py-1 mr-2 border ${tc(
-                  'bg-[#0a0a0a] border-blue-900/50',
-                  'bg-blue-50 border-blue-200',
-                )}`}
-              >
-                <span className={`text-[11px] font-bold px-1 uppercase tracking-wider ${tc('text-blue-400', 'text-blue-600')}`}>
-                  Đã chọn {selectedPaths.size}
-                </span>
-
-                {tab === 'photos' && (
-                  <Button
-                    size="small"
-                    type="primary"
-                    icon={<PictureOutlined />}
-                    onClick={handlePrintSelected}
-                    style={{ background: '#10b981', borderColor: '#10b981' }}
-                  >
-                    In {selectedPaths.size} ảnh
-                  </Button>
-                )}
-
-                {permissions?.canManageAdmins && (
-                  <Button
-                    size="small"
-                    type="primary"
-                    danger
-                    icon={<DeleteFilled />}
-                    onClick={handleDeleteSelected}
-                  >
-                    Xóa {selectedPaths.size}
-                  </Button>
-                )}
-                <Button size="small" onClick={deselectAll}>
-                  Bỏ chọn
-                </Button>
-              </div>
-            )}
-
             <Button
               size="small"
               icon={<ReloadOutlined />}
               onClick={() => window.location.reload()}
-              disabled={bulkDeleting}
             >
               Tải lại
             </Button>
-
-            {(tab === 'photos' || tab === 'videos') && items.length > 0 && (
-              <Button size="small" onClick={selectedPaths.size === items.length ? deselectAll : selectAll}>
-                {selectedPaths.size === items.length ? 'Bỏ chọn hết' : 'Chọn tất cả'}
-              </Button>
-            )}
-
-            {permissions?.canManageAdmins && (
-              <Tooltip title="Xóa tất cả trong tab hiện tại">
-                <Button
-                  size="small"
-                  icon={<DeleteFilled />}
-                  onClick={handleDeleteAll}
-                  loading={bulkDeleting}
-                  danger
-                >
-                  <span className="hidden sm:inline">Xóa tất cả</span>
-                </Button>
-              </Tooltip>
-            )}
 
             <ThemeToggle />
 
@@ -454,10 +237,7 @@ export default function AdminPage() {
           {availableTabs.map((t) => (
             <button
               key={t}
-              onClick={() => {
-                setTab(t)
-                setSelectedPaths(new Set())
-              }}
+              onClick={() => setTab(t)}
               className={`py-3 px-4 text-sm font-semibold border-b-2 transition-colors shrink-0 whitespace-nowrap cursor-pointer ${
                 tab === t
                   ? tc('border-white text-white', 'border-blue-600 text-blue-600')
@@ -503,17 +283,12 @@ export default function AdminPage() {
           <div className="p-4 sm:p-6">
             <MediaTab
               tab={tab}
-              items={items}
+              items={currentMediaList}
               loading={loading}
-              selectedPaths={selectedPaths}
-              brokenPaths={brokenPaths}
-              printedPaths={printedPaths}
-              deletingPath={deletingPath}
               canDelete={permissions?.canManageAdmins ?? false}
-              onToggleSelect={toggleSelect}
-              onDelete={handleDelete}
-              onPrint={handlePrint}
-              onBrokenPath={(path) => setBrokenPaths((prev) => new Set(prev).add(path))}
+              initialPrintedPaths={printedPaths}
+              onItemDeleted={handleItemDeleted}
+              onItemsDeleted={handleItemsDeleted}
             />
           </div>
         )}
