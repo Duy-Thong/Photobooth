@@ -1,4 +1,4 @@
-import { memo } from 'react'
+import { memo, useRef, useState, useEffect } from 'react'
 import { Spin, Tooltip } from 'antd'
 import {
   PlayCircleOutlined,
@@ -44,6 +44,33 @@ function MediaCardComponent({
   onBroken,
 }: MediaCardProps) {
   const tc = useThemeClass()
+  const cardRef = useRef<HTMLDivElement>(null)
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const [isVisible, setIsVisible] = useState(false)
+  const [isLoaded, setIsLoaded] = useState(false)
+
+  // IntersectionObserver to lazy load the media asset only when approaching viewport
+  useEffect(() => {
+    const el = cardRef.current
+    if (!el) return
+    if (typeof IntersectionObserver === 'undefined') {
+      setIsVisible(true)
+      return
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          setIsVisible(true)
+          observer.disconnect()
+        }
+      },
+      { rootMargin: '300px' }
+    )
+
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
 
   const handleCardClick = () => {
     if (hasActiveSelection) {
@@ -53,58 +80,113 @@ function MediaCardComponent({
     }
   }
 
+  const handleVideoMouseEnter = () => {
+    if (videoRef.current && isVisible) {
+      videoRef.current.play().catch(() => {
+        /* autoplay muted policy / ignore */
+      })
+    }
+  }
+
+  const handleVideoMouseLeave = () => {
+    if (videoRef.current) {
+      videoRef.current.pause()
+      videoRef.current.currentTime = 0
+    }
+  }
+
   return (
     <div
+      ref={cardRef}
       className={`group relative rounded-xl overflow-hidden transition-all duration-200 border shadow-xs hover:shadow-md ${
         isSelected
           ? 'border-blue-500 ring-2 ring-blue-500/30'
           : tc(
               'bg-[#141414] border-[#262626] hover:border-[#444]',
-              'bg-white border-slate-200 hover:border-slate-300',
+              'bg-white border-slate-200 hover:border-slate-300'
             )
       }`}
     >
       {/* Thumbnail */}
       <div className="relative cursor-pointer" onClick={handleCardClick}>
         {item.type === 'photo' ? (
-          isBroken ? (
+          !isVisible ? (
+            <div
+              className={`w-full aspect-3/4 flex items-center justify-center animate-pulse ${tc(
+                'bg-[#101010]',
+                'bg-slate-100'
+              )}`}
+            >
+              <PictureOutlined className="text-xl opacity-20" />
+            </div>
+          ) : isBroken ? (
             <div
               className={`w-full aspect-3/4 flex flex-col items-center justify-center gap-2 ${tc(
                 'bg-[#0a0a0a] text-slate-600',
-                'bg-slate-100 text-slate-400',
+                'bg-slate-100 text-slate-400'
               )}`}
             >
               <CloseOutlined style={{ fontSize: 24 }} />
               <span className="text-[10px] uppercase font-semibold">File missing</span>
             </div>
           ) : (
-            <img
+            <div className="relative w-full aspect-3/4 overflow-hidden">
+              {!isLoaded && (
+                <div
+                  className={`absolute inset-0 flex items-center justify-center animate-pulse ${tc(
+                    'bg-[#101010]',
+                    'bg-slate-100'
+                  )}`}
+                >
+                  <PictureOutlined className="text-xl opacity-20" />
+                </div>
+              )}
+              <img
+                src={item.url}
+                alt={item.name}
+                loading="lazy"
+                decoding="async"
+                onLoad={() => setIsLoaded(true)}
+                onError={() => onBroken?.(item)}
+                className={`w-full h-full object-cover transition-opacity duration-300 ${
+                  isLoaded ? 'opacity-100' : 'opacity-0'
+                }`}
+              />
+            </div>
+          )
+        ) : !isVisible ? (
+          <div
+            className={`w-full aspect-video flex items-center justify-center animate-pulse ${tc(
+              'bg-[#101010]',
+              'bg-slate-100'
+            )}`}
+          >
+            <PlayCircleOutlined className="text-2xl opacity-20" />
+          </div>
+        ) : isBroken ? (
+          <div className="w-full aspect-video bg-black flex flex-col items-center justify-center text-slate-500 gap-2">
+            <CloseOutlined style={{ fontSize: 24 }} />
+            <span className="text-[10px] uppercase font-semibold">Video missing</span>
+          </div>
+        ) : (
+          <div
+            className="w-full aspect-video bg-black flex items-center justify-center overflow-hidden relative"
+            onMouseEnter={handleVideoMouseEnter}
+            onMouseLeave={handleVideoMouseLeave}
+          >
+            <video
+              ref={videoRef}
               src={item.url}
-              alt={item.name}
-              className="w-full aspect-3/4 object-cover"
-              loading="lazy"
+              preload="none"
+              muted
+              playsInline
+              loop
+              className="w-full h-full object-cover"
               onError={() => onBroken?.(item)}
             />
-          )
-        ) : (
-          <div className="w-full aspect-video bg-black flex items-center justify-center overflow-hidden">
-            {isBroken ? (
-              <div className="flex flex-col items-center justify-center text-slate-500 gap-2">
-                <CloseOutlined style={{ fontSize: 24 }} />
-                <span className="text-[10px] uppercase font-semibold">Video missing</span>
-              </div>
-            ) : (
-              <>
-                <video
-                  src={item.url}
-                  className="w-full h-full object-cover"
-                  onError={() => onBroken?.(item)}
-                />
-                <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                  <PlayCircleOutlined className="text-white text-4xl opacity-80 group-hover:opacity-100 transition-opacity" />
-                </div>
-              </>
-            )}
+            <div className="absolute inset-0 flex items-center justify-center bg-black/40 group-hover:bg-transparent transition-colors pointer-events-none">
+              <PlayCircleOutlined className="text-white text-4xl opacity-80 group-hover:opacity-0 transition-opacity" />
+            </div>
           </div>
         )}
 

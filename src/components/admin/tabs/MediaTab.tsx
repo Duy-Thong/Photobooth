@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from 'react'
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { Spin, Empty, Modal, Button, DatePicker, Input, Tooltip, message } from 'antd'
 import {
   CalendarOutlined,
@@ -119,6 +119,44 @@ export default function MediaTab({
     setCustomRange(null)
     setSearchQuery('')
   }
+
+  // Progressive chunk loading (Infinite scroll without pagination controls)
+  const INITIAL_CHUNK = 30
+  const CHUNK_STEP = 30
+  const [visibleCount, setVisibleCount] = useState(INITIAL_CHUNK)
+  const loadMoreRef = useRef<HTMLDivElement>(null)
+
+  // Reset visible count when filter or tab changes
+  useEffect(() => {
+    setVisibleCount(INITIAL_CHUNK)
+  }, [tab, searchQuery, datePreset, customRange])
+
+  const displayedItems = useMemo(() => {
+    return filteredItems.slice(0, visibleCount)
+  }, [filteredItems, visibleCount])
+
+  const hasMore = visibleCount < filteredItems.length
+
+  useEffect(() => {
+    const el = loadMoreRef.current
+    if (!el || !hasMore) return
+    if (typeof IntersectionObserver === 'undefined') {
+      setVisibleCount(filteredItems.length)
+      return
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          setVisibleCount((prev) => Math.min(prev + CHUNK_STEP, filteredItems.length))
+        }
+      },
+      { rootMargin: '400px' },
+    )
+
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [hasMore, filteredItems.length])
 
   // Filtered paths for quick select
   const filteredPaths = useMemo(() => filteredItems.map((i) => i.fullPath), [filteredItems])
@@ -431,7 +469,10 @@ export default function MediaTab({
 
           <div className="flex items-center gap-2 shrink-0">
             <span className={`text-[11px] font-medium ${tc('text-slate-400', 'text-slate-500')}`}>
-              {filteredItems.length} / {items.length} {tab === 'photos' ? 'ảnh' : 'video'}
+              {displayedItems.length < filteredItems.length
+                ? `Đang xem ${displayedItems.length}/${filteredItems.length}`
+                : `${filteredItems.length}/${items.length}`}{' '}
+              {tab === 'photos' ? 'ảnh' : 'video'}
             </span>
 
             {filteredItems.length > 0 && (
@@ -511,32 +552,58 @@ export default function MediaTab({
           </Button>
         </Empty>
       ) : (
-        <div
-          className={`grid gap-4 ${
-            tab === 'photos'
-              ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5'
-              : 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3'
-          }`}
-        >
-          {filteredItems.map((item) => (
-            <MediaCard
-              key={item.fullPath}
-              item={item}
-              isSelected={selection.isSelected(item.fullPath)}
-              isBroken={brokenPaths.has(item.fullPath)}
-              isPrinted={printedPaths.has(item.fullPath)}
-              isDeleting={deletingPath === item.fullPath}
-              canDelete={canDelete}
-              hasActiveSelection={selection.selectedCount > 0}
-              onToggleSelect={(it) => selection.toggle(it.fullPath)}
-              onPreview={setPreviewItem}
-              onPrint={tab === 'photos' ? handlePrintSingle : undefined}
-              onDownload={handleDownloadSingle}
-              onDelete={canDelete ? handleDeleteSingle : undefined}
-              onBroken={(it) => setBrokenPaths((prev) => new Set(prev).add(it.fullPath))}
-            />
-          ))}
-        </div>
+        <>
+          <div
+            className={`grid gap-4 ${
+              tab === 'photos'
+                ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5'
+                : 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3'
+            }`}
+          >
+            {displayedItems.map((item) => (
+              <MediaCard
+                key={item.fullPath}
+                item={item}
+                isSelected={selection.isSelected(item.fullPath)}
+                isBroken={brokenPaths.has(item.fullPath)}
+                isPrinted={printedPaths.has(item.fullPath)}
+                isDeleting={deletingPath === item.fullPath}
+                canDelete={canDelete}
+                hasActiveSelection={selection.selectedCount > 0}
+                onToggleSelect={(it) => selection.toggle(it.fullPath)}
+                onPreview={setPreviewItem}
+                onPrint={tab === 'photos' ? handlePrintSingle : undefined}
+                onDownload={handleDownloadSingle}
+                onDelete={canDelete ? handleDeleteSingle : undefined}
+                onBroken={(it) => setBrokenPaths((prev) => new Set(prev).add(it.fullPath))}
+              />
+            ))}
+          </div>
+
+          {/* Infinite Scroll sentinel / Load more */}
+          {hasMore ? (
+            <div ref={loadMoreRef} className="py-8 flex flex-col items-center justify-center gap-2">
+              <div className="flex items-center gap-2 text-xs opacity-75">
+                <Spin size="small" />
+                <span className={tc('text-slate-400', 'text-slate-500')}>
+                  Đang cuộn tải thêm ({displayedItems.length}/{filteredItems.length})...
+                </span>
+              </div>
+              <Button
+                size="small"
+                type="dashed"
+                onClick={() => setVisibleCount((prev) => Math.min(prev + CHUNK_STEP, filteredItems.length))}
+                className="text-xs"
+              >
+                Xem thêm (+{Math.min(CHUNK_STEP, filteredItems.length - visibleCount)})
+              </Button>
+            </div>
+          ) : filteredItems.length > INITIAL_CHUNK ? (
+            <div className={`py-6 text-center text-xs ${tc('text-slate-500', 'text-slate-400')}`}>
+              Đã hiển thị toàn bộ {filteredItems.length} {tab === 'photos' ? 'ảnh' : 'video'}
+            </div>
+          ) : null}
+        </>
       )}
 
       {/* Preview Modal */}
