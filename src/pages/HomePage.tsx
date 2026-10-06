@@ -82,15 +82,22 @@ export default function HomePage() {
     if (!el) return
 
     const update = () => {
-      const width = el.clientWidth
-      const height = el.clientHeight
-      if (width === 0 || height === 0) return
+      const style = window.getComputedStyle(el)
+      const padLeft = parseFloat(style.paddingLeft || '0')
+      const padRight = parseFloat(style.paddingRight || '0')
+      const padTop = parseFloat(style.paddingTop || '0')
+      const padBottom = parseFloat(style.paddingBottom || '0')
+      const usableWidth = el.clientWidth - padLeft - padRight
+      const usableHeight = el.clientHeight - padTop - padBottom
+      if (usableWidth <= 0 || usableHeight <= 0) return
 
-      const stripW = stripColRef.current?.offsetWidth ?? (isWideStrip ? 320 : 240)
+      const stripRect = stripColRef.current?.getBoundingClientRect()
+      const stripW = stripRect && stripRect.width > 0 ? stripRect.width : (isWideStrip ? 384 : 256)
       const gap = 20 // gap-3 sm:gap-5
-      const maxCamW = Math.max(300, width - stripW - gap)
-      // CaptureControls is ~56px, gap is 8px, leave safety buffer 4px -> 68px
-      const maxCamH = Math.max(0, height - 68)
+      // Leave at least 24px buffer so the strip column never touches the edge or gets clipped
+      const maxCamW = Math.max(300, usableWidth - stripW - gap - 24)
+      // CaptureControls is ~56px, gap is 8px, leave safety buffer 16px -> 80px
+      const maxCamH = Math.max(0, usableHeight - 80)
       const idealW = maxCamH * (16 / 9)
       const w = Math.min(maxCamW, idealW)
       setDesktopDeckWidth(Math.round(w))
@@ -477,7 +484,7 @@ export default function HomePage() {
         {/* Main Studio Area */}
         <div ref={studioRef} className="flex-1 h-full w-full max-w-[1640px] mx-auto px-2 sm:px-4 lg:px-6 py-1 md:py-2 overflow-hidden flex flex-col justify-between min-h-0">
           {/* ══════════════ DESKTOP VIEW (md:flex) ══════════════ */}
-          <div className="hidden md:flex flex-row gap-3 sm:gap-5 h-full items-center justify-center mx-auto">
+          <div className="hidden md:flex flex-row gap-3 sm:gap-5 h-full items-center justify-center max-w-full min-w-0 mx-auto">
             {/* Left: camera + unified capture controls (1 cohesive deck) */}
             <div
               style={{ width: desktopDeckWidth ? `${desktopDeckWidth}px` : undefined }}
