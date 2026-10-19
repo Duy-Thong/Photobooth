@@ -202,7 +202,7 @@ export default function AdminPage() {
                 className={`font-bold text-lg leading-tight ${tc('text-white', 'text-slate-900')}`}
                 style={{ letterSpacing: '-0.02em' }}
               >
-                Sổ Media Photobooth
+                SYPartners Photobooth
               </h1>
               <p className={`text-[10px] uppercase tracking-widest font-semibold ${tc('text-slate-500', 'text-slate-400')}`}>
                 Admin Panel

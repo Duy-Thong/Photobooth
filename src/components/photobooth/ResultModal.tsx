@@ -82,7 +82,7 @@ export default function ResultModal({
     if (navigator.share && sessionUrl) {
       try {
         await navigator.share({
-          title: 'Sổ Media Photobooth',
+          title: 'SYPartners Photobooth',
           text: 'Xem bộ ảnh photobooth siêu xinh của mình nè! ✨',
           url: sessionUrl,
         })

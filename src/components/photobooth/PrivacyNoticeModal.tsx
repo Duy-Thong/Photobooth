@@ -59,7 +59,7 @@ export default function PrivacyNoticeModal({ open, onClose }: PrivacyNoticeModal
     >
       <div className="flex flex-col gap-4 py-2">
         <p className={`text-xs sm:text-sm leading-relaxed ${tc('text-[#ccc]', 'text-[#444]')}`}>
-          Chào mừng bạn đến với <strong className={tc('text-white', 'text-black')}>Sổ Media Photobooth</strong>! Trước khi bắt đầu tạo những bộ ảnh xinh xắn, chúng tôi muốn bạn hoàn toàn an tâm về quyền riêng tư của mình:
+          Chào mừng bạn đến với <strong className={tc('text-white', 'text-black')}>SYPartners Photobooth</strong>! Trước khi bắt đầu tạo những bộ ảnh xinh xắn, chúng tôi muốn bạn hoàn toàn an tâm về quyền riêng tư của mình:
         </p>
 
         {/* Reassurance Points */}

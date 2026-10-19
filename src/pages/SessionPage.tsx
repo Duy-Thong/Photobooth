@@ -53,7 +53,7 @@ export default function SessionPage() {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'Sổ Media Photobooth',
+          title: 'SYPartners Photobooth',
           text: 'Xem bộ ảnh photobooth siêu xinh của mình nè! ✨',
           url: currentUrl,
         })
@@ -140,8 +140,8 @@ export default function SessionPage() {
 
       {/* Header */}
       <div className="flex flex-col items-center gap-1 text-center">
-        <a href="/" className={`font-bold text-2xl tracking-tight ${tc('text-white', 'text-black')}`} style={{ letterSpacing: '-0.04em' }}>
-          Sổ Media
+        <a href="/" className={`font-bold text-xl sm:text-2xl tracking-tight ${tc('text-white', 'text-black')}`} style={{ letterSpacing: '-0.02em' }}>
+          Chúc mừng Ngày Phụ nữ Việt Nam
         </a>
         <p className={`text-[10px] uppercase tracking-[0.25em] font-medium ${tc('text-[#777]', 'text-[#999]')}`}>Photobooth Studio</p>
         <p className={`text-xs mt-1 font-mono ${tc('text-[#555]', 'text-[#aaa]')}`}>{date}</p>
