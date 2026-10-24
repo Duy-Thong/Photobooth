@@ -14,14 +14,22 @@ export default function PhotoboothHeader() {
       <div className="w-8 hidden sm:block" />
 
       {/* Title - Absolutely Centered */}
-      <div className="absolute left-1/2 -translate-x-1/2 text-center pointer-events-none whitespace-nowrap">
+      <div className="absolute left-1/2 -translate-x-1/2 text-center pointer-events-none">
         <a href="/" className="pointer-events-auto">
           <h1
-            className={`text-sm sm:text-base md:text-lg font-bold tracking-tight ${tc('text-white', 'text-black')}`}
-            style={{ letterSpacing: '-0.02em' }}
+            className={`text-xl sm:text-2xl font-bold tracking-tight ${tc('text-white', 'text-black')}`}
+            style={{ letterSpacing: '-0.03em' }}
           >
-            Chúc mừng Ngày Phụ nữ Việt Nam
+            Sổ Media
           </h1>
+          <p
+            className={`text-[8px] sm:text-[9px] tracking-[0.35em] uppercase font-medium ${tc(
+              'text-[#888]',
+              'text-[#666]'
+            )}`}
+          >
+            Photobooth
+          </p>
         </a>
       </div>
 

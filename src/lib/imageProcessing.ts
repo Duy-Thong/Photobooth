@@ -533,7 +533,7 @@ export async function downloadMedia(url: string, filename: string) {
       try {
         await navigator.share({
           files: [file],
-          title: 'SYPartners Photobooth',
+          title: 'Sổ Media Photobooth',
         })
         return // Successfully shared/saved
       } catch (err) {
